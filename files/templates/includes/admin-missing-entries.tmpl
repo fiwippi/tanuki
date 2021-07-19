@@ -1,0 +1,89 @@
+{{ define "title" }}User Management{{ end }}
+
+{{ define "scripts" }}
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('entriesGrid', () => ({
+            entries: [],
+            showModal: false,
+            modalText: "",
+
+            async init() {
+                await this.refreshEntries()
+            },
+
+            async refreshEntries() {
+                let resp = await apiAdminLibraryMissingEntries()
+                if (resp === undefined || !resp.success) {
+                    this.modalText = 'FAILED TO GET ENTRIES'
+                    this.showModal = true
+                } else {
+                    this.entries = resp.entries
+                }
+            },
+
+            async deleteEntries() {
+                let resp = await apiDeleteAdminLibraryMissingEntries()
+                if (!resp.success) {
+                    this.modalText = 'FAILED TO DELETE ENTRIES'
+                } else {
+                    this.modalText = 'DELETED ENTRIES'
+                }
+                this.showModal = true
+
+                await this.refreshEntries()
+            },
+        }))
+    })
+</script>
+{{ end }}
+
+{{ define "content" }}
+<div x-data="entriesGrid">
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; row-gap: 0.8em; ">
+
+        <!-- Table Headings -->
+        <template x-if="entries.length > 0">
+            <b><span style="grid-column: 1; grid-row: 0">Type</span></b>
+        </template>
+        <template x-if="entries.length > 0">
+            <b><span style="grid-column: 1; grid-row: 0">Title</span></b>
+        </template>
+        <template x-if="entries.length > 0">
+            <b><span style="grid-column: 2; grid-row: 0">Path</span></b>
+        </template>
+
+        <template x-if="entries.length === 0">
+            <h2>No Missing Entries!</h2>
+        </template>
+
+        <!-- Type -->
+        <template x-for="(entry, index) in entries" :key="index">
+            <span x-text="entry.type" :style="`grid-column: 1; grid-row: ${index + 2}`"></span>
+        </template>
+
+        <!-- Title -->
+        <template x-for="(entry, index) in entries" :key="index">
+            <span x-text="entry.title" :style="`grid-column: 2; grid-row: ${index + 2}`"></span>
+        </template>
+
+        <!-- Path -->
+        <template x-for="(entry, index) in entries" :key="index">
+            <span x-text="entry.path" :style="`grid-column: 3; grid-row: ${index + 2}`"></span>
+        </template>
+    </div>
+
+    <template x-if="entries.length > 0">
+        <a style="border-bottom: none;" href="javascript:void(0)"><button style="margin-top: 1.5em" @click="await deleteEntries()">Delete Missing Entries</button></a>
+    </template>
+
+    <div x-cloak>
+        <div  x-show="showModal" class="modal">
+            <div @click.away="showModal = false" x-show="showModal" x-transition class="modal-content">
+                <span class="close" @click="showModal = false">&times;</span>
+                <h3 x-text="modalText"></h3>
+            </div>
+        </div>
+    </div>
+</div>
+{{ end }}

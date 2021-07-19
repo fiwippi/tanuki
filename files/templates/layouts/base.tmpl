@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ block "title" . }}{{ end }}</title>
+    <link rel="stylesheet" href='{{versioning "/static/css/style.css"}}'>
+    <link rel="stylesheet" href='{{versioning "/static/css/fira_mono.css"}}'>
+    <script src='{{versioning "/static/js/api.js"}}'></script>
+    <script src='{{versioning "/static/js/auth.js"}}'></script>
+    <script src='{{versioning "/static/js/common.js"}}'></script>
+    <script src='{{versioning "/static/js/theme.js"}}'></script>
+    <script defer src='{{versioning "/static/js/alpine.js"}}'></script>
+    <script>
+        document.addEventListener('alpine:init', () => {
+            setTheme()
+
+            Alpine.data('adminSpecific', () => ({
+                isAdmin: true,
+
+                async init() {
+                    this.isAdmin = await apiUserAdmin()
+                },
+            }))
+
+            Alpine.data('logoutButton', () => ({
+                async logout() {
+                    await authLogout()
+                    window.location.replace('/login')
+                }
+            }))
+        })
+    </script>
+    {{ block "styles" . }}{{ end }}
+    {{ block "scripts" . }}{{ end }}
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><a style="border-bottom: none;" href="/">Tanuki</a></h1>
+            → <a href="/">Home</a>
+            → <a href="/tags">Tags</a>
+            <span x-data="adminSpecific" x-show="isAdmin" x-cloak>
+                → <a href="/admin">Admin</a>
+            </span>
+            → <a x-data="logoutButton" @click="await logout()" href="javascript:void(0)">Logout</a>
+            <button x-data style="float: right" @click="toggleTheme()">Change Theme 🎨</button>
+            <br><br>
+        </div>
+        <div class='main'>
+            {{ block "content" . }}{{ end }}
+        </div>
+    </div>
+</body>
+</html>

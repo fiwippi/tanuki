@@ -1,0 +1,53 @@
+{{ define "title" }}User Management{{ end }}
+
+{{ define "styles" }}
+<style>
+    .wrappedText {
+        white-space: pre-wrap;
+    }
+
+    .unwrappedText {
+        white-space: pre;
+    }
+
+    pre {
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+</style>
+{{ end }}
+
+{{ define "scripts" }}
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('database', () => ({
+            dbString: "",
+            showModal: false,
+            wrapped: true,
+            modalText: "",
+
+            async init() {
+                await this.refreshDB()
+            },
+
+            async refreshDB() {
+                let resp = await apiAdminDB()
+                if (resp === undefined || !resp.success) {
+                    this.modalText = 'FAILED TO GET DATABASE'
+                    this.showModal = true
+                } else {
+                    this.dbString = resp.db
+                }
+            },
+        }))
+    })
+</script>
+{{ end }}
+
+{{ define "content" }}
+<div x-data="database">
+    <h2>Database</h2>
+    <p><button @click="refreshDB()">Refresh</button> Wrap Text: <input type="checkbox" x-model="wrapped"></p>
+    <pre style="font-weight: bold;" x-text="dbString" :class="{ 'wrappedText': wrapped, 'unwrappedText': !wrapped }"></pre>
+</div>
+{{ end }}

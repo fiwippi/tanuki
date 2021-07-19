@@ -1,0 +1,62 @@
+{{ define "title" }}Admin{{ end }}
+
+{{ define "scripts" }}
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('dashboard', () => ({
+            showScanResult: false,
+            scanResult: "",
+            showThumbnailsResult: false,
+            thumbnailsResult: "",
+
+            async thumbnails() {
+                let resp = await apiAdminLibraryGenerateThumbnails()
+                if (resp === undefined) {
+                    this.thumbnailsResult = "Failure!"
+                } else if (!resp.success) {
+                    this.thumbnailsResult = "Failure!"
+                } else {
+                    this.thumbnailsResult = "Success!, " + resp.message
+                }
+                this.showThumbnailsResult = true
+
+            },
+
+            async scan() {
+                let resp = await apiAdminLibraryScan()
+                if (resp === undefined) {
+                    this.scanResult = "Failure!"
+                } else if (!resp.success) {
+                    this.scanResult = "Failure!"
+                } else {
+                    this.scanResult = "Success!, " + resp.message
+                }
+                this.showScanResult = true
+
+            }
+        }))
+    })
+</script>
+{{ end }}
+
+{{ define "content" }}
+<div x-data="dashboard">
+    <div class="flex_div">
+        <span class="flex_key_unpadded">⦿ <a href="/admin/users" style="line-height: 1.8em; align-self: auto">User Management</a></span>
+    </div>
+    <div class="flex_div">
+        <span class="flex_key_unpadded">⦿ <a href="/admin/db" style="line-height: 1.8em; align-self: auto">View Database</a></span>
+    </div>
+    <div class="flex_div">
+        <span class="flex_key_unpadded">⦿ <a href="/admin/missing-entries" style="line-height: 1.8em; align-self: auto">Missing Entries</a></span>
+    </div>
+    <div class="flex_div_col">
+        <span>⦿ <a href="javascript:void(0)" style="line-height: 1.8em; align-self: auto" @click="await scan()">Scan Library Files</a></span>
+        <span x-show="showScanResult" @click.away="showScanResult = false" class="flex_value_uncentred" x-text="scanResult"></span>
+    </div>
+    <div class="flex_div_col">
+        <span>⦿ <a href="javascript:void(0)" style="line-height: 1.8em; align-self: auto" @click="await thumbnails()">Generate Thumbnails</a></span>
+        <span x-show="showThumbnailsResult" @click.away="showThumbnailsResult = false" class="flex_value_uncentred" x-text="thumbnailsResult"></span>
+    </div>
+</div>
+{{ end }}

@@ -1,0 +1,91 @@
+{{ define "title" }}Home{{ end }}
+
+{{ define "scripts" }}
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('homepage', () => ({
+            search: "",
+            entries: [],
+            images: [],
+
+            get filteredEntries() {
+                return this.entries.filter(
+                    i => i.title.toLowerCase().startsWith(this.search.toLowerCase())
+                )
+            },
+
+            async init() {
+                await this.refreshLibrary()
+            },
+
+            async refreshLibrary() {
+                let resp = await apiSeriesList()
+                if (resp === undefined) {
+                    this.entries = []
+                } else if (!resp.success) {
+                    this.entries = []
+                } else {
+                    this.images = []
+                    let promises = []
+                    resp.entries.sort(entryCompare) // Sort before we bind images to indexes
+                    for (let i = 0; i < resp.entries.length; i++) {
+                        let img = new Image()
+                        promises.push(waitUntilLoad(img))
+                        img.src = '/api/series/{0}/cover?thumbnail=true'.format(resp.entries[i].hash)
+                        this.images.push(img)
+                    }
+                    await Promise.all(promises).catch(function(err) {
+                        console.log(err.message);
+                    })
+                    this.entries = resp.entries
+                }
+            },
+
+            async getProgress(series) {
+                let resp = await apiUserProgress(series, "")
+
+                if (resp === undefined) {
+                    return "Progress: N/A"
+                } else if (!resp.success) {
+                    return  "Progress: N/A"
+                } else {
+                    return "Progress: " + stringPercent(resp.progress_percent)
+                }
+            },
+        }))
+    })
+</script>
+{{ end }}
+
+{{ define "content" }}
+<div x-data="homepage">
+    <template x-if="entries.length > 0">
+        <h2>Library</h2>
+    </template>
+    <template x-if="entries.length === 0">
+        <h3>Empty!</h3>
+    </template>
+
+    <template x-if="entries.length > 0">
+        <div class="searchWrapper">
+            <input x-model="search" class="searchbar" placeholder="Search..." type="text">
+        </div>
+    </template>
+
+    <div class="entriesDiv">
+        <template x-for="(e, index) in filteredEntries">
+            <a style="border-bottom: none;" :href="'/entries/{0}'.format(e.hash)">
+                <div class="entry" :style="`flex: 0 1 ${images[index].naturalWidth}px`">
+                    <img :src="images[index].src" style="width: 100%">
+                    <div style="padding: 9px 16px;" >
+                        <h4 style="margin-block: 0.2em" x-text="e.title"></h4>
+                        <span x-text="'Entries: {0}'.format(e.entries)"></span><br>
+                        <span x-text="await getProgress(e.hash)"></span>
+                    </div>
+                </div>
+            </a>
+        </template>
+    </div>
+</div>
+
+{{ end }}

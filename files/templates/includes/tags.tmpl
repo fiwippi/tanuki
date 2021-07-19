@@ -1,0 +1,47 @@
+{{ define "title" }}Home{{ end }}
+
+{{ define "styles" }}
+{{ end }}
+
+{{ define "scripts" }}
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('tagspage', () => ({
+            tags: [],
+
+            async init() {
+                await this.refreshTags()
+            },
+
+            async refreshTags() {
+                let resp = await apiTags()
+
+                if (resp === undefined) {
+                    this.tags = []
+                } else if (!resp.success) {
+                    this.tags = []
+                } else {
+                    this.tags = resp.tags
+                }
+            },
+        }))
+    })
+</script>
+{{ end }}
+
+{{ define "content" }}
+<div x-data="tagspage">
+    <template x-if="tags.length > 0">
+        <h2>Tags</h2>
+    </template>
+    <template x-if="tags.length === 0">
+        <h3>Empty!</h3>
+    </template>
+
+    <template x-for="tag in tags" :key="tag">
+        <div class="flex_div">
+            <span class="flex_key_unpadded">⦿ <a :href="'/tags/' + tag" style="line-height: 1.8em; align-self: auto" x-text="tag"></a></span>
+        </div>
+    </template>
+</div>
+{{ end }}

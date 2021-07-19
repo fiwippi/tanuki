@@ -1,0 +1,64 @@
+{{ define "title" }}Login{{ end }}
+
+{{ define "scripts" }}
+<script src='{{versioning "/static/js/auth.js"}}'></script>
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('loginForm', () => ({
+            username: '',
+            password: '',
+            modalText: '',
+            showModal: false,
+
+            async login() {
+                let resp = await authLogin(this.username, this.password)
+
+                if (resp === undefined) {
+                    this.modalText = 'ERROR ENCOUNTERED'
+                    this.showModal = true
+                } else if (resp.success) {
+                    window.location.replace('/')
+                } else {
+                    if (resp.message.length > 0) {
+                        this.modalText = 'LOGIN FAILED: ' + resp.message.toUpperCase()
+                    } else {
+                        this.modalText = 'LOGIN FAILED'
+                    }
+                    this.showModal = true
+                }
+            }
+        }))
+    })
+</script>
+{{ end }}
+
+{{ define "content" }}
+<h1><a style="border-bottom: none;" href="/">Tanuki</a></h1>
+
+<div x-data="loginForm">
+    <div class="flex_div">
+        <h3 class="flex_key">Username:</h3>
+        <label class="flex_value">
+            <input type="text" placeholder="Username" x-model="username">
+        </label>
+    </div>
+
+    <div class="flex_div">
+        <h3 class="flex_key">Password:</h3>
+        <label class="flex_value">
+            <input type="password" placeholder="Password" x-model="password" @keyup.enter="await login()">
+        </label>
+    </div>
+
+    <div x-cloak>
+        <div  x-show="showModal" class="modal">
+            <div @click.away="showModal = false" x-show="showModal" x-transition class="modal-content">
+                <span class="close" @click="showModal = false">&times;</span>
+                <h3 x-text="modalText"></h3>
+            </div>
+        </div>
+    </div>
+
+    <button @click="await login()">Login</button>
+</div>
+{{ end }}

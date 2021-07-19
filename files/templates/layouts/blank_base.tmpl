@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ block "title" . }}{{ end }}</title>
+    <link rel="stylesheet" href='{{versioning "/static/css/style.css"}}'>
+    <link rel="stylesheet" href='{{versioning "/static/css/fira_mono.css"}}'>
+    <script src='{{versioning "/static/js/theme.js"}}'></script>
+    {{ block "styles" . }}{{ end }}
+    {{ block "scripts" . }}{{ end }}
+    <script defer src='{{versioning "/static/js/alpine.js"}}'></script>
+    <script>
+        document.addEventListener('alpine:init', () => {
+            setTheme()
+        })
+    </script>
+</head>
+<body>
+    <div class="container" id="container">
+        <div class='main'>
+            {{ block "content" . }}{{ end }}
+        </div>
+    </div>
+</body>
+</html>

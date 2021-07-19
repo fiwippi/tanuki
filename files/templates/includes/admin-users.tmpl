@@ -1,0 +1,103 @@
+{{ define "title" }}User Management{{ end }}
+
+{{ define "scripts" }}
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('userGrid', () => ({
+            users: [],
+            username: "",
+            showModal: false,
+            modalText: "",
+
+            async init() {
+                await this.refreshUsers()
+            },
+
+            async refreshUsers() {
+                this.username = await apiUserName()
+
+                let resp = await apiAdminUsersView()
+                if (resp === undefined || !resp.success) {
+                    this.modalText = 'FAILED TO GET USERS'
+                    this.showModal = true
+                } else {
+                    this.users = resp.users
+                }
+            },
+
+            async deleteUser(name) {
+                let resp = await apiAdminUserDelete(name)
+
+                if (resp === undefined) {
+                    this.modalText = 'ERROR ENCOUNTERED'
+                    this.showModal = true
+                } else if (!resp.success) {
+                    if (resp.message !== undefined && resp.message.length > 0) {
+                        this.modalText = 'FAILED: ' + resp.message.toUpperCase()
+                    } else {
+                        this.modalText = 'FAILED'
+                    }
+                    this.showModal = true
+                } else {
+                    this.modalText = 'SUCCESS'
+                    this.showModal = true
+                    await this.refreshUsers()
+                }
+            },
+        }))
+    })
+</script>
+{{ end }}
+
+{{ define "content" }}
+<div x-data="userGrid">
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; row-gap: 0.8em; ">
+        <!-- Table Headings -->
+        <b><span style="grid-column: 1; grid-row: 0">User</span></b>
+        <b><span style="grid-column: 2; grid-row: 0">Admin</span></b>
+        <b><span style="grid-column: 3; grid-row: 0">Actions</span></b>
+
+        <!-- Username -->
+        <template x-for="(user, index) in users" :key="user.name">
+            <span x-text="user.name" :style="`grid-column: 1; grid-row: ${index + 2}`"></span>
+        </template>
+
+        <!-- Is Admin -->
+        <template x-for="(user, index) in users" :key="user.name">
+            <template x-if="user.type === 'admin'">
+                <span :style="`grid-column: 2; grid-row: ${index + 2}`">True</span>
+            </template>
+        </template>
+
+        <template x-for="(user, index) in users" :key="user.name">
+            <template x-if="user.type === 'standard'">
+                <span :style="`grid-column: 2; grid-row: ${index + 2}`">False</span>
+            </template>
+        </template>
+
+        <!-- Actions -->
+        <template x-for="(user, index) in users" :key="user.name">
+            <template x-if="1 === 1">
+                <span :style="`grid-column: 3; grid-row: ${index + 2}`">
+                    <a :href="'/admin/users/edit?hash=' + user.hash">EDIT</a>
+
+                    <template x-if="user.name !== username">
+                        <a href="javascript:void(0)" @click="deleteUser(user.hash)">DELETE</a>
+                    </template>
+                </span>
+            </template>
+        </template>
+    </div>
+
+    <a style="border-bottom: none;" href="/admin/users/create"><button style="margin-top: 1.5em">New User</button></a>
+
+    <div x-cloak>
+        <div  x-show="showModal" class="modal">
+            <div @click.away="showModal = false" x-show="showModal" x-transition class="modal-content">
+                <span class="close" @click="showModal = false">&times;</span>
+                <h3 x-text="modalText"></h3>
+            </div>
+        </div>
+    </div>
+</div>
+{{ end }}

@@ -1,0 +1,103 @@
+{{ define "title" }}Edit User{{ end }}
+
+{{ define "scripts" }}
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('editUser', () => ({
+            userHash: "",
+            username: "",
+            password: "",
+            admin: false,
+            showModal: false,
+            modalText: "",
+            open: false,
+
+            async init() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const name = urlParams.get('hash');
+
+                let resp = await apiAdminUserView(name)
+                if (resp === undefined || !resp.success) {
+                    this.modalText = 'FAILED TO GET USER DATA'
+                    this.showModal = true
+                } else {
+                    this.userHash = resp.user.hash
+                    this.username = resp.user.name
+                    this.password = resp.user.pass
+                    this.admin = resp.user.type === 'admin';
+                }
+            },
+
+            async edit() {
+                let uType = 'admin'
+                if (!this.admin) {
+                    uType = 'standard'
+                }
+
+                let resp = await apiAdminUserEdit(this.userHash, this.username, this.password, uType)
+
+                if (resp === undefined) {
+                    this.modalText = 'ERROR ENCOUNTERED'
+                    this.showModal = true
+                } else if (!resp.success) {
+                    if (resp.message !== undefined && resp.message.length > 0) {
+                        this.modalText = 'FAILED: ' + resp.message.toUpperCase()
+                    } else {
+                        this.modalText = 'FAILED'
+                    }
+                    this.showModal = true
+                } else {
+                    let isAdmin = await apiUserAdmin()
+                    if (!isAdmin) {
+                        window.location.replace('/login')
+                    } else {
+                        this.modalText = 'SUCCESS'
+                        this.showModal = true
+                    }
+                }
+            }
+        }))
+    })
+</script>
+{{ end }}
+
+{{ define "content" }}
+<div x-data="editUser">
+    <div class="flex_div">
+        <h3 class="flex_key">Username:</h3>
+        <label class="flex_value">
+            <input type="text" placeholder="Username" x-model="username">
+        </label>
+    </div>
+
+    <div class="flex_div">
+        <h3 class="flex_key">Admin:</h3>
+        <label class="flex_value">
+            <input type="checkbox" x-model="admin">
+        </label>
+    </div>
+
+    <button @click="open = ! open">Change Password</button>
+    <div x-show="open" @click.away="open = false" class="flex_div">
+        <h3 class="flex_key">New Password:</h3>
+        <label class="flex_value">
+            <input type="password" placeholder="Password" x-model="password">
+        </label>
+    </div>
+
+    <div x-cloak>
+        <div  x-show="showModal" class="modal">
+            <div @click.away="showModal = false" x-show="showModal" x-transition class="modal-content">
+                <span class="close" @click="showModal = false">&times;</span>
+                <h3 x-text="modalText"></h3>
+            </div>
+        </div>
+    </div>
+
+    <p>
+        --------------------<br>
+        <button @click="await edit()">Save</button>
+    </p>
+
+</div>
+{{ end }}
