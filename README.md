@@ -8,7 +8,7 @@ Self hosted manga server + reader
 - Nested folders in library
 - Track reading progress
 - Thumbnail generation
-- Single binary which is small (19 MB)
+- Single binary (19 MB)
 - Dark/light mode
 - Metadata editor
 
@@ -63,7 +63,6 @@ This is the currnt [OPDS](https://specs.opds.io/) feature support
 - Full OPDS feature support for v1.2 and v2.0
 
 ### Implementation Improvements
-- Split the library and the data dir
 - WASM frontend for the API
 - Minimise final JS and CSS file
 - Use more go routines to speed up data processing functions

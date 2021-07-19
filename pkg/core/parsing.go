@@ -111,9 +111,9 @@ func ParseMangaArchive(fp string) (*Manga, error) {
 		return nil, err
 	}
 	a := &Archive{
-		Path:  absFp,
-		Type:  at,
-		Cover: &Cover{},
+		Path:    absFp,
+		Type:    at,
+		Cover:   &Cover{},
 		ModTime: aStats.ModTime(),
 	}
 
@@ -161,7 +161,6 @@ func parseFormedArchive(a *Archive) (*Manga, error) {
 			if err == nil {
 				m.Metadata.Chapter = ch
 				m.Metadata.Volume = vol
-				//m.Metadata.DateModified = NewDate(f.ModTime())
 				parsedOnce = true
 			}
 		}
@@ -191,7 +190,6 @@ func parseFormedArchive(a *Archive) (*Manga, error) {
 
 		return nil
 
-
 	})
 	if err != nil {
 		return nil, err
@@ -205,13 +203,8 @@ func parseMalformedArchive(a *Archive) (*Manga, error) {
 	m.Archive = a
 
 	// Iterate through the files in the archive, try to parse metadata
-	//once := &sync.Once{}
 	err := a.Walk(func(f archiver.File) error {
-		//once.Do(func() {
-		//	m.Metadata.DateModified = NewDate(f.ModTime())
-		//})
-
-		if !f.IsDir() && !strings.HasPrefix(f.Name(), "."){
+		if !f.IsDir() && !strings.HasPrefix(f.Name(), ".") {
 			// Validate page has correct image type
 			t, err := GetImageType(filepath.Ext(f.Name()))
 			if err != nil {
@@ -225,7 +218,7 @@ func parseMalformedArchive(a *Archive) (*Manga, error) {
 			} else {
 				// If image isn't a cover page then parse it as a proper page
 				page := &Page{
-					ImageType:        t,
+					ImageType: t,
 				}
 
 				// If zip we need the file header to get the absolute filepath
