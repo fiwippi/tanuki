@@ -13,7 +13,6 @@ import (
 	database "github.com/fiwippi/tanuki/pkg/db"
 )
 
-
 // GET /api/admin/users
 func apiGetAdminUsers(c *gin.Context) {
 	users, err := db.GetUsers(true)
@@ -55,7 +54,7 @@ func apiPutAdminUsers(c *gin.Context) {
 
 // GET /api/admin/user/:id
 func apiGetAdminUser(c *gin.Context) {
-	user, err := db.GetUserHashed(c.Param("id"))
+	user, err := db.GetUser(c.Param("id"))
 	if err != nil {
 		c.AbortWithStatusJSON(500, api.AdminUserReply{Success: false})
 		return
@@ -75,7 +74,7 @@ func apiPatchAdminUser(c *gin.Context) {
 	}
 
 	// Ensure user exists
-	u, err := db.GetUserHashed(c.Param("id"))
+	u, err := db.GetUser(c.Param("id"))
 	if err != nil {
 		c.AbortWithStatusJSON(500, api.AdminUserReply{Success: false})
 		return
@@ -86,15 +85,15 @@ func apiPatchAdminUser(c *gin.Context) {
 		if len(data.NewPassword) < 8 {
 			c.AbortWithStatusJSON(400, api.AdminUserReply{Success: false, Message: "password should be minimum of 8 characters"})
 			return
-		} else if err := db.ChangeUserPasswordUnhashed(u.Name, data.NewPassword); err != nil {
-				c.AbortWithStatusJSON(500, api.AdminUserReply{Success: false})
-				return
+		} else if err := db.ChangePassword(u.Hash, data.NewPassword); err != nil {
+			c.AbortWithStatusJSON(500, api.AdminUserReply{Success: false})
+			return
 		}
 	}
 
 	// Change type if needed
 	if u.Type != data.NewType {
-		if err := db.ChangeUserTypeUnhashed(u.Name, data.NewType); err != nil {
+		if err := db.ChangeUserType(u.Hash, data.NewType); err != nil {
 			if err == database.ErrNotEnoughAdmins {
 				c.AbortWithStatusJSON(500, api.AdminUserReply{Success: false, Message: "at least one admin must always exist"})
 			} else {
@@ -106,7 +105,7 @@ func apiPatchAdminUser(c *gin.Context) {
 
 	// Finally change username if needed
 	if data.NewUsername != "" && data.NewUsername != u.Name {
-		if err := db.ChangeUserNameUnhashed(u.Name, data.NewUsername); err != nil {
+		if err := db.ChangeUsername(u.Hash, data.NewUsername); err != nil {
 			c.AbortWithStatusJSON(500, api.AdminUserReply{Success: false})
 			return
 		}
@@ -123,12 +122,12 @@ func apiPatchAdminUser(c *gin.Context) {
 // DELETE /api/admin/user/:id
 func apiDeleteAdminUser(c *gin.Context) {
 	id := c.Param("id")
-	if c.GetString("usernameHash") == id {
+	if c.GetString("uid") == id { // storde the id as uid not usernameHash
 		c.AbortWithStatusJSON(403, api.AdminUserReply{Success: false, Message: "cannot delete yourself"})
 		return
 	}
 
-	err := db.DeleteUserHashed(id)
+	err := db.DeleteUser(id)
 	if err != nil {
 		c.AbortWithStatusJSON(500, api.AdminUserReply{Success: false})
 		return
@@ -139,7 +138,8 @@ func apiDeleteAdminUser(c *gin.Context) {
 
 // GET /api/admin/db
 func apiGetAdminDB(c *gin.Context) {
-	c.JSON(200, api.AdminDBReply{Success: true, DB: db.String()})
+	c.Writer.Header().Set("Content-Disposition", "attachment; filename=\"db.txt\"")
+	c.Data(200, "text/plain", []byte(db.String()))
 }
 
 // GET /api/admin/library/scan

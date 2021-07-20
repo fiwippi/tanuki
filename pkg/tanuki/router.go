@@ -63,7 +63,6 @@ func setupFrontendRoutes(r *gin.Engine, authorised *gin.RouterGroup) {
 	admin := authorised.Group("/admin")
 	admin.Use(adminMiddleware())
 	admin.GET("/", adminDashboard)
-	admin.GET("/db", adminDB)
 	admin.GET("/users", adminUsers)
 	admin.GET("/users/edit", adminUsersEdit)
 	admin.GET("/users/create", adminUsersCreate)

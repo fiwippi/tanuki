@@ -9,11 +9,6 @@ func adminDashboard(c *gin.Context) {
 	c.HTML(200, "admin.tmpl", nil)
 }
 
-// GET /admin/db
-func adminDB(c *gin.Context) {
-	c.HTML(200, "admin-db.tmpl", nil)
-}
-
 // GET /admin/missing-entries
 func adminMissingEntries(c *gin.Context) {
 	c.HTML(200, "admin-missing-entries.tmpl", nil)
