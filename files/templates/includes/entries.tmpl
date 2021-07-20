@@ -609,8 +609,8 @@
     <div class="entriesDiv">
         <template x-for="(e, index) in filteredEntries">
             <a style="border-bottom: none; cursor: pointer" :href="void(0)" @click="await showBasicEntry(e)">
-                <div class="entry" :style="`flex: 0 1 auto; max-width: ${imageWidth(index)}px`">
-                    <img :src="images[index].src" style="width: 100%">
+                <div class="entry" :style="`flex: 0 1 auto; max-width: max(150px, ${imageWidth(index)}px)`">
+                    <img :src="images[index].src" style="width: 100%; max-height: 300px">
                     <div style="padding: 9px 16px;" >
                         <h4 style="margin-block: 0.2em" x-text="e.title"></h4>
                         <span x-text="'Pages: {0}'.format(e.pages)"></span><br>

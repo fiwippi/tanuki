@@ -82,7 +82,6 @@ This is the currnt [OPDS](https://specs.opds.io/) feature support
 - Store the user progress data in the specific entry bucket for each so if a series is deleted/missing/changed it is easier to update the user's data
 - Store series list in the DB so no need to generate it on the fly each time
 - Progress bar when uploading covers
-- Set minimum width for coverart in libraries so webtoons are displayed properley
 
 ## Tests
 To run tests, an example archive file has to be supplied using the `SERIES_PATH` parameter, so for example:
