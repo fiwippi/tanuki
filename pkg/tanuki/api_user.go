@@ -17,8 +17,8 @@ import (
 
 // GET /api/user/:property
 func apiGetUserProperty(c *gin.Context) {
-	userHash := c.GetString("usernameHash")
-	u, err := db.GetUserHashed(userHash)
+	uid := c.GetString("uid")
+	u, err := db.GetUser(uid)
 	if err != nil {
 		c.AbortWithStatusJSON(500, api.UserPropertyReply{Success: false})
 		return
@@ -55,7 +55,7 @@ func apiGetUserProperty(c *gin.Context) {
 		save := false
 		switch entry == "" {
 		case true:
-			if ! u.ProgressTracker.HasSeries(series) {
+			if !u.ProgressTracker.HasSeries(series) {
 				u.ProgressTracker.AddSeries(series)
 				save = true
 			}
@@ -73,7 +73,7 @@ func apiGetUserProperty(c *gin.Context) {
 
 		// Save the created progress back to the user
 		if save {
-			err := db.ChangeUserProgressTrackerHashed(userHash, u.ProgressTracker)
+			err := db.ChangeProgressTracker(uid, u.ProgressTracker)
 			if err != nil {
 				c.AbortWithStatusJSON(500, api.UserPropertyReply{Success: false})
 				return
@@ -109,8 +109,8 @@ func apiPatchUserProgress(c *gin.Context) {
 	}
 
 	// Ensure user exists
-	userHash := c.GetString("usernameHash")
-	_, err := db.GetUserHashed(userHash)
+	uid := c.GetString("uid")
+	_, err := db.GetUser(uid)
 	if err != nil {
 		log.Debug().Err(err).Msg("failed to verify user")
 		c.AbortWithStatusJSON(500, api.UserPropertyReply{Success: false})
@@ -144,13 +144,13 @@ func apiPatchUserProgress(c *gin.Context) {
 	case true:
 		// Set series as either AllRead or AllUnread
 		if data.Progress == "100%" {
-			if err := db.SetSeriesProgressAllRead(userHash, series); err != nil {
+			if err := db.SetSeriesProgressAllRead(uid, series); err != nil {
 				log.Debug().Err(err).Msg("failed to set progress to all read")
 				c.AbortWithStatusJSON(500, api.UserPropertyReply{Success: false})
 				return
 			}
 		} else if data.Progress == "0%" {
-			if err := db.SetSeriesProgressAllUnread(userHash, series); err != nil {
+			if err := db.SetSeriesProgressAllUnread(uid, series); err != nil {
 				log.Debug().Err(err).Msg("failed to set progress to all unread")
 				c.AbortWithStatusJSON(500, api.UserPropertyReply{Success: false})
 				return
@@ -161,19 +161,19 @@ func apiPatchUserProgress(c *gin.Context) {
 		}
 	case false:
 		if data.Progress == "100%" {
-			if err := db.SetSeriesEntryProgressRead(userHash, series, entry); err != nil {
+			if err := db.SetEntryProgressRead(uid, series, entry); err != nil {
 				log.Debug().Err(err).Msg("failed to set progress to read")
 				c.AbortWithStatusJSON(500, api.UserPropertyReply{Success: false})
 				return
 			}
 		} else if data.Progress == "0%" {
-			if err := db.SetSeriesEntryProgressUnread(userHash, series, entry); err != nil {
+			if err := db.SetEntryProgressUnread(uid, series, entry); err != nil {
 				log.Debug().Err(err).Msg("failed to set progress to unread")
 				c.AbortWithStatusJSON(500, api.UserPropertyReply{Success: false})
 				return
 			}
 		} else {
-			if err := db.SetSeriesEntryProgressNum(userHash, series, entry, num); err != nil {
+			if err := db.SetSeriesEntryProgressNum(uid, series, entry, num); err != nil {
 				log.Debug().Err(err).Int("num", num).Msg("failed to set progress")
 				c.AbortWithStatusJSON(500, api.UserPropertyReply{Success: false})
 				return

@@ -10,7 +10,7 @@ import (
 )
 
 const authTime = time.Minute * 30 // How long should a session last for
-const authCookieName = "tanuki" // Name of the cookie stored on the client
+const authCookieName = "tanuki"   // Name of the cookie stored on the client
 
 var session *auth.Session
 
@@ -32,7 +32,7 @@ func authLogin(c *gin.Context) {
 	}
 
 	// Validate login details
-	valid, err := db.ValidateLoginUnhashed(data.Username, data.Password)
+	valid, err := db.ValidateLogin(data.Username, data.Password)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to validate user")
 		c.AbortWithStatusJSON(500, auth.LoginReply{Success: false})
@@ -52,13 +52,7 @@ func authLogin(c *gin.Context) {
 // GET /auth/logout
 func authLogout(c *gin.Context) {
 	session.Delete(c)
-
-	username := c.GetString("usernameHash")
-	name, err := db.GetUserNameHashed(username)
-	if err == nil {
-		username = name
-	}
-
-	log.Debug().Str("username", username).Msg("user logged out")
+	uid := c.GetString("uid")
+	log.Debug().Str("uid", uid).Msg("user logged out")
 	c.JSON(200, auth.LogoutReply{Success: true})
 }

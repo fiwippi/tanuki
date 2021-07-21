@@ -46,7 +46,7 @@ func (db *DB) GenerateSeriesThumbnail(seriesHash string, forceNew bool) error {
 			return err
 		}
 
-		seriesThumbnailExists :=  sb.HasThumbnail()
+		seriesThumbnailExists := sb.HasThumbnail()
 		if !seriesThumbnailExists || (seriesThumbnailExists && forceNew) {
 			c := sb.Cover()
 			if c.Fp != "" && c.ExistsOnFS() {
@@ -70,7 +70,7 @@ func (db *DB) GenerateThumbnails(forceNew bool) error {
 		root := db.seriesListBucket(tx)
 
 		return root.ForEachSeries(func(_ string, sb *SeriesBucket) error {
-			seriesThumbnailExists :=  sb.HasThumbnail()
+			seriesThumbnailExists := sb.HasThumbnail()
 
 			// Generate series thumbnail
 			if !seriesThumbnailExists || (seriesThumbnailExists && forceNew) {
@@ -90,7 +90,7 @@ func (db *DB) GenerateThumbnails(forceNew bool) error {
 
 			// Generate entries thumbnails
 			return sb.ForEachEntry(func(_ string, mb *MangaBucket) error {
-				thumbnailExists :=  mb.HasThumbnail()
+				thumbnailExists := mb.HasThumbnail()
 				if !thumbnailExists || (thumbnailExists && forceNew) {
 					img, err := mb.Archive().Thumbnail()
 					if err != nil {
@@ -445,7 +445,7 @@ func (db *DB) GetMissingEntries() api.MissingEntries {
 		userRoot := db.usersBucket(tx)
 		seriesRoot := db.seriesListBucket(tx)
 
-		return userRoot.ForEachUserBucket(func(u *UserBucket) error {
+		return userRoot.ForEachUser(func(u *UserBucket) error {
 			tracker := u.ProgressTracker()
 			if tracker != nil {
 				for sid := range tracker.Tracker {
@@ -518,7 +518,7 @@ func (db *DB) DeleteMissingEntries() error {
 		userRoot := db.usersBucket(tx)
 		seriesRoot := db.seriesListBucket(tx)
 
-		return userRoot.ForEachUserBucket(func(u *UserBucket) error {
+		return userRoot.ForEachUser(func(u *UserBucket) error {
 			tracker := u.ProgressTracker()
 			if tracker != nil {
 				for sid := range tracker.Tracker {

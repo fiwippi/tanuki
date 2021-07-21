@@ -71,7 +71,7 @@ func skipIfAuthedMiddleware() gin.HandlerFunc {
 // Middleware which ensures the user is authorised
 func authMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		usernameHash, err := session.Get(c)
+		uid, err := session.Get(c)
 		if err != nil {
 			// Invalid cookie
 			log.Debug().Err(err).Msg("failed to auth request")
@@ -80,19 +80,19 @@ func authMiddleware() gin.HandlerFunc {
 		}
 
 		// Set values for next requests
-		valid, _ := db.IsUserAdminHashed(usernameHash)
+		valid, _ := db.IsUserAdmin(uid)
 		c.Set("admin", valid)
-		c.Set("usernameHash", usernameHash)
+		c.Set("uid", uid)
 
 		// Refresh cookie for the user, only refresh if the cookie is bout to expire
 		timeLeft, err := session.TimeLeft(c)
 		if err != nil {
-			log.Debug().Err(err).Str("username", usernameHash).Msg("failed to get time left")
+			log.Debug().Err(err).Str("uid", uid).Msg("failed to get time left")
 		}
-		if err == nil && timeLeft < (time.Minute * 3) {
+		if err == nil && timeLeft < (time.Minute*3) {
 			err = session.Refresh(c)
 			if err != nil {
-				log.Debug().Err(err).Str("username", usernameHash).Msg("failed to refresh cookie")
+				log.Debug().Err(err).Str("uid", uid).Msg("failed to refresh cookie")
 			}
 		}
 
@@ -131,7 +131,7 @@ func basicAuthMiddleware(realm string) gin.HandlerFunc {
 			return
 		}
 
-		valid, err := db.ValidateLoginUnhashed(user, pass)
+		valid, err := db.ValidateLogin(user, pass)
 		if !valid || err != nil {
 			log.Debug().Err(err).Msg("failed to parse auth credentials")
 			c.Header("WWW-Authenticate", realm)

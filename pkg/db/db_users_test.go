@@ -29,24 +29,24 @@ func TestDB_CreateUser(t *testing.T) {
 	}
 
 	// Ensure third user can be viewed
-	_, err = testDb.GetUserUnhashed(u2.Name)
+	_, err = testDb.GetUser(auth.HashSHA1(u2.Name))
 	if err != nil {
 		t.Error(err)
 	}
 
 	// Delete third user and make sure it cant be viewed
-	err = testDb.DeleteUserUnhashed(u2.Name)
+	err = testDb.DeleteUser(auth.HashSHA1(u2.Name))
 	if err != nil {
 		t.Error(err)
 	}
 
-	_, err = testDb.GetUserUnhashed(u2.Name)
+	_, err = testDb.GetUser(auth.HashSHA1(u2.Name))
 	if err != ErrUserNotExist {
 		t.Error(err)
 	}
 
 	// Fake login validation for the first user
-	valid, err := testDb.ValidateLoginUnhashed("test", "boom")
+	valid, err := testDb.ValidateLogin("test", "boom")
 	if err != nil {
 		t.Error(err)
 	} else if !valid {
@@ -54,8 +54,8 @@ func TestDB_CreateUser(t *testing.T) {
 	}
 
 	//
-	testDb.DeleteUserUnhashed(u1.Name)
-	testDb.DeleteUserUnhashed(u2.Name)
+	testDb.DeleteUser(auth.HashSHA1(u1.Name))
+	testDb.DeleteUser(auth.HashSHA1(u2.Name))
 }
 
 func TestDB_GetUsers(t *testing.T) {
@@ -87,9 +87,9 @@ func TestDB_GetUsers(t *testing.T) {
 		t.Error("passwords should be sanitised")
 	}
 
-	testDb.DeleteUserUnhashed(u1.Name)
-	testDb.DeleteUserUnhashed(u2.Name)
-	testDb.DeleteUserUnhashed(u3.Name)
+	testDb.DeleteUser(auth.HashSHA1(u1.Name))
+	testDb.DeleteUser(auth.HashSHA1(u2.Name))
+	testDb.DeleteUser(auth.HashSHA1(u3.Name))
 }
 
 func TestDB_ChangeUsername(t *testing.T) {
@@ -105,24 +105,24 @@ func TestDB_ChangeUsername(t *testing.T) {
 	}
 
 	// Check a can be renamed to c, meaning c exists and a does not exist
-	err := testDb.ChangeUserNameUnhashed(u1.Name, "c")
+	err := testDb.ChangeUsername(u1.Hash, "c")
 	if err != nil {
 		t.Error("change username should be successful, err:", err)
 	}
 
-	u, err := testDb.GetUserUnhashed(u1.Name)
+	u, err := testDb.GetUser(auth.HashSHA1(u1.Name))
 	if err != ErrUserNotExist {
 		t.Error("user 'a' should not exist:", u, err)
 	}
 
-	u, err = testDb.GetUserUnhashed("c")
+	u, err = testDb.GetUser(auth.HashSHA1("c"))
 	if err != nil {
 		t.Error("user 'c' should exist:", u, err)
 	}
 
-	testDb.DeleteUserUnhashed(u1.Name)
-	testDb.DeleteUserUnhashed(u2.Name)
-	testDb.DeleteUserUnhashed("c")
+	testDb.DeleteUser(auth.HashSHA1(u1.Name))
+	testDb.DeleteUser(auth.HashSHA1(u2.Name))
+	testDb.DeleteUser(auth.HashSHA1("c"))
 }
 
 func TestDB_ChangeType(t *testing.T) {
@@ -137,11 +137,11 @@ func TestDB_ChangeType(t *testing.T) {
 	}
 
 	// 'a' should be able to become a standard user without any problems
-	err := testDb.ChangeUserTypeUnhashed("a", core.StandardUser)
+	err := testDb.ChangeUserType(auth.HashSHA1("a"), core.StandardUser)
 	if err != nil {
 		t.Error("change type should be successful", err)
 	}
-	a, err := testDb.GetUserUnhashed(u1.Name)
+	a, err := testDb.GetUser(auth.HashSHA1(u1.Name))
 	if err != nil {
 		t.Error(err)
 	}
@@ -150,13 +150,13 @@ func TestDB_ChangeType(t *testing.T) {
 	}
 
 	// changing 'b' from admin to standard user should result in ErrNotEnoughAdmin
-	err = testDb.ChangeUserTypeUnhashed("b", core.StandardUser)
+	err = testDb.ChangeUserType(auth.HashSHA1("b"), core.StandardUser)
 	if err != ErrNotEnoughAdmins {
 		t.Error("change type raised wrong error", err)
 	}
 
-	testDb.DeleteUserUnhashed(u1.Name)
-	testDb.DeleteUserUnhashed(u2.Name)
+	testDb.DeleteUser(auth.HashSHA1(u1.Name))
+	testDb.DeleteUser(auth.HashSHA1(u2.Name))
 }
 
 func TestDB_ChangePassword(t *testing.T) {
@@ -169,12 +169,12 @@ func TestDB_ChangePassword(t *testing.T) {
 
 	// Check a can be renamed to c, meaning c exists and a does not exist
 	newPassHash := auth.HashSHA256("kekeke")
-	err := testDb.ChangeUserPasswordUnhashed(u1.Name, "kekeke")
+	err := testDb.ChangePassword(auth.HashSHA1(u1.Name), "kekeke")
 	if err != nil {
 		t.Error("password should have changed successfully", err)
 	}
 
-	u, err := testDb.GetUserUnhashed(u1.Name)
+	u, err := testDb.GetUser(auth.HashSHA1(u1.Name))
 	if err != nil {
 		t.Error(err)
 	}
@@ -182,5 +182,5 @@ func TestDB_ChangePassword(t *testing.T) {
 		t.Error("password should have changed to the new hash")
 	}
 
-	testDb.DeleteUserUnhashed(u1.Name)
+	testDb.DeleteUser(auth.HashSHA1(u1.Name))
 }

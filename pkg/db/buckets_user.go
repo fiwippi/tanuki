@@ -54,8 +54,15 @@ func (u *UserBucket) ValidPassword(unhashedPassword string) bool {
 	return u.Password() == auth.HashSHA256(unhashedPassword)
 }
 
-func (u *UserBucket) ChangePassword(unhashedPassword string) error {
-	return u.Put(keyUserPassword, core.MarshalJSON(auth.HashSHA256(unhashedPassword)))
+func (u *UserBucket) ChangeName(name string) error {
+	return u.Put(keyUserName, core.MarshalJSON(name))
+}
+
+func (u *UserBucket) ChangePassword(password string, hash bool) error {
+	if hash {
+		password = auth.HashSHA256(password)
+	}
+	return u.Put(keyUserPassword, core.MarshalJSON(password))
 }
 
 func (u *UserBucket) ChangeType(userType core.UserType) error {

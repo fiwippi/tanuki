@@ -20,55 +20,34 @@ func (db *DB) SaveUser(u *core.User, overwrite bool) error {
 	})
 }
 
-func (db *DB) DeleteUserHashed(hash string) error {
-	return db.deleteUser([]byte(hash))
-}
-
-func (db *DB) DeleteUserUnhashed(name string) error {
-	return db.deleteUser([]byte(auth.HashSHA1(name)))
-}
-
-func (db *DB) deleteUser(hash []byte) error {
+func (db *DB) DeleteUser(uid string) error {
 	return db.Update(func(tx *bolt.Tx) error {
-		root := db.usersBucket(tx)
-		return root.DeleteUser(hash)
+		return db.usersBucket(tx).DeleteUser(uid)
 	})
 }
 
-func (db *DB) ChangeUserNameHashed(oldHash, newHash string, newUsername string) error {
+func (db *DB) ChangeUsername(uid, name string) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		root := db.usersBucket(tx)
-		return root.RenameUser(oldHash, newHash, newUsername)
+		return root.RenameUser(uid, auth.HashSHA1(name), name)
 	})
 }
 
-func (db *DB) ChangeUserNameUnhashed(oldName, newName string) error {
-	return db.ChangeUserNameHashed(auth.HashSHA1(oldName), auth.HashSHA1(newName), newName)
-}
-
-func (db *DB) ChangeUserPasswordHashed(hash, unhashedPassword string) error {
+func (db *DB) ChangePassword(uid, password string) error {
 	return db.Update(func(tx *bolt.Tx) error {
-		user, err := db.usersBucket(tx).GetUserIfExists([]byte(hash))
+		user, err := db.usersBucket(tx).GetUser(uid)
 		if err != nil {
 			return err
 		}
-		return user.ChangePassword(unhashedPassword)
+		return user.ChangePassword(password, true)
 	})
 }
 
-func (db *DB) ChangeUserPasswordUnhashed(name, password string) error {
-	return db.ChangeUserPasswordHashed(auth.HashSHA1(name), password)
-}
-
-func (db *DB) ChangeUserTypeHashed(hash string, uType core.UserType) error {
-	admins, err := db.AdminCount()
-	if err != nil {
-		return err
-	}
-
+func (db *DB) ChangeUserType(uid string, uType core.UserType) error {
+	admins := db.AdminCount()
 	return db.Update(func(tx *bolt.Tx) error {
 		// Get the users bucket
-		user, err := db.usersBucket(tx).GetUserIfExists([]byte(hash))
+		user, err := db.usersBucket(tx).GetUser(uid)
 		if err != nil {
 			return err
 		}
@@ -86,13 +65,9 @@ func (db *DB) ChangeUserTypeHashed(hash string, uType core.UserType) error {
 	})
 }
 
-func (db *DB) ChangeUserTypeUnhashed(name string, uType core.UserType) error {
-	return db.ChangeUserTypeHashed(auth.HashSHA1(name), uType)
-}
-
-func (db *DB) ChangeUserProgressTrackerHashed(hash string, t *core.ProgressTracker) error {
+func (db *DB) ChangeProgressTracker(uid string, t *core.ProgressTracker) error {
 	return db.Update(func(tx *bolt.Tx) error {
-		user, err := db.usersBucket(tx).GetUserIfExists([]byte(hash))
+		user, err := db.usersBucket(tx).GetUser(uid)
 		if err != nil {
 			return err
 		}
@@ -100,60 +75,9 @@ func (db *DB) ChangeUserProgressTrackerHashed(hash string, t *core.ProgressTrack
 	})
 }
 
-// Viewing
-
-func (db *DB) getUser(hash []byte) (*core.User, error) {
-	var e *core.User
-
-	err := db.View(func(tx *bolt.Tx) error {
-		user, err := db.usersBucket(tx).GetUserIfExists(hash)
-		if err != nil {
-			return err
-		}
-		e = user.Struct()
-
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return e, nil
-}
-
-func (db *DB) getUserName(hash []byte) (string, error) {
-	var e string
-
-	err := db.View(func(tx *bolt.Tx) error {
-		user, err := db.usersBucket(tx).GetUserIfExists([]byte(hash))
-		if err != nil {
-			return err
-		}
-		e = user.Name()
-
-		return nil
-	})
-	if err != nil {
-		return "", err
-	}
-
-	return e, nil
-}
-
-func (db *DB) GetUserHashed(hash string) (*core.User, error) {
-	return db.getUser([]byte(hash))
-}
-
-func (db *DB) GetUserUnhashed(name string) (*core.User, error) {
-	return db.GetUserHashed(auth.HashSHA1(name))
-}
-
-func (db *DB) GetUserNameHashed(hash string) (string, error) {
-	return db.getUserName([]byte(hash))
-}
-
-func (db *DB) SetSeriesProgressAllRead(usernameHash, sid string) error {
-	u, err := db.GetUserHashed(usernameHash)
+// TODO move progress data into the series bucket
+func (db *DB) SetSeriesProgressAllRead(uid, sid string) error {
+	u, err := db.GetUser(uid)
 	if err != nil {
 		return err
 	}
@@ -179,11 +103,11 @@ func (db *DB) SetSeriesProgressAllRead(usernameHash, sid string) error {
 	}
 
 	// Save the new progress
-	return db.ChangeUserProgressTrackerHashed(usernameHash, u.ProgressTracker)
+	return db.ChangeProgressTracker(uid, u.ProgressTracker)
 }
 
-func (db *DB) SetSeriesProgressAllUnread(usernameHash, sid string) error {
-	u, err := db.GetUserHashed(usernameHash)
+func (db *DB) SetSeriesProgressAllUnread(uid, sid string) error {
+	u, err := db.GetUser(uid)
 	if err != nil {
 		return err
 	}
@@ -209,11 +133,11 @@ func (db *DB) SetSeriesProgressAllUnread(usernameHash, sid string) error {
 	}
 
 	// Save the new progress
-	return db.ChangeUserProgressTrackerHashed(usernameHash, u.ProgressTracker)
+	return db.ChangeProgressTracker(uid, u.ProgressTracker)
 }
 
-func (db *DB) SetSeriesEntryProgressRead(usernameHash, sid, eid string) error {
-	u, err := db.GetUserHashed(usernameHash)
+func (db *DB) SetEntryProgressRead(uid, sid, eid string) error {
+	u, err := db.GetUser(uid)
 	if err != nil {
 		return err
 	}
@@ -233,11 +157,11 @@ func (db *DB) SetSeriesEntryProgressRead(usernameHash, sid, eid string) error {
 	u.ProgressTracker.ProgressEntry(sid, eid).SetRead()
 
 	// Save the new progress
-	return db.ChangeUserProgressTrackerHashed(usernameHash, u.ProgressTracker)
+	return db.ChangeProgressTracker(uid, u.ProgressTracker)
 }
 
-func (db *DB) SetSeriesEntryProgressUnread(usernameHash, sid, eid string) error {
-	u, err := db.GetUserHashed(usernameHash)
+func (db *DB) SetEntryProgressUnread(uid, sid, eid string) error {
+	u, err := db.GetUser(uid)
 	if err != nil {
 		return err
 	}
@@ -257,11 +181,11 @@ func (db *DB) SetSeriesEntryProgressUnread(usernameHash, sid, eid string) error 
 	u.ProgressTracker.ProgressEntry(sid, eid).SetUnread()
 
 	// Save the new progress
-	return db.ChangeUserProgressTrackerHashed(usernameHash, u.ProgressTracker)
+	return db.ChangeProgressTracker(uid, u.ProgressTracker)
 }
 
-func (db *DB) SetSeriesEntryProgressNum(usernameHash, sid, eid string, num int) error {
-	u, err := db.GetUserHashed(usernameHash)
+func (db *DB) SetSeriesEntryProgressNum(uid, sid, eid string, num int) error {
+	u, err := db.GetUser(uid)
 	if err != nil {
 		return err
 	}
@@ -281,7 +205,46 @@ func (db *DB) SetSeriesEntryProgressNum(usernameHash, sid, eid string, num int) 
 	u.ProgressTracker.ProgressEntry(sid, eid).Set(num)
 
 	// Save the new progress
-	return db.ChangeUserProgressTrackerHashed(usernameHash, u.ProgressTracker)
+	return db.ChangeProgressTracker(uid, u.ProgressTracker)
+}
+
+// Viewing
+
+func (db *DB) GetUser(uid string) (*core.User, error) {
+	var e *core.User
+	err := db.View(func(tx *bolt.Tx) error {
+		user, err := db.usersBucket(tx).GetUser(uid)
+		if err != nil {
+			return err
+		}
+		e = user.Struct()
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return e, nil
+}
+
+func (db *DB) GetUsername(uid string) (string, error) {
+	var e string
+
+	err := db.View(func(tx *bolt.Tx) error {
+		user, err := db.usersBucket(tx).GetUser(uid)
+		if err != nil {
+			return err
+		}
+		e = user.Name()
+
+		return nil
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return e, nil
 }
 
 func (db *DB) GetUsers(safe bool) ([]core.User, error) {
@@ -289,7 +252,8 @@ func (db *DB) GetUsers(safe bool) ([]core.User, error) {
 	err := db.View(func(tx *bolt.Tx) error {
 		root := db.usersBucket(tx)
 
-		return root.ForEachUser(func(u *core.User) error {
+		return root.ForEachUser(func(ub *UserBucket) error {
+			u := ub.Struct()
 			if safe {
 				u.Pass = ""
 			}
@@ -301,12 +265,20 @@ func (db *DB) GetUsers(safe bool) ([]core.User, error) {
 	return users, err
 }
 
+func (db *DB) HasUser(uid string) bool {
+	exists := false
+	db.View(func(tx *bolt.Tx) error {
+		exists = db.usersBucket(tx).HasUser(uid)
+		return nil
+	})
+
+	return exists
+}
+
 func (db *DB) HasUsers() bool {
 	exists := false
-
-	_ = db.View(func(tx *bolt.Tx) error {
-		root := db.usersBucket(tx)
-		exists = root.HasUsers()
+	db.View(func(tx *bolt.Tx) error {
+		exists = db.usersBucket(tx).HasUsers()
 		return nil
 	})
 
@@ -315,11 +287,11 @@ func (db *DB) HasUsers() bool {
 
 // Processing
 
-func (db *DB) IsUserAdminHashed(hash string) (bool, error) {
+func (db *DB) IsUserAdmin(uid string) (bool, error) {
 	var isAdmin bool
 
-	err :=  db.View(func(tx *bolt.Tx) error {
-		user, err := db.usersBucket(tx).GetUserIfExists([]byte(hash))
+	err := db.View(func(tx *bolt.Tx) error {
+		user, err := db.usersBucket(tx).GetUser(uid)
 		if err != nil {
 			return err
 		}
@@ -334,33 +306,20 @@ func (db *DB) IsUserAdminHashed(hash string) (bool, error) {
 	return isAdmin, nil
 }
 
-func (db *DB) IsUserAdminUnhashed(hash string) (bool, error) {
-	return db.IsUserAdminHashed(auth.HashSHA1(hash))
-}
-
-func (db *DB) AdminCount() (int, error) {
+func (db *DB) AdminCount() int {
 	var count int
-	err := db.View(func(tx *bolt.Tx) error {
-		root := db.usersBucket(tx)
-
-		c, err := root.AdminCount()
-		if err != nil {
-			return err
-		}
-		count = c
+	db.View(func(tx *bolt.Tx) error {
+		count = db.usersBucket(tx).AdminCount()
 		return nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return count, nil
+	return count
 }
 
-func (db *DB) ValidateLoginHashed(hash, pass string) (bool, error) {
+func (db *DB) ValidateLogin(name, pass string) (bool, error) {
 	var valid bool
 
-	err :=  db.View(func(tx *bolt.Tx) error {
-		user, err := db.usersBucket(tx).GetUserIfExists([]byte(hash))
+	err := db.View(func(tx *bolt.Tx) error {
+		user, err := db.usersBucket(tx).GetUser(auth.HashSHA1(name))
 		if err != nil {
 			return err
 		}
@@ -375,21 +334,17 @@ func (db *DB) ValidateLoginHashed(hash, pass string) (bool, error) {
 	return valid, nil
 }
 
-func (db *DB) ValidateLoginUnhashed(name, pass string) (bool, error) {
-	return db.ValidateLoginHashed(auth.HashSHA1(name), pass)
-}
-
-func (db *DB) EnsurValidSeriesProgress(sid, eid string, num int) {
+func (db *DB) EnsureValidSeriesProgress(sid, eid string, num int) {
 	db.Update(func(tx *bolt.Tx) error {
 		root := db.usersBucket(tx)
 
-		return root.ForEachUserBucket(func(u *UserBucket) error {
-			tracker := u.ProgressTracker()
+		return root.ForEachUser(func(ub *UserBucket) error {
+			tracker := ub.ProgressTracker()
 			if tracker != nil {
 				e := tracker.ProgressEntry(sid, eid)
 				if e != nil {
 					e.Total = num
-					u.ChangeProgressTracker(tracker)
+					ub.ChangeProgressTracker(tracker)
 				}
 			}
 
