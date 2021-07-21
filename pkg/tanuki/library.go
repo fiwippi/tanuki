@@ -24,7 +24,6 @@ func ScanLibrary() error {
 	//	fmt.Println("-", v.Name())
 	//}
 
-
 	for _, item := range items {
 		if item.IsDir() {
 			name := item.Name()
@@ -47,7 +46,7 @@ func ScanLibrary() error {
 
 				// If the archive has changed, ensure the progress total pages matches the current total
 				for _, e := range m {
-					db.EnsurValidSeriesProgress(auth.HashSHA1(s.Title), auth.HashSHA1(e.Title), len(e.Pages))
+					db.EnsureValidSeriesProgress(auth.HashSHA1(s.Title), auth.HashSHA1(e.Title), len(e.Pages))
 				}
 
 				// Delete empty .tanuki folder
