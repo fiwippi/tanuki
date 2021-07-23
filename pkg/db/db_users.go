@@ -29,7 +29,7 @@ func (db *DB) DeleteUser(uid string) error {
 func (db *DB) ChangeUsername(uid, name string) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		root := db.usersBucket(tx)
-		return root.RenameUser(uid, auth.HashSHA1(name), name)
+		return root.RenameUser(uid, auth.SHA1(name), name)
 	})
 }
 
@@ -65,147 +65,17 @@ func (db *DB) ChangeUserType(uid string, uType core.UserType) error {
 	})
 }
 
-func (db *DB) ChangeProgressTracker(uid string, t *core.ProgressTracker) error {
+func (db *DB) ChangeProgress(uid string, p *core.CatalogProgress) error {
 	return db.Update(func(tx *bolt.Tx) error {
+		// Get the users bucket
 		user, err := db.usersBucket(tx).GetUser(uid)
 		if err != nil {
 			return err
 		}
-		return user.ChangeProgressTracker(t)
+
+		// Set the password
+		return user.ChangeProgress(p)
 	})
-}
-
-// TODO move progress data into the series bucket
-func (db *DB) SetSeriesProgressAllRead(uid, sid string) error {
-	u, err := db.GetUser(uid)
-	if err != nil {
-		return err
-	}
-
-	// Check series exists and ensure the series entry count
-	// is the same as the read progress entry count
-	entries, err := db.GetSeriesEntries(sid)
-	if err != nil {
-		return err
-	}
-	num, err := u.ProgressTracker.SeriesEntriesNum(sid)
-	if err != nil {
-		return err
-	}
-	if len(entries) != num {
-		return ErrProgressCount
-	}
-
-	// Change the series progress
-	err = u.ProgressTracker.SetSeriesAllRead(sid)
-	if err != nil {
-		return err
-	}
-
-	// Save the new progress
-	return db.ChangeProgressTracker(uid, u.ProgressTracker)
-}
-
-func (db *DB) SetSeriesProgressAllUnread(uid, sid string) error {
-	u, err := db.GetUser(uid)
-	if err != nil {
-		return err
-	}
-
-	// Check series exists and ensure the series entry count
-	// is the same as the read progress entry count
-	entries, err := db.GetSeriesEntries(sid)
-	if err != nil {
-		return err
-	}
-	num, err := u.ProgressTracker.SeriesEntriesNum(sid)
-	if err != nil {
-		return err
-	}
-	if len(entries) != num {
-		return ErrProgressCount
-	}
-
-	// Change the series progress
-	err = u.ProgressTracker.SetSeriesAllUnread(sid)
-	if err != nil {
-		return err
-	}
-
-	// Save the new progress
-	return db.ChangeProgressTracker(uid, u.ProgressTracker)
-}
-
-func (db *DB) SetEntryProgressRead(uid, sid, eid string) error {
-	u, err := db.GetUser(uid)
-	if err != nil {
-		return err
-	}
-
-	// Check series exists and the entry exists
-	entry, err := db.GetEntry(sid, eid)
-	if err != nil {
-		return err
-	}
-
-	// Ensure progress tracker is tracking this entry
-	if !u.ProgressTracker.HasEntry(sid, eid) {
-		u.ProgressTracker.AddEntry(sid, eid, entry.Pages)
-	}
-
-	// Set progress
-	u.ProgressTracker.ProgressEntry(sid, eid).SetRead()
-
-	// Save the new progress
-	return db.ChangeProgressTracker(uid, u.ProgressTracker)
-}
-
-func (db *DB) SetEntryProgressUnread(uid, sid, eid string) error {
-	u, err := db.GetUser(uid)
-	if err != nil {
-		return err
-	}
-
-	// Check series exists and the entry exists
-	entry, err := db.GetEntry(sid, eid)
-	if err != nil {
-		return err
-	}
-
-	// Ensure progress tracker is tracking this entry
-	if !u.ProgressTracker.HasEntry(sid, eid) {
-		u.ProgressTracker.AddEntry(sid, eid, entry.Pages)
-	}
-
-	// Set progress
-	u.ProgressTracker.ProgressEntry(sid, eid).SetUnread()
-
-	// Save the new progress
-	return db.ChangeProgressTracker(uid, u.ProgressTracker)
-}
-
-func (db *DB) SetSeriesEntryProgressNum(uid, sid, eid string, num int) error {
-	u, err := db.GetUser(uid)
-	if err != nil {
-		return err
-	}
-
-	// Check series exists and the entry exists
-	entry, err := db.GetEntry(sid, eid)
-	if err != nil {
-		return err
-	}
-
-	// Ensure progress tracker is tracking this entry
-	if !u.ProgressTracker.HasEntry(sid, eid) {
-		u.ProgressTracker.AddEntry(sid, eid, entry.Pages)
-	}
-
-	// Set progress
-	u.ProgressTracker.ProgressEntry(sid, eid).Set(num)
-
-	// Save the new progress
-	return db.ChangeProgressTracker(uid, u.ProgressTracker)
 }
 
 // Viewing
@@ -223,25 +93,6 @@ func (db *DB) GetUser(uid string) (*core.User, error) {
 	})
 	if err != nil {
 		return nil, err
-	}
-
-	return e, nil
-}
-
-func (db *DB) GetUsername(uid string) (string, error) {
-	var e string
-
-	err := db.View(func(tx *bolt.Tx) error {
-		user, err := db.usersBucket(tx).GetUser(uid)
-		if err != nil {
-			return err
-		}
-		e = user.Name()
-
-		return nil
-	})
-	if err != nil {
-		return "", err
 	}
 
 	return e, nil
@@ -285,9 +136,42 @@ func (db *DB) HasUsers() bool {
 	return exists
 }
 
+func (db *DB) AdminCount() int {
+	var count int
+	db.View(func(tx *bolt.Tx) error {
+		count = db.usersBucket(tx).AdminCount()
+		return nil
+	})
+	return count
+}
+
+func (db *DB) GetProgress(uid string) (*core.CatalogProgress, error) {
+	var p *core.CatalogProgress
+	err := db.View(func(tx *bolt.Tx) error {
+		root := db.usersBucket(tx)
+
+		user, err := root.GetUser(uid)
+		if err != nil {
+			return err
+		}
+
+		progress := user.Progress()
+		if progress == nil {
+			return ErrProgressNotExist
+		}
+		p = progress
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
 // Processing
 
-func (db *DB) IsUserAdmin(uid string) (bool, error) {
+func (db *DB) IsAdmin(uid string) (bool, error) {
 	var isAdmin bool
 
 	err := db.View(func(tx *bolt.Tx) error {
@@ -306,20 +190,10 @@ func (db *DB) IsUserAdmin(uid string) (bool, error) {
 	return isAdmin, nil
 }
 
-func (db *DB) AdminCount() int {
-	var count int
-	db.View(func(tx *bolt.Tx) error {
-		count = db.usersBucket(tx).AdminCount()
-		return nil
-	})
-	return count
-}
-
 func (db *DB) ValidateLogin(name, pass string) (bool, error) {
 	var valid bool
-
 	err := db.View(func(tx *bolt.Tx) error {
-		user, err := db.usersBucket(tx).GetUser(auth.HashSHA1(name))
+		user, err := db.usersBucket(tx).GetUser(auth.SHA1(name))
 		if err != nil {
 			return err
 		}
@@ -332,23 +206,4 @@ func (db *DB) ValidateLogin(name, pass string) (bool, error) {
 	}
 
 	return valid, nil
-}
-
-func (db *DB) EnsureValidSeriesProgress(sid, eid string, num int) {
-	db.Update(func(tx *bolt.Tx) error {
-		root := db.usersBucket(tx)
-
-		return root.ForEachUser(func(ub *UserBucket) error {
-			tracker := ub.ProgressTracker()
-			if tracker != nil {
-				e := tracker.ProgressEntry(sid, eid)
-				if e != nil {
-					e.Total = num
-					ub.ChangeProgressTracker(tracker)
-				}
-			}
-
-			return nil
-		})
-	})
 }

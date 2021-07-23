@@ -1,29 +1,21 @@
 package core
 
 import (
-	"fmt"
-	"strconv"
 	"time"
 )
 
-type SeriesMetadata struct {
-	Title        string `json:"title"`
-	Author       string `json:"author"`
-	DateReleased *Date  `json:"date_released"`
-}
+const (
+	ChapterZeroValue = -1
+	VolumeZeroValue  = -1
+	AuthorZeroValue  = ""
+	TitleZeroValue   = ""
+)
 
-func (m *SeriesMetadata) String() string {
-	return fmt.Sprintf("Title: %s, Author: %s, DateReleased: %s",
-		m.Title, m.Author, m.DateReleased)
-}
+var (
+	TimeZeroValue = time.Time{}
+)
 
-func NewSeriesMetadata() *SeriesMetadata {
-	return &SeriesMetadata{
-		DateReleased: NewDate(time.Time{}),
-	}
-}
-
-type EntryMetadata struct {
+type ParsedEntryMetadata struct {
 	Title        string `json:"title"`
 	Chapter      int    `json:"chapter"`
 	Volume       int    `json:"volume"`
@@ -31,27 +23,12 @@ type EntryMetadata struct {
 	DateReleased *Date  `json:"date_released"`
 }
 
-func (m *EntryMetadata) String() string {
-	return fmt.Sprintf("Title: %s, Chapter: %s, Volume: %s, DateReleased: %s",
-		m.Title, m.StringChapter(), m.StringVolume(), m.DateReleased)
-}
-
-func (m *EntryMetadata) StringChapter() string {
-	if m.Chapter == -1 {
-		return "N/A"
-	}
-	return strconv.Itoa(m.Chapter)
-}
-
-func (m *EntryMetadata) StringVolume() string {
-	if m.Volume == -1 {
-		return "N/A"
-	}
-	return strconv.Itoa(m.Volume)
-}
-
-func NewEntryMetadata() *EntryMetadata {
-	return &EntryMetadata{
-		DateReleased: NewDate(time.Time{}),
+func NewEntryMetadata() *ParsedEntryMetadata {
+	return &ParsedEntryMetadata{
+		DateReleased: nil,
+		Chapter:      ChapterZeroValue,
+		Volume:       VolumeZeroValue,
+		Author:       AuthorZeroValue,
+		Title:        TitleZeroValue,
 	}
 }

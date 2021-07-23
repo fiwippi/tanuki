@@ -5,12 +5,12 @@ import (
 )
 
 // GET /
-func home(c *gin.Context) {
+func homePage(c *gin.Context) {
 	c.HTML(200, "home.tmpl", nil)
 }
 
 // GET /entries/:sid
-func entries(c *gin.Context) {
+func entriesPage(c *gin.Context) {
 	id := c.Param("sid")
 	_, err := db.GetSeries(id)
 	if err != nil {
@@ -21,7 +21,7 @@ func entries(c *gin.Context) {
 }
 
 // GET /tags/:tag
-func specificTag(c *gin.Context) {
+func specificTagPage(c *gin.Context) {
 	tag := c.Param("tag")
 
 	allTags := db.GetTags()
@@ -33,12 +33,12 @@ func specificTag(c *gin.Context) {
 }
 
 // GET /tags
-func tags(c *gin.Context) {
+func tagsPage(c *gin.Context) {
 	c.HTML(200, "tags.tmpl", nil)
 }
 
 // GET /reader/:sid/:eid
-func reader(c *gin.Context) {
+func readerPage(c *gin.Context) {
 	sid := c.Param("sid")
 	eid := c.Param("eid")
 
@@ -49,4 +49,9 @@ func reader(c *gin.Context) {
 	}
 
 	c.HTML(200, "reader.tmpl", nil)
+}
+
+// GET /login
+func loginPage(c *gin.Context) {
+	c.HTML(200, "login.tmpl", nil)
 }

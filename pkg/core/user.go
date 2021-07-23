@@ -5,30 +5,20 @@ import (
 )
 
 type User struct {
-	Hash            string           `json:"hash,omitempty"`
-	Name            string           `json:"name"`
-	Pass            string           `json:"pass"`
-	Type            UserType         `json:"type"`
-	ProgressTracker *ProgressTracker `json:"progress_tracker"`
+	Hash     string           `json:"hash"`
+	Name     string           `json:"name"`
+	Pass     string           `json:"pass"`
+	Type     UserType         `json:"type"`
+	Progress *CatalogProgress `json:"progress"`
 }
 
 // NewUser expects username and unhashed password along with the users permission
-func NewUser(name, pass string, uType UserType) *User {
+func NewUser(name, pass string, t UserType) *User {
 	return &User{
-		Name:            name,
-		Pass:            auth.HashSHA256(pass),
-		Type:            uType,
-		ProgressTracker: NewProgressTracker(),
+		Hash:     auth.SHA1(name),
+		Name:     name,
+		Pass:     auth.SHA256(pass),
+		Type:     t,
+		Progress: NewCatalogProgress(),
 	}
-}
-
-func (u *User) HashBytes() []byte {
-	return []byte(u.HashString())
-}
-
-func (u *User) HashString() string {
-	if u.Hash == "" {
-		u.Hash = auth.HashSHA1(u.Name)
-	}
-	return u.Hash
 }

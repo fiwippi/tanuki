@@ -43,18 +43,20 @@ async function apiUserProgress(series, entry) {
         })
 }
 
-// PATCH /api/user/progress
-async function apiPatchUserProgress(series, entry, progress) {
-    let url = '/api/user/progress?'
+// PATCH
+async function apiPatchUserProgress(sid, eid, progress) {
+    let url
 
-    if (series.length > 0) {
-        url = url + 'series=' +series
+    if (sid.length > 0) {
+        url = `/api/series/${sid}/progress`
     }
-    if (entry.length > 0) {
-        url = url + '&entry=' + entry
+    if (eid.length > 0) {
+        url = `/api/series/${sid}/entries/${eid}/progress`
     }
 
     let data = { progress: progress }
+
+    console.log(sid, eid, progress, url, data)
 
     return await fetch(url, {
         method: 'PATCH',
@@ -185,24 +187,6 @@ async function apiAdminUserDelete(usernameHash) {
         })
 }
 
-// GET /api/admin/db
-async function apiAdminDB() {
-    return await fetch('/api/admin/db', {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-        .then(response => response.json())
-        .then(data => {
-            return { success: data['success'], db: data['db'] }
-        })
-        .catch((error) => {
-            console.error(error);
-            return ""
-        })
-}
-
 // GET /api/series
 async function apiSeriesList() {
     return await fetch('/api/series', {
@@ -257,8 +241,54 @@ async function apiSeries(sid) {
         })
 }
 
+// GET /api/catalog/progress
+async function apiCatalogProgress() {
+    let url = '/api/catalog/progress'
+
+    return await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    })
+        .then(response => response.json())
+        .then(data => {
+            return data
+        })
+        .catch((error) => {
+            console.error(error);
+            return undefined
+        })
+}
+
+// GET /api/series/:sid/progress
+async function apiSeriesProgress(series) {
+    let url = '/api/series/{0}/progress'.format(series)
+
+    return await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    })
+        .then(response => response.json())
+        .then(data => {
+            return data
+        })
+        .catch((error) => {
+            console.error(error);
+            return undefined
+        })
+}
+
 // PATCH /api/series/:sid
-async function apiPatchSeries(sid, data) {
+async function apiPatchSeries(sid, title, author, date_released) {
+    let data = {
+        title: title,
+        author: author,
+        date_released: date_released
+    }
+
     return await fetch('/api/series/' + sid, {
         method: 'PATCH',
         headers: {
@@ -295,9 +325,14 @@ async function apiGetEntry(sid, eid) {
 }
 
 // PATCH /api/series/:sid/entries/:eid
-async function apiPatchEntry(sid, eid, data) {
-    data.chapter = Number(data.chapter)
-    data.volume = Number(data.volume)
+async function apiPatchEntry(sid, eid, title, author, date_released, chapter, volume) {
+    let data = {
+        title: title,
+        author: author,
+        date_released: date_released,
+        chapter: Number(chapter),
+        volume: Number(volume),
+    }
 
     return await fetch('/api/series/' + sid + '/entries/' + eid, {
         method: 'PATCH',

@@ -1,6 +1,7 @@
 package tanuki
 
 import (
+	"github.com/fiwippi/tanuki/pkg/api"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -17,17 +18,12 @@ var session *auth.Session
 // We store the username hash in the session, it become more
 // efficient to access the database and improve security
 
-// GET /login
-func login(c *gin.Context) {
-	c.HTML(200, "login.tmpl", nil)
-}
-
-// POST /auth/login
+// POST /api/auth/login
 func authLogin(c *gin.Context) {
 	// Retrieve the request
-	var data auth.LoginRequest
+	var data api.AuthLoginRequest
 	if err := c.ShouldBindJSON(&data); err != nil {
-		c.AbortWithStatusJSON(400, auth.LoginReply{Success: false, Message: ""})
+		c.AbortWithStatusJSON(400, api.AuthLoginReply{Success: false, Message: ""})
 		return
 	}
 
@@ -35,24 +31,24 @@ func authLogin(c *gin.Context) {
 	valid, err := db.ValidateLogin(data.Username, data.Password)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to validate user")
-		c.AbortWithStatusJSON(500, auth.LoginReply{Success: false})
+		c.AbortWithStatusJSON(500, api.AuthLoginReply{Success: false})
 		return
 	} else if !valid {
-		c.AbortWithStatusJSON(403, auth.LoginReply{Success: false, Message: "invalid username/password"})
+		c.AbortWithStatusJSON(403, api.AuthLoginReply{Success: false, Message: "invalid username/password"})
 		return
 	}
 	log.Debug().Str("username", data.Username).Msg("validated user")
 
 	// If valid then give user token they can identify themselves with
-	usernameHash := auth.HashSHA1(data.Username)
+	usernameHash := auth.SHA1(data.Username)
 	session.Store(usernameHash, c)
-	c.JSON(200, auth.LoginReply{Success: true})
+	c.JSON(200, api.AuthLoginReply{Success: true})
 }
 
-// GET /auth/logout
+// GET /api/auth/logout
 func authLogout(c *gin.Context) {
 	session.Delete(c)
 	uid := c.GetString("uid")
 	log.Debug().Str("uid", uid).Msg("user logged out")
-	c.JSON(200, auth.LogoutReply{Success: true})
+	c.JSON(200, api.AuthLogoutReply{Success: true})
 }

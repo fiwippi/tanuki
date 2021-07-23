@@ -2,6 +2,7 @@ package core
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/fiwippi/tanuki/internal/sets"
 )
@@ -40,8 +41,8 @@ func UnmarshalArchive(data []byte) *Archive {
 	return &s
 }
 
-func UnmarshalProgressTracker(data []byte) *ProgressTracker {
-	var p ProgressTracker
+func UnmarshalCatalogProgress(data []byte) *CatalogProgress {
+	var p CatalogProgress
 	err := json.Unmarshal(data, &p)
 	if err != nil {
 		panic(err)
@@ -71,7 +72,24 @@ func UnmarshalString(data []byte) string {
 	return s
 }
 
+func UnmarshalOrder(data []byte) int {
+	if data == nil {
+		return -1
+	}
+
+	var s int
+	err := json.Unmarshal(data, &s)
+	if err != nil {
+		panic(err)
+	}
+	return s
+}
+
 func UnmarshalPage(data []byte) *Page {
+	if data == nil {
+		return nil
+	}
+
 	var s Page
 	err := json.Unmarshal(data, &s)
 	if err != nil {
@@ -89,29 +107,11 @@ func UnmarshalUserType(data []byte) UserType {
 	return p
 }
 
-func UnmarshalSeriesMetadata(data []byte) *SeriesMetadata {
-	if data == nil {
-		return nil
-	}
-
-	var p SeriesMetadata
-	err := json.Unmarshal(data, &p)
+func UnmarshalTime(data []byte) time.Time {
+	var t time.Time
+	err := json.Unmarshal(data, &t)
 	if err != nil {
 		panic(err)
 	}
-	return &p
+	return t
 }
-
-func UnmarshalEntryMetadata(data []byte) *EntryMetadata {
-	if data == nil {
-		return nil
-	}
-
-	var p EntryMetadata
-	err := json.Unmarshal(data, &p)
-	if err != nil {
-		panic(err)
-	}
-	return &p
-}
-

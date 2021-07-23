@@ -80,7 +80,7 @@ func authMiddleware() gin.HandlerFunc {
 		}
 
 		// Set values for next requests
-		valid, _ := db.IsUserAdmin(uid)
+		valid, _ := db.IsAdmin(uid)
 		c.Set("admin", valid)
 		c.Set("uid", uid)
 

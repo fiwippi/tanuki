@@ -113,7 +113,7 @@ func apiPatchAdminUser(c *gin.Context) {
 		// the cookie is not found but we can ignore that since we are setting
 		// a new cookie anyway
 		session.Delete(c)
-		session.Store(auth.HashSHA1(data.NewUsername), c)
+		session.Store(auth.SHA1(data.NewUsername), c)
 	}
 
 	c.JSON(200, api.AdminUserReply{Success: true})
@@ -170,14 +170,14 @@ func apiGetAdminLibraryGenerateThumbnails(c *gin.Context) {
 
 // GET /api/admin/library/missing-entries
 func apiGetAdminLibraryMissingEntries(c *gin.Context) {
-	e := db.GetMissingEntries()
-	c.JSON(200, api.AdminLibraryMissingEntriesReply{Success: true, Entries: e})
+	c.JSON(200, api.AdminLibraryMissingEntriesReply{Success: true, Entries: db.GetMissingItems()})
 }
 
 // DELETE /api/admin/library/missing-entries
 func apiDeleteAdminLibraryMissingEntries(c *gin.Context) {
-	err := db.DeleteMissingEntries()
+	err := db.DeleteMissingItems()
 	if err != nil {
+		log.Debug().Err(err).Msg("failed to delete missing items")
 		c.AbortWithStatusJSON(500, api.AdminLibraryMissingEntriesReply{Success: false})
 		return
 	}

@@ -24,7 +24,7 @@ func opdsCatalog(c *gin.Context) {
 	}
 	catalog.SetUpdated(updated)
 
-	list := db.GenerateSeriesList()
+	list := db.GetCatalog()
 	for _, s := range list {
 		seriesTime, err := db.GetSeriesModTime(s.Hash)
 		if err != nil {
@@ -63,7 +63,7 @@ func opdsViewEntries(c *gin.Context) {
 	}
 	series.SetUpdated(updated)
 
-	list, err := db.GetSeriesEntries(id)
+	list, err := db.GetEntries(id)
 	if err != nil {
 		c.AbortWithStatus(500)
 		return
@@ -79,7 +79,7 @@ func opdsViewEntries(c *gin.Context) {
 			c.AbortWithStatus(500)
 			return
 		}
-		a, err := db.GetSeriesEntryArchive(id, e.Hash)
+		a, err := db.GetEntryArchive(id, e.Hash)
 		if err != nil {
 			c.AbortWithStatus(500)
 			return
@@ -95,16 +95,15 @@ func opdsViewEntries(c *gin.Context) {
 		})
 	}
 
-
 	c.XML(200, series)
 }
 
 // GET /opds/v1.2/series/:sid/entries/:eid/archive
 func opdsArchive(c *gin.Context) {
-	apiGetSeriesEntryArchive(c)
+	apiGetEntryArchive(c)
 }
 
 // GET /opds/v1.2/series/:sid/entries/:eid/cover?thumbnail={true,false}
 func opdsCover(c *gin.Context) {
-	apiGetSeriesEntryCover(c)
+	apiGetEntryCover(c)
 }

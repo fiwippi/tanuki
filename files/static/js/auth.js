@@ -1,6 +1,6 @@
 async function authLogin(username, password) {
     let data = { username: username, password: password }
-    return await fetch('/auth/login', {
+    return await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -18,7 +18,7 @@ async function authLogin(username, password) {
 }
 
 async function authLogout() {
-    return await fetch('/auth/logout', {
+    return await fetch('/api/auth/logout', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',

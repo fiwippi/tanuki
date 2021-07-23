@@ -19,9 +19,5 @@ func (b *PagesBucket) SetPage(num int, p *core.Page) error {
 }
 
 func (b *PagesBucket) GetPage(num int) *core.Page {
-	d := b.Get(core.MarshalJSON(num))
-	if d == nil {
-		return nil
-	}
-	return core.UnmarshalPage(d)
+	return core.UnmarshalPage(b.Get(core.MarshalJSON(num)))
 }

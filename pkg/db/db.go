@@ -4,7 +4,6 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-
 type DB struct {
 	*bolt.DB
 }
@@ -23,7 +22,7 @@ func CreateDB(path string) (*DB, error) {
 			return err
 		}
 
-		_, err = tx.CreateBucketIfNotExists(bucketSeries)
+		_, err = tx.CreateBucketIfNotExists(bucketCatalog)
 		if err != nil {
 			return err
 		}
@@ -57,6 +56,3 @@ func (db *DB) returnBytes(f func(tx *bolt.Tx) ([]byte, string, error)) ([]byte, 
 	}
 	return data, mimetype, nil
 }
-
-
-

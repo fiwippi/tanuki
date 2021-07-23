@@ -31,7 +31,7 @@ function stringPercent(p) {
 }
 
 function percent(p) {
-    return Math.round(p*100)/100
+    return Math.round(p*100)
 }
 
 // Python like .format()

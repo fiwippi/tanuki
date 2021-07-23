@@ -3,11 +3,7 @@ package core
 import (
 	"fmt"
 	"image"
-	"io"
-	"io/ioutil"
 	"os"
-
-	"github.com/nfnt/resize"
 
 	"github.com/fiwippi/tanuki/internal/fse"
 )
@@ -15,8 +11,8 @@ import (
 // Cover is a filepath to an image file which
 // represents the cover of the manga entry
 type Cover struct {
-	Fp               string    `json:"file"` // Filepath
-	ImageType        ImageType `json:"image_type"`
+	Fp        string    `json:"file"` // Filepath
+	ImageType ImageType `json:"image_type"`
 }
 
 func (c *Cover) String() string {
@@ -27,29 +23,22 @@ func (c *Cover) ExistsOnFS() bool {
 	return fse.Exists(c.Fp)
 }
 
-func (c *Cover) FromFS() ([]byte, error) {
-	d, err := ioutil.ReadFile(c.Fp)
+func (c *Cover) ReadFile() ([]byte, error) {
+	d, err := os.ReadFile(c.Fp)
 	if err != nil {
 		return nil, err
 	}
 	return d, nil
 }
 
-func (c *Cover) Reader() (io.Reader, error) {
+func (c *Cover) Image() (image.Image, error) {
 	f, err := os.Open(c.Fp)
 	if err != nil {
 		return nil, err
 	}
-	return f, nil
-}
+	defer f.Close()
 
-func (c *Cover) ImageFromFS() (image.Image, error) {
-	r, err := c.Reader()
-	if err != nil {
-		return nil, err
-	}
-
-	img, err := c.ImageType.Decode(r)
+	img, err := c.ImageType.Decode(f)
 	if err != nil {
 		return nil, err
 	}
@@ -57,12 +46,11 @@ func (c *Cover) ImageFromFS() (image.Image, error) {
 	return img, nil
 }
 
-func (c *Cover) ThumbnailFromFS() ([]byte, error) {
-	img, err := c.ImageFromFS()
+func (c *Cover) Thumbnail() ([]byte, error) {
+	img, err := c.Image()
 	if err != nil {
 		return nil, err
 	}
 
-	thumb := resize.Thumbnail(300, 300, img, resize.Lanczos2)
-	return EncodeJPEG(thumb)
+	return EncodeJPEG(thumbnail(img))
 }

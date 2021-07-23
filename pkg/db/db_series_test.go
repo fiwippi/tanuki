@@ -7,44 +7,30 @@ import (
 )
 
 func TestDB_SaveSeries(t *testing.T) {
-	s, m, err := core.ParseSeriesFolder(os.Getenv("SERIES_PATH"))
+	s, err := core.ParseSeriesFolder(os.Getenv("SERIES_PATH"))
 	if err != nil {
 		t.Error(err)
 	}
 
-	err = testDb.SaveSeries(s, m)
+	err = testDb.PopulateCatalog([]*core.ParsedSeries{s})
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func TestDB_CreateThumbnails(t *testing.T) {
-	dir := os.Getenv("SERIES_PATH")
-	s, m, err := core.ParseSeriesFolder(dir)
+	s, err := core.ParseSeriesFolder(os.Getenv("SERIES_PATH"))
 	if err != nil {
 		t.Error(err)
 	}
 
-	err = testDb.SaveSeries(s, m)
+	err = testDb.PopulateCatalog([]*core.ParsedSeries{s})
 	if err != nil {
 		t.Error(err)
 	}
 
-	err = testDb.GenerateThumbnails(false)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestDB_GenerateSeriesList(t *testing.T) {
-	dir := os.Getenv("SERIES_PATH")
-	s, m, err := core.ParseSeriesFolder(dir)
-	if err != nil {
-		t.Error(err)
-	}
-
-	err = testDb.SaveSeries(s, m)
-	if err != nil {
+	errors := testDb.GenerateThumbnails(false)
+	if errors != nil {
 		t.Error(err)
 	}
 }

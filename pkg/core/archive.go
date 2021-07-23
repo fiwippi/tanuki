@@ -11,17 +11,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mholt/archiver/v3"
-	"github.com/nfnt/resize"
-
 	"github.com/fiwippi/tanuki/internal/fse"
+	"github.com/mholt/archiver/v3"
 )
 
 type Archive struct {
-	Path    string      `json:"path"`  // Path to the archive on the filesystem
-	Type    ArchiveType `json:"type"`  // What file format is the archive e.g. zip/rar
-	Cover   *Cover      `json:"cover"` // Link to the embedded cover in the archive
-	ModTime time.Time   `json:"mod_time"`
+	Title   string      `json:"title"`
+	Path    string      `json:"path"`     // Path to the archive on the filesystem
+	Type    ArchiveType `json:"type"`     // What file format is the archive e.g. zip/rar
+	Cover   *Cover      `json:"cover"`    // Link to the embedded cover in the archive
+	ModTime time.Time   `json:"mod_time"` // Modified time of the archive
 }
 
 func (a *Archive) FilenameWithExt() string {
@@ -33,33 +32,7 @@ func (a *Archive) Exists() bool {
 }
 
 func (a *Archive) Walk(f func(f archiver.File) error) error {
-	return a.Type.Walker().Walk(a.Path,  f)
-}
-
-func (a *Archive) File(fp string) (archiver.File, error) {
-	// Attempt to find the file
-	var file archiver.File
-	err := a.Type.Walker().Walk(a.Path, func(f archiver.File) error {
-		if strings.HasSuffix(fp, f.Name()) {
-			file.FileInfo = f.FileInfo
-			file.Header = f.Header
-			data, err := ioutil.ReadAll(f)
-			if err != nil {
-				return err
-			}
-			file.ReadCloser = archiver.ReadFakeCloser{Reader: bytes.NewReader(data)}
-		}
-		return nil
-	})
-
-	// If there was an error retrieving the file or
-	// the file was not found then return an error
-	if err != nil {
-		return archiver.File{}, err
-	} else if file == (archiver.File{}) {
-		return archiver.File{}, ErrArchiveFileNotFound
-	}
-	return file, nil
+	return a.Type.Walker().Walk(a.Path, f)
 }
 
 func (a *Archive) FileReader(fp string) (io.Reader, int64, error) {
@@ -88,7 +61,7 @@ func (a *Archive) FileReader(fp string) (io.Reader, int64, error) {
 	return r, size, nil
 }
 
-func (a *Archive) CoverImage() (image.Image, error){
+func (a *Archive) CoverImage() (image.Image, error) {
 	if a.Cover == nil {
 		return nil, errors.New("cover is nil")
 	}
@@ -105,7 +78,7 @@ func (a *Archive) CoverImage() (image.Image, error){
 	return img, nil
 }
 
-func (a *Archive) CoverBytes() ([]byte, error){
+func (a *Archive) CoverFile() ([]byte, error) {
 	img, err := a.CoverImage()
 	if err != nil {
 		return nil, err
@@ -114,7 +87,7 @@ func (a *Archive) CoverBytes() ([]byte, error){
 	return EncodeJPEG(img)
 }
 
-func (a *Archive) Thumbnail() ([]byte, error){
+func (a *Archive) Thumbnail() ([]byte, error) {
 	// Get the cover image
 	img, err := a.CoverImage()
 	if err != nil {
@@ -122,20 +95,16 @@ func (a *Archive) Thumbnail() ([]byte, error){
 	}
 
 	// Create thumbnail
-	thumb := resize.Thumbnail(300, 300, img, resize.Lanczos2)
-	return EncodeJPEG(thumb)
+	return EncodeJPEG(thumbnail(img))
 }
 
-func (a *Archive) Filesize() int64 {
+func (a *Archive) FilesizeMiB() float64 {
 	fi, err := os.Stat(a.Path)
 	if err != nil {
 		return 0
 	}
-	return fi.Size()
-}
 
-func (a *Archive) FilesizeMib() float64 {
-	s := a.Filesize()
+	s := fi.Size()
 	if s > 0 {
 		return float64(s) / 1024 / 1024
 	}

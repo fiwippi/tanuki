@@ -18,8 +18,8 @@ func NewSeries(sid, title string) *Series {
 	return s
 }
 
-func (s *Series) AddEntry(e *ArchiveEntry)  {
-	e.Content = fmt.Sprintf("%s - %.1f MiB", e.Archive.Type.String(), e.Archive.FilesizeMib())
+func (s *Series) AddEntry(e *ArchiveEntry) {
+	e.Content = fmt.Sprintf("%s - %.1f MiB", e.Archive.Type.String(), e.Archive.FilesizeMiB())
 
 	entryPath := fmt.Sprintf("/opds/v1.2/series/%s/entries/%s", s.ID, e.ID)
 

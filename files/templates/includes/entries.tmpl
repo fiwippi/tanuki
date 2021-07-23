@@ -92,8 +92,11 @@
             search: "",
             seriesData: {},
             entries: [],
+            progress: [],
             images: [],
             newTag: "",
+            seriesMetadata: {},
+            entryMetadata: {},
 
             // Series Modal related
             seriesImage: {},
@@ -114,7 +117,6 @@
             showBasicEntryModal: false,
             showEntryProgress: false,
             entryProgress: "",
-
 
             // Edit Entry Modal
             showEditEntryModal: false,
@@ -174,6 +176,10 @@
                 let resp = await apiSeries(sid)
                 this.seriesData = resp.data
 
+                this.seriesMetadata.title = this.seriesData.title
+                this.seriesMetadata.author = this.seriesData.author
+                this.seriesMetadata.date_released = this.seriesData.date_released
+
                 resp = await apiSeriesEntries(sid)
                 if (resp === undefined) {
                     this.entries = []
@@ -201,20 +207,18 @@
                         console.log("error loading images", err.message);
                     })
                     this.images = images
+                    await this.getProgress(sid)
                     this.entries = resp.entries
                 }
             },
 
-            async getProgress(series, entry) {
-                let resp = await apiUserProgress(series, entry)
+            async getProgress(series) {
+                let resp = await apiSeriesProgress(series)
 
-                if (resp === undefined) {
-                    return "N/A"
-                } else if (!resp.success) {
-                    return  "N/A"
+                if (resp === undefined || !resp.success) {
+                    this.progress = []
                 } else {
-                    this.selectedEntryProgressPage = resp.progress_page
-                    return stringPercent(resp.progress_percent)
+                    this.progress = resp.progress
                 }
             },
 
@@ -233,6 +237,20 @@
                     this.seriesData.tags.push(newTag);
                     this.newTag = ''
                 }
+            },
+
+            calcEntryProgress(p) {
+                if (p === undefined) {
+                    return stringPercent(0)
+                }
+                return  stringPercent(p.current / p.total)
+            },
+
+            calcEntryProgressFormatted(p) {
+                if (p === undefined) {
+                    return "Progress: " + stringPercent(0)
+                }
+                return  "Progress: " + stringPercent(p.current / p.total)
             },
 
             // Series Modal
@@ -255,13 +273,19 @@
             },
 
             async saveSeriesMetadata() {
-              let resp = await apiPatchSeries(this.seriesData.hash, this.seriesData)
-              if (!resp) {
-                  this.metadataResult = "Failed!"
-              } else {
-                  this.metadataResult = "Success!"
-              }
-              this.showMetadataResult = true
+                let resp = await apiPatchSeries(this.seriesData.hash, this.seriesMetadata.title,
+                    this.seriesMetadata.author, this.seriesMetadata.date_released)
+                if (!resp) {
+                    this.metadataResult = "Failed!"
+                } else {
+                    this.metadataResult = "Success!"
+
+                    // Refresh the metadata on the screen
+                    this.seriesData.title = this.seriesMetadata.title
+                }
+                this.showMetadataResult = true
+
+
             },
 
             async setSeriesProgress(mode) {
@@ -271,7 +295,7 @@
                 } else if (mode === "unread") {
                     resp = await apiPatchUserProgress(this.seriesData.hash, "", "0%")
                 } else {
-                    console.log("YOU SHOULDN'T BE HERE")
+                    console.error("PANIC!!!")
                     return
                 }
 
@@ -282,7 +306,7 @@
                 }
                 this.showProgressResult = true
 
-                await this.refreshEntries(this.seriesData.hash)
+                await this.getProgress(this.seriesData.hash)
             },
 
             async setNewSeriesCover(fileList) {
@@ -296,7 +320,6 @@
                         this.coverResult = "Failed!"
                     } else {
                         this.coverResult = "Success!"
-                        await this.refreshEntries(this.seriesData.hash)
                     }
                     this.showCoverResult = true
                     await this.refreshSeriesThumbnail(this.seriesData.hash, true)
@@ -314,12 +337,30 @@
                 await this.refreshSeriesThumbnail(this.seriesData.hash, true)
             },
 
-            // Basic Entry Modal
+            // Basic EntryProgress Modal
             async showBasicEntry(entry) {
-                this.selectedEntryProgress = await this.getProgress(this.seriesData.hash, entry.hash)
                 this.selectedEntry = entry
-                console.log(this.selectedEntryProgress, this.select)
+
+                this.entryMetadata.title = entry.title
+                this.entryMetadata.author = entry.author
+                this.entryMetadata.date_released = entry.date_released
+                this.entryMetadata.chapter = entry.chapter
+                this.entryMetadata.volume = entry.volume
+
                 this.showBasicEntryModal = true
+            },
+
+            getEntryCurrentPage(entry) {
+                if (entry === undefined) {
+                    return 0
+                }
+
+                let p = this.progress[entry.order - 1]
+                if (p === undefined) {
+                    return 0
+                }
+
+                return p.current
             },
 
             async setEntryProgress(mode) {
@@ -345,7 +386,7 @@
                 await this.refreshEntries(this.seriesData.hash)
             },
 
-            // Edit Entry Modal
+            // Edit EntryProgress Modal
             async showEditEntry() {
                 await this.refreshEntryThumbnail(this.seriesData.hash, this.selectedEntry.hash, true)
                 this.showBasicEntryModal = false
@@ -362,14 +403,29 @@
                 }
                 await p
                 this.entryImage = img
+
+                for (let i in this.entries) {
+                    if (this.entries[i].hash === this.selectedEntry.hash) {
+                       this.images[i] = img
+                    }
+                }
+
+
             },
 
             async saveEntryMetadata() {
-                let resp = await apiPatchEntry(this.seriesData.hash, this.selectedEntry.hash, this.selectedEntry)
+                let resp = await apiPatchEntry(this.seriesData.hash, this.selectedEntry.hash, this.entryMetadata.title,
+                    this.entryMetadata.author, this.entryMetadata.date_released, this.entryMetadata.chapter, this.entryMetadata.volume)
                 if (!resp) {
                     this.entryMetadataResult = "Failed!"
                 } else {
                     this.entryMetadataResult = "Success!"
+
+                    for (let i in this.entries) {
+                        if (this.entries[i].hash === this.selectedEntry.hash) {
+                            this.entries[i].title = this.entryMetadata.title
+                        }
+                    }
                 }
                 this.showEntryMetadataResult = true
             },
@@ -385,7 +441,7 @@
                         this.entryCoverResult = "Failed!"
                     } else {
                         this.entryCoverResult = "Success!"
-                        await this.refreshEntries(this.seriesData.hash, true)
+                        // await this.refreshEntries(this.seriesData.hash, true)
                     }
                     this.showEntryCoverResult = true
                     await this.refreshEntryThumbnail(this.seriesData.hash, this.selectedEntry.hash, true)
@@ -432,15 +488,15 @@
                 <h2>Metadata</h2>
                 <div class="flex_div">
                     <h3 class="flex_key">Title:</h3>
-                    <label class="flex_value"><input type="text" placeholder="Title" x-model="seriesData.title"></label>
+                    <label class="flex_value"><input type="text" placeholder="Title" x-model="seriesMetadata.title"></label>
                 </div>
                 <div class="flex_div">
                     <h3 class="flex_key">Author:</h3>
-                    <label class="flex_value"><input type="text" placeholder="Author" x-model="seriesData.author"></label>
+                    <label class="flex_value"><input type="text" placeholder="Author" x-model="seriesMetadata.author"></label>
                 </div>
                 <div class="flex_div">
                     <h3 class="flex_key">Date:</h3>
-                    <label class="flex_value"><input type="date" x-model="seriesData.date_released"></label>
+                    <label class="flex_value"><input type="date" x-model="seriesMetadata.date_released"></label>
                 </div>
                 <div class="flex_div" style="margin-top: 1em" >
                     <span><button @click="await saveSeriesMetadata()">Save Metadata</button></span>
@@ -501,9 +557,9 @@
                 <p x-text="selectedEntry.path" style="margin-block-start: 0.5em"></p>
                 <h3>Read</h3>
                 <a :href="'/reader/{0}/{1}?page=1'.format(seriesData.hash, selectedEntry.hash)"><button @click="">From Beginning</button></a>
-                <template x-if="selectedEntryProgress !== '0%' && selectedEntryProgress !== 'N/A'">
-                    <a :href="'/reader/{0}/{1}?page={2}'.format(seriesData.hash, selectedEntry.hash, selectedEntryProgressPage)">
-                        <button @click="" x-text="'From {0}'.format(selectedEntryProgress)"></button>
+                <template x-if="getEntryCurrentPage(selectedEntry) > 0">
+                    <a :href="'/reader/{0}/{1}?page={2}'.format(seriesData.hash, selectedEntry.hash, getEntryCurrentPage(selectedEntry))">
+                        <button @click="" x-text="'From {0}'.format(calcEntryProgress(progress[selectedEntry.order - 1]))"></button>
                     </a>
                 </template>
 
@@ -526,23 +582,23 @@
                 <h2>Metadata</h2>
                 <div class="flex_div">
                     <h3 class="flex_key">Title:</h3>
-                    <label class="flex_value"><input type="text" placeholder="Title" x-model="selectedEntry.title"></label>
+                    <label class="flex_value"><input type="text" placeholder="Title" x-model="entryMetadata.title"></label>
                 </div>
                 <div class="flex_div">
                     <h3 class="flex_key">Author:</h3>
-                    <label class="flex_value"><input type="text" placeholder="Author" x-model="selectedEntry.author"></label>
+                    <label class="flex_value"><input type="text" placeholder="Author" x-model="entryMetadata.author"></label>
                 </div>
                 <div class="flex_div">
                     <h3 class="flex_key">Date:</h3>
-                    <label class="flex_value"><input type="date" x-model="selectedEntry.date_released"></label>
+                    <label class="flex_value"><input type="date" x-model="entryMetadata.date_released"></label>
                 </div>
                 <div class="flex_div">
                     <h3 class="flex_key">Chapter:</h3>
-                    <label class="flex_value"><input type="number" min="-1" x-model="selectedEntry.chapter"></label>
+                    <label class="flex_value"><input type="number" min="-1" x-model="entryMetadata.chapter"></label>
                 </div>
                 <div class="flex_div">
                     <h3 class="flex_key">Volume:</h3>
-                    <label class="flex_value"><input type="number" min="-1" x-model="selectedEntry.volume"></label>
+                    <label class="flex_value"><input type="number" min="-1" x-model="entryMetadata.volume"></label>
                 </div>
                 <div class="flex_div" style="margin-top: 1em" >
                     <span><button @click="await saveEntryMetadata()">Save Metadata</button></span>
@@ -607,14 +663,14 @@
 
     <!--    Entries    -->
     <div class="entriesDiv">
-        <template x-for="(e, index) in filteredEntries">
+        <template x-for="e in filteredEntries">
             <a style="border-bottom: none; cursor: pointer" :href="void(0)" @click="await showBasicEntry(e)">
-                <div class="entry" :style="`flex: 0 1 auto; max-width: max(150px, ${imageWidth(index)}px)`">
-                    <img :src="images[index].src" style="width: 100%; max-height: 300px">
+                <div class="entry" :style="`flex: 0 1 auto; max-width: max(150px, ${imageWidth(e.order - 1)}px)`">
+                    <img :src="images[e.order - 1].src" style="width: 100%; max-height: 300px">
                     <div style="padding: 9px 16px;" >
                         <h4 style="margin-block: 0.2em" x-text="e.title"></h4>
                         <span x-text="'Pages: {0}'.format(e.pages)"></span><br>
-                        <span x-text="await getProgressFormatted(seriesData.hash, e.hash)"></span>
+                        <span x-text="calcEntryProgressFormatted(progress[e.order - 1])"></span>
                     </div>
                 </div>
             </a>

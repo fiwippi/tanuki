@@ -50,10 +50,6 @@ This is the current [OPDS](https://specs.opds.io/) feature support
 ### v2.0
 - N/A
 
-## Changelog
-### [0.1] - 2021-07-19
-Initial commit
-
 ## Development Roadmap
 ### Features
 - Favicon
@@ -69,22 +65,15 @@ Initial commit
 ### Implementation Improvements
 - WASM frontend for the API
 - Minimise final JS and CSS file
-- Use more go routines to speed up data processing functions
 - Make the UI more mobile friendly, e.g. so the modal loads in the centre of the phone screen
 - Reduce API calls by:
     - serving some data through the golang templating engine, e.g. sid, eid or isAdmin
-    - calling the api for multiple properties at once instead of each property individually, e.g. call for progress for each entry of the series in once call vs separate call for each entry
 - Full well formatted documentation for Go + Javascript
 - Single shareable modal class where esc key causes it to disappear
 - Try and remove some dependencies e.g. xid to reduce file size
 - Log more less important routes as trace
-- Encapsulate retrievel and autoamtic generation of thumbnail if it doesn't exist into one function so that the API that the gin router acesses is simpler
-- Instead of sorting SeriesList and SeriesEntries, they should already be stored in a sorted order
-- Can the function which retrieves Series Entries just us `keySeriesData` to make data retrieval simpler
-- Generate thumbnails shouldn't stop at the first error, it should continue to the end and then return an error for each thumbnail it failed to generate
+- Encapsulate retrieval and automatic generation of thumbnail if it doesn't exist into one function so that the API that the gin router acesses is simpler
 - Clean up DB API by not returning an error for all functions since some don't need to
-- Store the user progress data in the specific entry bucket for each so if a series is deleted/missing/changed it is easier to update the user's data
-- Store series list in the DB so no need to generate it on the fly each time
 - Progress bar when uploading covers
 
 ## Tests
@@ -92,3 +81,14 @@ To run tests, an example archive file has to be supplied using the `SERIES_PATH`
 ```console
 make test SERIES_PATH=./series/chapter.cbz
 ```
+
+## Changelog
+### [0.2] - 2021-07-23
+- Go routines speed up parsing series and adding them to the DB
+- Properties like user progress bundles into one API call so less calls are made
+- Series list is stored in order as catalog instead of being generated on the fly
+- Metadata for each entry is stored in order instead of being generated on the fly
+- Parsing/adding/generating series/thumbnails doesn't stop at the first error, it returns all errors which occurred at the end
+
+### [0.1] - 2021-07-19
+- Initial commit

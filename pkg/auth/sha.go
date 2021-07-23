@@ -7,13 +7,13 @@ import (
 	"hash"
 )
 
-// HashSHA256 hashes a string using SHA256
-func HashSHA256(s string) string {
+// SHA256 hashes a string using SHA256
+func SHA256(s string) string {
 	return hashStr(s, sha256.New())
 }
 
-// HashSHA1 hashes a string using SHA1
-func HashSHA1(s string) string {
+// SHA1 hashes a string using SHA1
+func SHA1(s string) string {
 	return hashStr(s, sha1.New())
 }
 

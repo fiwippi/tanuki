@@ -1,10 +1,7 @@
 package core
 
-// Series is a collection of Manga volumes/chapters
-type Series struct {
-	Title   string    // Title of the Series
-}
-
-func newSeries() *Series {
-	return &Series{}
+// ParsedSeries is a collection of ParsedEntry volumes/chapters
+type ParsedSeries struct {
+	Title   string         // Title of the ParsedSeries
+	Entries []*ParsedEntry // Slice of all entries in the series
 }

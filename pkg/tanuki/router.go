@@ -39,8 +39,7 @@ func createRouter(efs fs.FS) *gin.Engine {
 	authorised := r.Group("/")
 	authorised.Use(authMiddleware())
 	setupFrontendRoutes(r, authorised)
-	setupAPIRoutes(authorised)
-	setupAuthRoutes(r, authorised)
+	setupAPIRoutes(r, authorised)
 	setupOPDSRoutes(r)
 
 	return r
@@ -50,14 +49,14 @@ func setupFrontendRoutes(r *gin.Engine, authorised *gin.RouterGroup) {
 	// If already authorised then skips these routes
 	loginGroup := r.Group("/")
 	loginGroup.Use(skipIfAuthedMiddleware())
-	loginGroup.GET("/login", login)
+	loginGroup.GET("/login", loginPage)
 
 	// Must be authorised to access these routes
-	authorised.GET("/", home)
-	authorised.GET("/tags", tags)
-	authorised.GET("/tags/:tag", specificTag)
-	authorised.GET("/entries/:sid", entries)
-	authorised.GET("/reader/:sid/:eid", reader)
+	authorised.GET("/", homePage)
+	authorised.GET("/tags", tagsPage)
+	authorised.GET("/tags/:tag", specificTagPage)
+	authorised.GET("/entries/:sid", entriesPage)
+	authorised.GET("/reader/:sid/:eid", readerPage)
 
 	// Must be authorised and an admin to access these routes i.e. /admin
 	admin := authorised.Group("/admin")
@@ -69,33 +68,40 @@ func setupFrontendRoutes(r *gin.Engine, authorised *gin.RouterGroup) {
 	admin.GET("/missing-entries", adminMissingEntries)
 }
 
-func setupAPIRoutes(authorised *gin.RouterGroup) {
-	api := authorised.Group("/api")
+func setupAPIRoutes(r *gin.Engine, authorised *gin.RouterGroup) {
+	r.POST("/api/auth/login", authLogin)
+	authorised.GET("/api/auth/logout", authLogout)
 
+	api := authorised.Group("/api")
 	api.GET("/tags", apiGetAllTags)
 	api.GET("/tag/:tag", apiGetSeriesWithTag)
-	api.GET("/series", apiGetSeriesList)
+	api.GET("/series", apiGetCatalog)
 	api.GET("/series/:sid", apiGetSeries)
 	api.PATCH("/series/:sid", apiPatchSeries)
 	api.GET("/series/:sid/cover", apiGetSeriesCover)
+	api.GET("/series/:sid/progress", apiGetSeriesProgress)
+	api.PATCH("/series/:sid/progress", apiPatchSeriesProgress)
+	api.GET("/catalog/progress", apiGetCatalogProgress)
+	api.GET("/series/:sid/entries/:eid/progress", apiGetEntryProgress)
+	api.PATCH("/series/:sid/entries/:eid/progress", apiPatchEntryProgress)
 	api.PATCH("/series/:sid/cover", apiPatchSeriesCover)
 	api.DELETE("/series/:sid/cover", apiDeleteSeriesCover)
 	api.GET("/series/:sid/tags", apiGetSeriesTags)
 	api.PATCH("/series/:sid/tags", apiPatchSeriesTags)
 	api.GET("/series/:sid/entries", apiGetSeriesEntries)
-	api.GET("/series/:sid/entries/:eid", apiGetSeriesEntry)
+	api.GET("/series/:sid/entries/:eid", apiGetEntry)
 	api.PATCH("/series/:sid/entries/:eid", apiPatchEntry)
-	api.GET("/series/:sid/entries/:eid/cover", apiGetSeriesEntryCover)
+	api.GET("/series/:sid/entries/:eid/cover", apiGetEntryCover)
 	api.PATCH("/series/:sid/entries/:eid/cover", apiPatchEntryCover)
 	api.DELETE("/series/:sid/entries/:eid/cover", apiDeleteEntryCover)
-	api.GET("/series/:sid/entries/:eid/archive", apiGetSeriesEntryArchive)
-	api.GET("/series/:sid/entries/:eid/page/:num", apiGetSeriesEntryPage)
+	api.GET("/series/:sid/entries/:eid/archive", apiGetEntryArchive)
+	api.GET("/series/:sid/entries/:eid/page/:num", apiGetEntryPage)
 
 	// Users can request/edit data about themselves if they
 	// provide their cookie to identify themselves
 	apiUser := api.Group("/user")
-	apiUser.GET("/:property", apiGetUserProperty)
-	apiUser.PATCH("/progress", apiPatchUserProgress)
+	apiUser.GET("/type", apiGetUserType)
+	apiUser.GET("/name", apiGetUserName)
 
 	// Must be an admin to access these api routes i.e. /api/admin/...
 	apiAdmin := api.Group("/admin")
@@ -111,12 +117,6 @@ func setupAPIRoutes(authorised *gin.RouterGroup) {
 	apiAdmin.PATCH("/user/:id", apiPatchAdminUser)
 	apiAdmin.DELETE("/user/:id", apiDeleteAdminUser)
 
-}
-
-func setupAuthRoutes(r *gin.Engine, authorised *gin.RouterGroup) {
-	// Have to be authorised to logout but not to login
-	r.POST("/auth/login", authLogin)
-	authorised.GET("/auth/logout", authLogout)
 }
 
 func setupOPDSRoutes(r *gin.Engine) {

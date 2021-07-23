@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-
 	"github.com/fiwippi/tanuki/pkg/core"
 )
 
@@ -16,23 +15,8 @@ import (
 // GET /api/series/:sid/entries/:eid/page/:num
 // GET /api/series/:sid/entries/:eid/archive
 
-// SeriesEntries is the data sent to the user for a specific
-// series so they can request data about its entries
-type SeriesEntries []*SeriesEntry
-
-type SeriesEntry struct {
-	Hash         string     `json:"hash"`
-	Title        string     `json:"title"`
-	Pages        int        `json:"pages"`
-	Path         string     `json:"path"`
-	Chapter      int        `json:"chapter"`
-	Volume       int        `json:"volume"`
-	Author       string     `json:"author"`
-	DateReleased *core.Date `json:"date_released"`
-}
-
-func UnmarshalSeriesEntries(data []byte) SeriesEntries {
-	var s SeriesEntries
+func UnmarshalEntries(data []byte) Entries {
+	var s Entries
 	err := json.Unmarshal(data, &s)
 	if err != nil {
 		panic(err)
@@ -40,21 +24,8 @@ func UnmarshalSeriesEntries(data []byte) SeriesEntries {
 	return s
 }
 
-// SeriesList is the data sent to the user for about all series
-// series so the user can request further data about them
-type SeriesList []*Series
-
-type Series struct {
-	Hash         string     `json:"hash"`
-	Title        string     `json:"title"`
-	Entries      int        `json:"entries"`
-	Tags         []string   `json:"tags"`
-	Author       string     `json:"author"`
-	DateReleased *core.Date `json:"date_released"`
-}
-
-func UnmarshalSeriesList(data []byte) SeriesList {
-	var s SeriesList
+func UnmarshalCatalog(data []byte) Catalog {
+	var s Catalog
 	err := json.Unmarshal(data, &s)
 	if err != nil {
 		panic(err)
@@ -62,10 +33,10 @@ func UnmarshalSeriesList(data []byte) SeriesList {
 	return s
 }
 
-// SeriesListReply for /api/series
-type SeriesListReply struct {
-	Success bool       `json:"success"`
-	List    SeriesList `json:"list"`
+// CatalogReply for /api/series
+type CatalogReply struct {
+	Success bool    `json:"success"`
+	List    Catalog `json:"list"`
 }
 
 // SeriesReply for /api/series/:sid
@@ -76,33 +47,45 @@ type SeriesReply struct {
 
 // SeriesEntriesReply for /api/series/:id/entries
 type SeriesEntriesReply struct {
-	Success    bool          `json:"success"`
-	List       SeriesEntries `json:"list"`
+	Success bool    `json:"success"`
+	List    Entries `json:"list"`
 }
 
 // SeriesEntryReply for /api/series/:id/entries/:eid
 type SeriesEntryReply struct {
-	Success bool        `json:"success"`
-	Data    SeriesEntry `json:"data"`
+	Success bool  `json:"success"`
+	Data    Entry `json:"data"`
 }
 
-type SeriesTagsRequest struct {
-	Tags    []string `json:"tags"`
-}
-
-type SeriesTagsReply struct {
-	Success bool     `json:"success"`
-	Tags    []string `json:"tags"`
-}
-
+// PatchCoverReply for /api/series/:sid/cover
 type PatchCoverReply struct {
-	Success bool     `json:"success"`
+	Success bool `json:"success"`
 }
 
-type MissingEntry struct {
-	Type  string `json:"type"`
-	Title string `json:"title"`
-	Path  string `json:"path"`
+// CatalogProgressReply for /api/catalog/progress
+type CatalogProgressReply struct {
+	Success  bool                            `json:"success"`
+	Progress map[string]*core.SeriesProgress `json:"progress"`
 }
 
-type MissingEntries []*MissingEntry
+// SeriesProgressRequest for /api/series/:sid/progress
+type SeriesProgressRequest struct {
+	Progress string `json:"progress"`
+}
+
+// SeriesProgressReply for /api/series/:sid/progress
+type SeriesProgressReply struct {
+	Success  bool                  `json:"success"`
+	Progress []*core.EntryProgress `json:"progress"`
+}
+
+// EntryProgressRequest for /api/series/:sid/entries/:eid/progress
+type EntryProgressRequest struct {
+	Progress string `json:"progress"`
+}
+
+// EntriesProgressReply for /api/series/:sid/entries/:eid/progress
+type EntriesProgressReply struct {
+	Success  bool                `json:"success"`
+	Progress *core.EntryProgress `json:"progress"`
+}

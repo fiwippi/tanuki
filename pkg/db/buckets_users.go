@@ -32,12 +32,12 @@ func (b *UsersBucket) HasUsers() bool {
 
 func (b *UsersBucket) AddUser(u *core.User, overwrite bool) error {
 	// Check if allowed to add user
-	if !overwrite && b.HasUser(u.HashString()) {
+	if !overwrite && b.HasUser(u.Hash) {
 		return ErrUserExists
 	}
 
 	// Write the data
-	temp, err := b.Bucket.CreateBucketIfNotExists(u.HashBytes())
+	temp, err := b.Bucket.CreateBucketIfNotExists([]byte(u.Hash))
 	if err != nil {
 		return err
 	}
@@ -52,10 +52,6 @@ func (b *UsersBucket) AddUser(u *core.User, overwrite bool) error {
 		return err
 	}
 	err = user.ChangeType(u.Type)
-	if err != nil {
-		return err
-	}
-	err = user.ChangeProgressTracker(u.ProgressTracker)
 	if err != nil {
 		return err
 	}
@@ -86,7 +82,7 @@ func (b *UsersBucket) RenameUser(oldUid, newUid string, newUsername string) erro
 
 	// Set the new username as well in the user struct
 	newUser := b.Bucket.Bucket([]byte(newUid))
-	return newUser.Put(keyUserName, core.MarshalJSON(newUsername))
+	return newUser.Put(keyUsername, core.MarshalJSON(newUsername))
 }
 
 func (b *UsersBucket) ForEachUser(f func(ub *UserBucket) error) error {

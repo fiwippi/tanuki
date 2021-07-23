@@ -29,18 +29,18 @@ func TestDB_CreateUser(t *testing.T) {
 	}
 
 	// Ensure third user can be viewed
-	_, err = testDb.GetUser(auth.HashSHA1(u2.Name))
+	_, err = testDb.GetUser(auth.SHA1(u2.Name))
 	if err != nil {
 		t.Error(err)
 	}
 
-	// Delete third user and make sure it cant be viewed
-	err = testDb.DeleteUser(auth.HashSHA1(u2.Name))
+	// DeleteEntry third user and make sure it cant be viewed
+	err = testDb.DeleteUser(auth.SHA1(u2.Name))
 	if err != nil {
 		t.Error(err)
 	}
 
-	_, err = testDb.GetUser(auth.HashSHA1(u2.Name))
+	_, err = testDb.GetUser(auth.SHA1(u2.Name))
 	if err != ErrUserNotExist {
 		t.Error(err)
 	}
@@ -54,8 +54,8 @@ func TestDB_CreateUser(t *testing.T) {
 	}
 
 	//
-	testDb.DeleteUser(auth.HashSHA1(u1.Name))
-	testDb.DeleteUser(auth.HashSHA1(u2.Name))
+	testDb.DeleteUser(auth.SHA1(u1.Name))
+	testDb.DeleteUser(auth.SHA1(u2.Name))
 }
 
 func TestDB_GetUsers(t *testing.T) {
@@ -87,9 +87,9 @@ func TestDB_GetUsers(t *testing.T) {
 		t.Error("passwords should be sanitised")
 	}
 
-	testDb.DeleteUser(auth.HashSHA1(u1.Name))
-	testDb.DeleteUser(auth.HashSHA1(u2.Name))
-	testDb.DeleteUser(auth.HashSHA1(u3.Name))
+	testDb.DeleteUser(auth.SHA1(u1.Name))
+	testDb.DeleteUser(auth.SHA1(u2.Name))
+	testDb.DeleteUser(auth.SHA1(u3.Name))
 }
 
 func TestDB_ChangeUsername(t *testing.T) {
@@ -110,19 +110,19 @@ func TestDB_ChangeUsername(t *testing.T) {
 		t.Error("change username should be successful, err:", err)
 	}
 
-	u, err := testDb.GetUser(auth.HashSHA1(u1.Name))
+	u, err := testDb.GetUser(auth.SHA1(u1.Name))
 	if err != ErrUserNotExist {
 		t.Error("user 'a' should not exist:", u, err)
 	}
 
-	u, err = testDb.GetUser(auth.HashSHA1("c"))
+	u, err = testDb.GetUser(auth.SHA1("c"))
 	if err != nil {
 		t.Error("user 'c' should exist:", u, err)
 	}
 
-	testDb.DeleteUser(auth.HashSHA1(u1.Name))
-	testDb.DeleteUser(auth.HashSHA1(u2.Name))
-	testDb.DeleteUser(auth.HashSHA1("c"))
+	testDb.DeleteUser(auth.SHA1(u1.Name))
+	testDb.DeleteUser(auth.SHA1(u2.Name))
+	testDb.DeleteUser(auth.SHA1("c"))
 }
 
 func TestDB_ChangeType(t *testing.T) {
@@ -137,11 +137,11 @@ func TestDB_ChangeType(t *testing.T) {
 	}
 
 	// 'a' should be able to become a standard user without any problems
-	err := testDb.ChangeUserType(auth.HashSHA1("a"), core.StandardUser)
+	err := testDb.ChangeUserType(auth.SHA1("a"), core.StandardUser)
 	if err != nil {
 		t.Error("change type should be successful", err)
 	}
-	a, err := testDb.GetUser(auth.HashSHA1(u1.Name))
+	a, err := testDb.GetUser(auth.SHA1(u1.Name))
 	if err != nil {
 		t.Error(err)
 	}
@@ -150,13 +150,13 @@ func TestDB_ChangeType(t *testing.T) {
 	}
 
 	// changing 'b' from admin to standard user should result in ErrNotEnoughAdmin
-	err = testDb.ChangeUserType(auth.HashSHA1("b"), core.StandardUser)
+	err = testDb.ChangeUserType(auth.SHA1("b"), core.StandardUser)
 	if err != ErrNotEnoughAdmins {
 		t.Error("change type raised wrong error", err)
 	}
 
-	testDb.DeleteUser(auth.HashSHA1(u1.Name))
-	testDb.DeleteUser(auth.HashSHA1(u2.Name))
+	testDb.DeleteUser(auth.SHA1(u1.Name))
+	testDb.DeleteUser(auth.SHA1(u2.Name))
 }
 
 func TestDB_ChangePassword(t *testing.T) {
@@ -168,13 +168,13 @@ func TestDB_ChangePassword(t *testing.T) {
 	}
 
 	// Check a can be renamed to c, meaning c exists and a does not exist
-	newPassHash := auth.HashSHA256("kekeke")
-	err := testDb.ChangePassword(auth.HashSHA1(u1.Name), "kekeke")
+	newPassHash := auth.SHA256("kekeke")
+	err := testDb.ChangePassword(auth.SHA1(u1.Name), "kekeke")
 	if err != nil {
 		t.Error("password should have changed successfully", err)
 	}
 
-	u, err := testDb.GetUser(auth.HashSHA1(u1.Name))
+	u, err := testDb.GetUser(auth.SHA1(u1.Name))
 	if err != nil {
 		t.Error(err)
 	}
@@ -182,5 +182,5 @@ func TestDB_ChangePassword(t *testing.T) {
 		t.Error("password should have changed to the new hash")
 	}
 
-	testDb.DeleteUser(auth.HashSHA1(u1.Name))
+	testDb.DeleteUser(auth.SHA1(u1.Name))
 }

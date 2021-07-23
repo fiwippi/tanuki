@@ -13,10 +13,10 @@ import (
 // A Time To Live (TTL) is specified, this is the duration the client
 // should hold onto the cookie.
 type Session struct {
-	cache      libcache.Cache
-	secret     SecureKey
-	cookieName string
-	ttl        time.Duration
+	cache      libcache.Cache // Locally store the data
+	secret     SecureKey      // Used to hash the uid in the cookie
+	cookieName string         // What name should the cookie have
+	ttl        time.Duration  // Time to live of the cookie and the key in the cache
 }
 
 func NewSession(ttl time.Duration, cookie string, secret SecureKey) *Session {
@@ -42,7 +42,7 @@ func (s *Session) getDecryptedID(c *gin.Context) (string, error) {
 	}
 
 	// Cookie found, decrypt it to get the key
-	return Decrypt(encryptedID, s.secret), nil
+	return s.secret.Decrypt(encryptedID), nil
 }
 
 func (s *Session) getValue(c *gin.Context) (string, error) {
@@ -72,7 +72,7 @@ func (s *Session) Store(value string, c *gin.Context) {
 	s.cache.Store(key, value)
 
 	// Store encrypted version in the cookie store
-	encryptedID := Encrypt(key, s.secret)
+	encryptedID := s.secret.Encrypt(key)
 	c.SetCookie(s.cookieName, encryptedID, s.TTL(), "/", "", false, true)
 }
 
@@ -96,7 +96,7 @@ func (s *Session) Refresh(c *gin.Context) error {
 	if err != nil {
 		return err
 	}
-	decryptedID := Decrypt(encryptedID, s.secret)
+	decryptedID := s.secret.Decrypt(encryptedID)
 	value, found := s.cache.Load(decryptedID)
 	if !found {
 		return ErrInvalidCookie
@@ -122,4 +122,3 @@ func (s *Session) Delete(c *gin.Context) {
 func (s *Session) Get(c *gin.Context) (string, error) {
 	return s.getValue(c)
 }
-

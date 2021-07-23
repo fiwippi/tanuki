@@ -8,9 +8,9 @@ import "github.com/fiwippi/tanuki/pkg/core"
 // GET /api/admin/db
 
 type AdminUserPatchRequest struct {
-	NewUsername     string        `json:"new_username"`
-	NewPassword     string        `json:"new_password"`
-	NewType         core.UserType `json:"new_type"`
+	NewUsername string        `json:"new_username"`
+	NewPassword string        `json:"new_password"`
+	NewType     core.UserType `json:"new_type"`
 }
 
 // AdminUserReply for /api/admin/user
@@ -47,7 +47,6 @@ type AdminLibraryReply struct {
 
 // AdminLibraryMissingEntriesReply for /api/admin/library/missing-entries
 type AdminLibraryMissingEntriesReply struct {
-	Success bool           `json:"success"`
-	Entries MissingEntries `json:"entries"`
+	Success bool         `json:"success"`
+	Entries MissingItems `json:"entries"`
 }
-

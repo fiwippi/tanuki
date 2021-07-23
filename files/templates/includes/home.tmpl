@@ -7,6 +7,7 @@
             search: "",
             entries: [],
             images: [],
+            progress: [],
 
             get filteredEntries() {
                 return this.entries.filter(
@@ -15,6 +16,7 @@
             },
 
             async init() {
+                await this.getProgress()
                 await this.refreshLibrary()
             },
 
@@ -35,22 +37,38 @@
                         this.images.push(img)
                     }
                     await Promise.all(promises).catch(function(err) {
-                        console.log(err.message);
+                        console.error(err.message);
                     })
+
                     this.entries = resp.entries
                 }
             },
 
-            async getProgress(series) {
-                let resp = await apiUserProgress(series, "")
+            async getProgress() {
+                let resp = await apiCatalogProgress()
 
-                if (resp === undefined) {
-                    return "Progress: N/A"
-                } else if (!resp.success) {
-                    return  "Progress: N/A"
+                if (resp === undefined || !resp.success) {
+                    this.progress = []
                 } else {
-                    return "Progress: " + stringPercent(resp.progress_percent)
+                    this.progress = resp.progress
+                    console.log(this.progress)
                 }
+            },
+
+            calcSeriesProgress(seriesProgress) {
+                if (seriesProgress === undefined) {
+                    return "Progress: " + stringPercent(0)
+                }
+
+                let current = 0
+                let total = 0
+                for (let i in seriesProgress.tracker) {
+                    let p = seriesProgress.tracker[i]
+                    current += p.current
+                    total += p.total
+                }
+
+                return "Progress: " + stringPercent(current / total)
             },
         }))
     })
@@ -73,14 +91,14 @@
     </template>
 
     <div class="entriesDiv">
-        <template x-for="(e, index) in filteredEntries">
+        <template x-for="e in filteredEntries">
             <a style="border-bottom: none;" :href="'/entries/{0}'.format(e.hash)">
-                <div class="entry" :style="`flex: 0 1 max(150px, ${images[index].naturalWidth}px)`">
-                    <img :src="images[index].src" style="width: 100%; max-height: 300px">
+                <div class="entry" :style="`flex: 0 1 max(150px, ${images[e.order - 1].naturalWidth}px)`">
+                    <img :src="images[e.order - 1].src" style="width: 100%; max-height: 300px">
                     <div style="padding: 9px 16px;" >
                         <h4 style="margin-block: 0.2em" x-text="e.title"></h4>
                         <span x-text="'Entries: {0}'.format(e.entries)"></span><br>
-                        <span x-text="await getProgress(e.hash)"></span>
+                        <span x-text="calcSeriesProgress(progress[e.hash])"></span>
                     </div>
                 </div>
             </a>

@@ -13,8 +13,8 @@ import (
 	database "github.com/fiwippi/tanuki/pkg/db"
 )
 
-var conf *config // Current config which tanuki is using
-var db *database.DB // The user/manga database
+var conf *config             // Current config which tanuki is using
+var db *database.DB          // The user/manga database
 var static, templates string // Filepaths to the static dir and templates dir
 
 func init() {
@@ -65,22 +65,22 @@ func Server(efs fs.FS) *http.Server {
 	if err != nil {
 		log.Error().Err(err).Msg("failed to scan library on startup")
 	} else {
-		log.Info().Str("scan time", time.Now().Sub(scanStart).String()).Msg("finished scan")
+		log.Info().Str("scan_time", time.Now().Sub(scanStart).String()).Msg("finished scan")
 	}
 	thumbnailStart := time.Now()
 	err = db.GenerateThumbnails(true)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to generate thumbnails startup")
 	} else {
-		log.Info().Str("thumbnail time", time.Now().Sub(thumbnailStart).String()).Msg("finished thumbnail generation")
+		log.Info().Str("task_time", time.Now().Sub(thumbnailStart).String()).Msg("finished thumbnail generation")
 	}
 
 	// Setup cron jobs
 	conf.ScanIntervalMinutes.RunTask(ScanLibrary, "scan library")
-	NewInterval(10).RunTask(func() error {return db.GenerateThumbnails(true)}, "generate thumbnails")
+	NewInterval(10).RunTask(func() error { return db.GenerateThumbnails(true) }, "generate thumbnails")
 
 	if !db.HasUsers() {
-		pass := auth.GenerateSecureKey(32).Base64String()
+		pass := auth.NewSecureKey(32).Base64()
 		err := db.CreateUser(core.NewUser("default", pass, core.AdminUser))
 		if err != nil {
 			log.Fatal().Err(err).Msg("failed to create default user")

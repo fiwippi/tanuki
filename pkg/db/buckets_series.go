@@ -1,9 +1,8 @@
 package db
 
 import (
-	"time"
-
 	bolt "go.etcd.io/bbolt"
+	"time"
 
 	"github.com/fiwippi/tanuki/internal/sets"
 	"github.com/fiwippi/tanuki/pkg/api"
@@ -11,53 +10,55 @@ import (
 	"github.com/fiwippi/tanuki/pkg/core"
 )
 
-var (
-	keySeriesData      = []byte("data") // Holds state like the series order, is served to the user so they can request specific data
-	keySeriesTags      = []byte("tags")
-	keySeriesTitle     = []byte("title")
-	keySeriesEntries   = []byte("entries")
-	keySeriesMetadata  = []byte("metadata")
-	keySeriesCover     = []byte("cover")
-	keySeriesThumbnail = []byte("thumbnail")
-)
-
 type SeriesBucket struct {
 	*bolt.Bucket
 }
 
-func (b *SeriesBucket) AddEntry(e *core.Manga) error {
-	entriesBucket := b.Bucket.Bucket(keySeriesEntries)
+// Entry edit
+
+func (b *SeriesBucket) getEntry(eid []byte) *EntryBucket {
+	// The catalog bucket should be used to access entries,
+	// this is a private helper function
+	bucket := b.Bucket.Bucket(keyEntriesData).Bucket(eid)
+	if bucket == nil {
+		return nil
+	}
+	return &EntryBucket{bucket}
+}
+
+func (b *SeriesBucket) AddEntry(e *core.ParsedEntry, order int) error {
+	entriesBucket := b.Bucket.Bucket(keyEntriesData)
 
 	// Creating bucket for the new manga entry
-	mangaHash := auth.HashSHA1(e.Title)
-	emptyMangaBucket, err := entriesBucket.CreateBucketIfNotExists([]byte(mangaHash))
+	eid := auth.SHA1(e.Archive.Title)
+	tempBucket, err := entriesBucket.CreateBucketIfNotExists([]byte(eid))
 	if err != nil {
 		return err
 	}
-	mangaBucket := &MangaBucket{emptyMangaBucket}
+	entryBucket := &EntryBucket{tempBucket}
 
 	// Set basic manga data
-	if err := mangaBucket.SetArchive(e.Archive); err != nil {
-		return err
-	} else if err := mangaBucket.SetMetadata(e.Metadata); err != nil {
-		return err
-	} else if err := mangaBucket.SetTitle(e.Title); err != nil {
+	if err := entryBucket.SetArchive(e.Archive); err != nil {
 		return err
 	}
 	// If cover is nil then set it to a default
-	cover := mangaBucket.Cover()
+	cover := entryBucket.Cover()
 	if cover == nil {
-		if err := mangaBucket.SetCover(&core.Cover{}); err != nil {
+		if err := entryBucket.SetCover(&core.Cover{}); err != nil {
 			return err
 		}
 	}
+	// Set the order of the entry
+	if err := entryBucket.SetOrder(order); err != nil {
+		return err
+	}
 
 	// Set the pages
-	emptyPagesBucket, err := mangaBucket.CreateBucketIfNotExists(keyMangaPages)
+	tempBucket, err = entryBucket.CreateBucketIfNotExists(keyPages)
 	if err != nil {
 		return err
 	}
-	pagesBucket := &PagesBucket{emptyPagesBucket}
+	pagesBucket := &PagesBucket{tempBucket}
 
 	for i, p := range e.Pages {
 		// Page indexing should start at 1
@@ -67,124 +68,186 @@ func (b *SeriesBucket) AddEntry(e *core.Manga) error {
 		}
 	}
 
-	// Set the file info
 	return nil
 }
 
-func (b *SeriesBucket) GetEntry(entryHashBytes []byte) *MangaBucket {
-	bucket := b.Bucket.Bucket(keySeriesEntries).Bucket(entryHashBytes)
-	if bucket == nil {
-		return nil
-	}
-	return &MangaBucket{bucket}
-}
-
-func (b *SeriesBucket) DeleteEntry(entryHashBytes []byte) error {
-	return b.Bucket.Bucket(keySeriesEntries).DeleteBucket(entryHashBytes)
-}
-
-func (b *SeriesBucket) Title() string {
-	return core.UnmarshalString(b.Bucket.Get(keySeriesTitle))
-}
-
-func (b *SeriesBucket) Tags() *sets.Set {
-	return core.UnmarshalSet(b.Bucket.Get(keySeriesTags))
-}
-
-func (b *SeriesBucket) Data() api.SeriesEntries {
-	return api.UnmarshalSeriesEntries(b.Bucket.Get(keySeriesData))
-}
-
-func (b *SeriesBucket) Metadata() *core.SeriesMetadata {
-	m := core.UnmarshalSeriesMetadata(b.Bucket.Get(keySeriesMetadata))
-	if m != nil && m.DateReleased == nil {
-		m.DateReleased = core.NewDate(time.Time{})
+func (b *SeriesBucket) DeleteEntry(eid string) error {
+	eb := b.getEntry([]byte(eid))
+	if eb == nil {
+		return ErrEntryNotExist
 	}
 
-	return m
-}
+	// Get index of the entry data in the metadata
+	i := eb.Order() - 1
 
-func (b *SeriesBucket) Cover() *core.Cover {
-	c := b.Get(keySeriesCover)
-	if c == nil {
-		return nil
+	// Delete it from the metadata
+	m := b.EntriesMetadata()
+	if m == nil {
+		return ErrEntriesMetadataNotExist
 	}
-	return core.UnmarshalCover(c)
-}
-
-//func (b *SeriesBucket) ArchiveCoverBytes() ([]byte, error) {
-//	cover := b.Cover()
-//	if cover == nil {
-//		return nil, nil
-//	}
-//	if cover.Fp == "" {
-//		return nil, nil
-//	}
-//	data, err := cover.FromFS()
-//	if err != nil {
-//		return nil, err
-//	}
-//	return data, nil
-//}
-
-func (b *SeriesBucket) HasThumbnail() bool {
-	return len(b.Thumbnail()) > 0
-}
-
-func (b *SeriesBucket) Thumbnail() []byte {
-	return b.Get(keySeriesThumbnail)
-}
-
-func (b *SeriesBucket) ApiSeries() *api.Series {
-	m := b.Metadata()
-
-	return &api.Series{
-		Hash:         auth.HashSHA1(b.Title()),
-		Title:        m.Title,
-		Entries:      len(b.Data()),
-		Tags:         b.Tags().List(),
-		Author:       m.Author,
-		DateReleased: m.DateReleased,
-	}
-}
-
-func (b *SeriesBucket) SetTitle(t string) error {
-	return b.Bucket.Put(keySeriesTitle, core.MarshalJSON(t))
-}
-
-func (b *SeriesBucket) SetTags(t *sets.Set) error {
-	return b.Bucket.Put(keySeriesTags, core.MarshalJSON(t))
-}
-
-func (b *SeriesBucket) SetData(d api.SeriesEntries) error {
-	return b.Bucket.Put(keySeriesData, core.MarshalJSON(d))
-}
-
-func (b *SeriesBucket) SetMetadata(d *core.SeriesMetadata) error {
-	// Ensure the date is not nil
-	if d != nil && d.DateReleased == nil {
-		d.DateReleased = core.NewDate(time.Time{})
+	m[i] = nil
+	err := b.SetEntriesMetadata(m)
+	if err != nil {
+		return err
 	}
 
-	return b.Bucket.Put(keySeriesMetadata, core.MarshalJSON(d))
+	// Delete the entry bucket
+	err = b.Bucket.Bucket(keyEntriesData).DeleteBucket([]byte(eid))
+	if err != nil {
+		return err
+	}
+
+	// Regenerate the metadata
+	return b.regenerateEntriesMetadata()
 }
 
-func (b *SeriesBucket) SetCover(c *core.Cover) error {
-	return b.Put(keySeriesCover, core.MarshalJSON(c))
-}
-
-func (b *SeriesBucket) SetThumbnail(thumb []byte) error {
-	return b.Put(keySeriesThumbnail, thumb)
-}
-
-func (b *SeriesBucket) ForEachEntry(f func(hash string, b *MangaBucket) error) error {
-	return b.Bucket.Bucket(keySeriesEntries).ForEach(func(k, v []byte) error {
+func (b *SeriesBucket) ForEachEntry(f func(hash string, b *EntryBucket) error) error {
+	return b.Bucket.Bucket(keyEntriesData).ForEach(func(k, v []byte) error {
 		if v == nil {
-			err := f(string(k), b.GetEntry(k))
+			err := f(string(k), b.getEntry(k))
 			if err != nil {
 				return err
 			}
 		}
 		return nil
 	})
+}
+
+func (b *SeriesBucket) regenerateEntriesMetadata() error {
+	oldM := b.EntriesMetadata()
+	newM := make(api.Entries, 0, len(oldM))
+
+	o := 1
+	for _, e := range oldM {
+		if e != nil {
+			eb := b.getEntry([]byte(e.Hash))
+			if eb == nil {
+				return ErrEntryNotExist
+			}
+
+			err := eb.SetOrder(o)
+			if err != nil {
+				return err
+			}
+
+			e.Order = o
+			newM = append(newM, e)
+			o++
+		}
+	}
+
+	return b.SetEntriesMetadata(newM)
+}
+
+// Title
+
+func (b *SeriesBucket) SetTitle(t string) error {
+	return b.Bucket.Put(keyTitle, core.MarshalJSON(t))
+}
+
+func (b *SeriesBucket) Title() string {
+	return core.UnmarshalString(b.Bucket.Get(keyTitle))
+}
+
+// Tags
+
+func (b *SeriesBucket) SetTags(t *sets.Set) error {
+	return b.Bucket.Put(keyTags, core.MarshalJSON(t))
+}
+
+func (b *SeriesBucket) Tags() *sets.Set {
+	return core.UnmarshalSet(b.Bucket.Get(keyTags))
+}
+
+// Cover
+
+func (b *SeriesBucket) Cover() *core.Cover {
+	c := b.Get(keyCover)
+	if c == nil {
+		return nil
+	}
+	return core.UnmarshalCover(c)
+}
+
+func (b *SeriesBucket) SetCover(c *core.Cover) error {
+	return b.Put(keyCover, core.MarshalJSON(c))
+}
+
+// Thumbnail
+
+func (b *SeriesBucket) Thumbnail() []byte {
+	return b.Get(keyThumbnail)
+}
+
+func (b *SeriesBucket) HasThumbnail() bool {
+	return len(b.Thumbnail()) > 0
+}
+
+func (b *SeriesBucket) SetThumbnail(thumb []byte) error {
+	return b.Put(keyThumbnail, thumb)
+}
+
+// Entries Metadata
+
+func (b *SeriesBucket) EntryMetadata(eid string) (*api.Entry, error) {
+	eb := b.getEntry([]byte(eid))
+	if eb == nil {
+		return nil, ErrEntryNotExist
+	}
+	i := eb.Order() - 1
+
+	m := b.EntriesMetadata()
+	if i >= len(m) {
+		return nil, ErrEntryMetadataNotExist
+	}
+
+	return m[i], nil
+}
+
+func (b *SeriesBucket) SetEntryMetadata(eid string, m *api.Entry) error {
+	eb := b.getEntry([]byte(eid))
+	if eb == nil {
+		return ErrEntryNotExist
+	}
+	i := eb.Order() - 1
+
+	em := b.EntriesMetadata()
+	if i >= len(em) {
+		return ErrEntryMetadataNotExist
+	}
+	em[i] = m
+
+	return b.SetEntriesMetadata(em)
+}
+
+func (b *SeriesBucket) EntriesMetadata() api.Entries {
+	em := b.Bucket.Get(keyEntriesMetadata)
+	if em == nil {
+		return nil
+	}
+	return api.UnmarshalEntries(em)
+}
+
+func (b *SeriesBucket) SetEntriesMetadata(d api.Entries) error {
+	return b.Bucket.Put(keyEntriesMetadata, core.MarshalJSON(d))
+}
+
+// Order
+
+func (b *SeriesBucket) SetOrder(o int) error {
+	return b.Put(keyOrder, core.MarshalJSON(o))
+}
+
+func (b *SeriesBucket) Order() int {
+	return core.UnmarshalOrder(b.Get(keyOrder))
+}
+
+// ModTime
+
+func (b *SeriesBucket) SetModTime(t time.Time) error {
+	return b.Put(keyModTime, core.MarshalJSON(t))
+}
+
+func (b *SeriesBucket) ModTime() time.Time {
+	return core.UnmarshalTime(b.Get(keyModTime))
 }

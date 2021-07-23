@@ -30,7 +30,7 @@ func dumpCursor(tx *bolt.Tx, c *bolt.Cursor, indent int, s *string) {
 			}
 			newCursor := newBucket.Cursor()
 			dumpCursor(tx, newCursor, indent+1, s)
-		} else if string(k) == string(keyMangaThumbnail) {
+		} else if string(k) == string(keyThumbnail) {
 			*s += fmt.Sprintf(strings.Repeat("\t", indent)+"%s\n", k)
 			*s += fmt.Sprintf(strings.Repeat("\t", indent+1)+"%s\n", "*EXISTS*")
 		} else {

@@ -17,7 +17,7 @@ type config struct {
 	Logging                logConfig       `yaml:"logging"`
 	Paths                  paths           `yaml:"paths"`
 	SessionSecret          *auth.SecureKey `yaml:"session_secret"`
-	ScanIntervalMinutes    *ScanInterval   `yaml:"scan_interval_minutes"`
+	ScanIntervalMinutes    *Interval       `yaml:"scan_interval_minutes"`
 	MaxUploadedFileSizeMiB int             `yaml:"max_uploaded_file_size_mib"`
 	DebugMode              bool            `yaml:"debug_mode"`
 }
@@ -29,10 +29,10 @@ func defaultConfig() *config {
 		Port:                   "8096",
 		Logging:                defaultLogConfig(),
 		Paths:                  defaultPaths(),
-		SessionSecret:          auth.GenerateSecureKey(32),
+		SessionSecret:          auth.NewSecureKey(32),
 		ScanIntervalMinutes:    NewInterval(5),
 		MaxUploadedFileSizeMiB: 10,
-		DebugMode: false,
+		DebugMode:              false,
 	}
 }
 

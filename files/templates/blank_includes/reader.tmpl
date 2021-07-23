@@ -98,7 +98,7 @@
 
     document.addEventListener('alpine:init', () => {
         Alpine.data('reader', () => ({
-            // General Data
+            // General EntriesMetadata
             sid: "",
             eid: "",
             entry: { pages: 0 },
@@ -109,12 +109,12 @@
             // Reader Settings
             mode: localStorage.getItem('mode') || 'continuous', // 'continuous', 'paged-rl', 'paged-lr'
 
-            // Progress Data
+            // Progress EntriesMetadata
             currentPage: 1,
             lastSavedPage: 1,
             acceptUpdates: false,
 
-            // Modal Data
+            // Modal EntriesMetadata
             showModal: false,
             selectedPage: 1,
             selectedMode: "mode",
