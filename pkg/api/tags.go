@@ -1,8 +1,5 @@
 package api
 
-// GET /api/tags
-// GET /api/tag/:id/series
-
 // TagsReply for the route /api/tags
 type TagsReply struct {
 	Success bool     `json:"success"`

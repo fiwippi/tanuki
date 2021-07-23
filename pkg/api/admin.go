@@ -2,11 +2,7 @@ package api
 
 import "github.com/fiwippi/tanuki/pkg/core"
 
-// Admin routes
-// GET, PATCH, DELETE /api/admin/user/:id
-// GET, PUT /api/admin/users
-// GET /api/admin/db
-
+// AdminUserPatchRequest for /api/admin/user
 type AdminUserPatchRequest struct {
 	NewUsername string        `json:"new_username"`
 	NewPassword string        `json:"new_password"`
@@ -20,6 +16,7 @@ type AdminUserReply struct {
 	User    core.User `json:"user,omitempty"`
 }
 
+// AdminUsersPutRequest for /api/admin/users
 type AdminUsersPutRequest struct {
 	Username string        `json:"username"`
 	Password string        `json:"password"`
@@ -45,7 +42,7 @@ type AdminLibraryReply struct {
 	Message string `json:"message,omitempty"`
 }
 
-// AdminLibraryMissingEntriesReply for /api/admin/library/missing-entries
+// AdminLibraryMissingEntriesReply for /api/admin/library/missing-items
 type AdminLibraryMissingEntriesReply struct {
 	Success bool         `json:"success"`
 	Entries MissingItems `json:"entries"`

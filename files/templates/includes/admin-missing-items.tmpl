@@ -15,7 +15,7 @@
             async refreshEntries() {
                 let resp = await apiAdminLibraryMissingEntries()
                 if (resp === undefined || !resp.success) {
-                    this.modalText = 'FAILED TO GET ENTRIES'
+                    this.modalText = 'FAILED TO GET ITEMS'
                     this.showModal = true
                 } else {
                     this.entries = resp.entries
@@ -25,7 +25,7 @@
             async deleteEntries() {
                 let resp = await apiDeleteAdminLibraryMissingEntries()
                 if (!resp.success) {
-                    this.modalText = 'FAILED TO DELETE ENTRIES'
+                    this.modalText = 'FAILED TO DELETE ITEMS'
                 } else {
                     this.modalText = 'DELETED ENTRIES'
                 }
@@ -54,7 +54,7 @@
         </template>
 
         <template x-if="entries.length === 0">
-            <h2>No Missing Entries!</h2>
+            <h2>No Missing Items!</h2>
         </template>
 
         <!-- Type -->
@@ -74,7 +74,7 @@
     </div>
 
     <template x-if="entries.length > 0">
-        <a style="border-bottom: none;" href="javascript:void(0)"><button style="margin-top: 1.5em" @click="await deleteEntries()">Delete Missing Entries</button></a>
+        <a style="border-bottom: none;" href="javascript:void(0)"><button style="margin-top: 1.5em" @click="await deleteEntries()">Delete Missing Items</button></a>
     </template>
 
     <div x-cloak>

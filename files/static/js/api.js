@@ -477,9 +477,9 @@ async function apiAdminLibraryGenerateThumbnails() {
         })
 }
 
-// GET /api/admin/library/missing-entries
+// GET /api/admin/library/missing-items
 async function apiAdminLibraryMissingEntries() {
-    return await fetch('/api/admin/library/missing-entries', {
+    return await fetch('/api/admin/library/missing-items', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
@@ -495,9 +495,9 @@ async function apiAdminLibraryMissingEntries() {
         })
 }
 
-// DELETE /api/admin/library/missing-entries
+// DELETE /api/admin/library/missing-items
 async function apiDeleteAdminLibraryMissingEntries() {
-    return await fetch('/api/admin/library/missing-entries', {
+    return await fetch('/api/admin/library/missing-items', {
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json',

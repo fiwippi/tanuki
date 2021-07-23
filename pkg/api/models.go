@@ -1,6 +1,9 @@
 package api
 
-import "github.com/fiwippi/tanuki/pkg/core"
+import (
+	"encoding/json"
+	"github.com/fiwippi/tanuki/pkg/core"
+)
 
 type Entry struct {
 	Order        int        `json:"order"`
@@ -48,4 +51,22 @@ type EditableSeriesMetadata struct {
 	Title        string     `json:"title"`
 	Author       string     `json:"author"`
 	DateReleased *core.Date `json:"date_released"`
+}
+
+func UnmarshalEntries(data []byte) Entries {
+	var s Entries
+	err := json.Unmarshal(data, &s)
+	if err != nil {
+		panic(err)
+	}
+	return s
+}
+
+func UnmarshalCatalog(data []byte) Catalog {
+	var s Catalog
+	err := json.Unmarshal(data, &s)
+	if err != nil {
+		panic(err)
+	}
+	return s
 }

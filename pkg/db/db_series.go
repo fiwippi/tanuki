@@ -421,7 +421,7 @@ func (db *DB) GetSeriesCoverFile(sid string) ([]byte, string, error) {
 		// error only returned if the file exists and it could be loaded,
 		// in cases where the cover exists but no file exists on the filesystem,
 		// then this should be flagged as missing entry, on consecutive
-		// delete-missing-entries, the cover's fp should be deleted if it's file does
+		// delete-missing-items, the cover's fp should be deleted if it's file does
 		// not exist
 
 		// 1

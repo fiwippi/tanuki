@@ -9,9 +9,9 @@ func adminDashboard(c *gin.Context) {
 	c.HTML(200, "admin.tmpl", nil)
 }
 
-// GET /admin/missing-entries
+// GET /admin/missing-items
 func adminMissingEntries(c *gin.Context) {
-	c.HTML(200, "admin-missing-entries.tmpl", nil)
+	c.HTML(200, "admin-missing-items.tmpl", nil)
 }
 
 // GET /admin/users

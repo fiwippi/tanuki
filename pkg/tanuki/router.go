@@ -65,7 +65,7 @@ func setupFrontendRoutes(r *gin.Engine, authorised *gin.RouterGroup) {
 	admin.GET("/users", adminUsers)
 	admin.GET("/users/edit", adminUsersEdit)
 	admin.GET("/users/create", adminUsersCreate)
-	admin.GET("/missing-entries", adminMissingEntries)
+	admin.GET("/missing-items", adminMissingEntries)
 }
 
 func setupAPIRoutes(r *gin.Engine, authorised *gin.RouterGroup) {
@@ -108,8 +108,8 @@ func setupAPIRoutes(r *gin.Engine, authorised *gin.RouterGroup) {
 	apiAdmin.Use(adminMiddleware())
 	apiAdmin.GET("/library/scan", apiGetAdminLibraryScan)
 	apiAdmin.GET("/library/generate-thumbnails", apiGetAdminLibraryGenerateThumbnails)
-	apiAdmin.GET("/library/missing-entries", apiGetAdminLibraryMissingEntries)
-	apiAdmin.DELETE("/library/missing-entries", apiDeleteAdminLibraryMissingEntries)
+	apiAdmin.GET("/library/missing-items", apiGetAdminLibraryMissingEntries)
+	apiAdmin.DELETE("/library/missing-items", apiDeleteAdminLibraryMissingEntries)
 	apiAdmin.GET("/db", apiGetAdminDB)
 	apiAdmin.GET("/users", apiGetAdminUsers)
 	apiAdmin.PUT("/users", apiPutAdminUsers)

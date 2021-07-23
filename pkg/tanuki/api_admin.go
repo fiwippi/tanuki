@@ -168,12 +168,12 @@ func apiGetAdminLibraryGenerateThumbnails(c *gin.Context) {
 	}
 }
 
-// GET /api/admin/library/missing-entries
+// GET /api/admin/library/missing-items
 func apiGetAdminLibraryMissingEntries(c *gin.Context) {
 	c.JSON(200, api.AdminLibraryMissingEntriesReply{Success: true, Entries: db.GetMissingItems()})
 }
 
-// DELETE /api/admin/library/missing-entries
+// DELETE /api/admin/library/missing-items
 func apiDeleteAdminLibraryMissingEntries(c *gin.Context) {
 	err := db.DeleteMissingItems()
 	if err != nil {

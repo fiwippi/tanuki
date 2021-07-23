@@ -1,37 +1,8 @@
 package api
 
 import (
-	"encoding/json"
 	"github.com/fiwippi/tanuki/pkg/core"
 )
-
-// GET /api/series
-// GET /api/series/:sid/
-// GET, PATCH /api/series/:sid/tags
-// GET /api/series/:sid/cover?thumbnail=true
-// GET /api/series/:sid/entries
-// GET /api/series/:sid/entries/eid
-// GET /api/series/:sid/entries/:eid/cover?thumbnail=true
-// GET /api/series/:sid/entries/:eid/page/:num
-// GET /api/series/:sid/entries/:eid/archive
-
-func UnmarshalEntries(data []byte) Entries {
-	var s Entries
-	err := json.Unmarshal(data, &s)
-	if err != nil {
-		panic(err)
-	}
-	return s
-}
-
-func UnmarshalCatalog(data []byte) Catalog {
-	var s Catalog
-	err := json.Unmarshal(data, &s)
-	if err != nil {
-		panic(err)
-	}
-	return s
-}
 
 // CatalogReply for /api/series
 type CatalogReply struct {
