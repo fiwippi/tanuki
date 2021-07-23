@@ -53,6 +53,24 @@ type EditableSeriesMetadata struct {
 	DateReleased *core.Date `json:"date_released"`
 }
 
+func UnmarshalEditableEntryMetadata(data []byte) *EditableEntryMetadata {
+	var s EditableEntryMetadata
+	err := json.Unmarshal(data, &s)
+	if err != nil {
+		panic(err)
+	}
+	return &s
+}
+
+func UnmarshalEditableSeriesMetadata(data []byte) *EditableSeriesMetadata {
+	var s EditableSeriesMetadata
+	err := json.Unmarshal(data, &s)
+	if err != nil {
+		panic(err)
+	}
+	return &s
+}
+
 func UnmarshalEntries(data []byte) Entries {
 	var s Entries
 	err := json.Unmarshal(data, &s)

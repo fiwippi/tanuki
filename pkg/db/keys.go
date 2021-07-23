@@ -10,6 +10,7 @@ var (
 	keyArchive         = []byte("archive")
 	keyCatalog         = []byte("catalog")
 	keyModTime         = []byte("modtime")
+	keyMetadata        = []byte("metadata")
 	keyThumbnail       = []byte("thumbnail")
 	keyEntriesData     = []byte("entries-data")
 	keyEntriesMetadata = []byte("entries-metadata")

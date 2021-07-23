@@ -188,7 +188,9 @@
                 } else {
                     let images = []
                     let promises = []
-                    resp.entries.sort(entryCompare) // Sort before we bind images to indexes
+                    resp.entries.sort(function (a, b) {
+                        return a.order - b.order
+                    }) // Sort before we bind images to indexes
 
                     for (let i = 0; i < resp.entries.length; i++) {
                         let img = new Image()

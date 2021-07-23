@@ -1,4 +1,4 @@
-package pretty
+package tanuki
 
 import (
 	"fmt"

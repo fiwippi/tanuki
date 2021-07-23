@@ -1,6 +1,7 @@
 package db
 
 import (
+	"github.com/fiwippi/tanuki/pkg/api"
 	bolt "go.etcd.io/bbolt"
 
 	"github.com/fiwippi/tanuki/pkg/core"
@@ -52,4 +53,18 @@ func (b *EntryBucket) SetOrder(o int) error {
 
 func (b *EntryBucket) Order() int {
 	return core.UnmarshalOrder(b.Get(keyOrder))
+}
+
+// Personal Metadata
+
+func (b *EntryBucket) Metadata() *api.EditableEntryMetadata {
+	m := b.Bucket.Get(keyMetadata)
+	if m == nil {
+		return nil
+	}
+	return api.UnmarshalEditableEntryMetadata(m)
+}
+
+func (b *EntryBucket) SetMetadata(d *api.EditableEntryMetadata) error {
+	return b.Bucket.Put(keyMetadata, core.MarshalJSON(d))
 }

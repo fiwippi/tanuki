@@ -187,6 +187,20 @@ func (b *SeriesBucket) SetThumbnail(thumb []byte) error {
 	return b.Put(keyThumbnail, thumb)
 }
 
+// Personal Metadata
+
+func (b *SeriesBucket) Metadata() *api.EditableSeriesMetadata {
+	m := b.Bucket.Get(keyMetadata)
+	if m == nil {
+		return nil
+	}
+	return api.UnmarshalEditableSeriesMetadata(m)
+}
+
+func (b *SeriesBucket) SetMetadata(d *api.EditableSeriesMetadata) error {
+	return b.Bucket.Put(keyMetadata, core.MarshalJSON(d))
+}
+
 // Entries Metadata
 
 func (b *SeriesBucket) EntryMetadata(eid string) (*api.Entry, error) {

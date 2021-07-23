@@ -33,10 +33,10 @@ func apiGetSeries(c *gin.Context) {
 
 // PATCH /api/series/:sid
 func apiPatchSeries(c *gin.Context) {
-	id := c.Param("sid")
+	sid := c.Param("sid")
 
 	// Series must exist and the data must be able to be unmarshalled
-	if _, err := db.GetSeries(id); err != nil {
+	if _, err := db.GetSeries(sid); err != nil {
 		c.AbortWithStatusJSON(404, api.SeriesReply{Success: false})
 		return
 	}
@@ -50,7 +50,7 @@ func apiPatchSeries(c *gin.Context) {
 		return
 	}
 
-	err := db.SetSeriesMetadata(id, &metadata)
+	err := db.SetSeriesMetadata(sid, &metadata)
 	if err != nil {
 		c.AbortWithStatusJSON(500, api.SeriesReply{Success: false})
 		return

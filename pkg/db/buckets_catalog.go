@@ -89,7 +89,6 @@ func (b *CatalogBucket) AddSeries(s *core.ParsedSeries) error {
 		return err
 	}
 	//
-	oldSeriesData := seriesBucket.EntriesMetadata()
 	seriesData := make(api.Entries, len(s.Entries))
 	seriesModTime := s.Entries[0].Archive.ModTime
 	for i, m := range s.Entries {
@@ -109,14 +108,10 @@ func (b *CatalogBucket) AddSeries(s *core.ParsedSeries) error {
 		if err != nil {
 			return err
 		}
-		eb, err := b.Entry(sid, eid)
-		if err != nil {
-			return err
-		}
 
 		e := &api.Entry{
 			Order:        m.Order,
-			Hash:         auth.SHA1(m.Archive.Title),
+			Hash:         eid,
 			Title:        m.Archive.Title,
 			Pages:        len(m.Pages),
 			Path:         m.Archive.Path,
@@ -126,26 +121,40 @@ func (b *CatalogBucket) AddSeries(s *core.ParsedSeries) error {
 			DateReleased: m.Metadata.DateReleased,
 		}
 
-		o := eb.Order()
-		if oldSeriesData != nil && o != -1 {
-			oldData := oldSeriesData[o-1]
-			if oldData.Title != core.TitleZeroValue {
-				e.Title = oldData.Title
+		eb, err := b.Entry(sid, eid)
+		if err != nil {
+			return err
+		}
+		metadata := eb.Metadata()
+		if metadata != nil {
+			if metadata.Title != core.TitleZeroValue {
+				e.Title = metadata.Title
 			}
-			if oldData.Author != core.AuthorZeroValue {
-				e.Author = oldData.Author
+			if metadata.Author != core.AuthorZeroValue {
+				e.Author = metadata.Author
 			}
-			if oldData.DateReleased != nil && oldData.DateReleased.Time != core.TimeZeroValue {
-				e.DateReleased = oldData.DateReleased
+			if metadata.DateReleased != nil && metadata.DateReleased.Time != core.TimeZeroValue {
+				e.DateReleased = metadata.DateReleased
 			}
-			if oldData.Chapter != core.ChapterZeroValue {
-				e.Chapter = oldData.Chapter
+			if metadata.Chapter != core.ChapterZeroValue {
+				e.Chapter = metadata.Chapter
 			}
-			if oldData.Volume != core.VolumeZeroValue {
-				e.Volume = oldData.Volume
+			if metadata.Volume != core.VolumeZeroValue {
+				e.Volume = metadata.Volume
 			}
 		}
 		seriesData[i] = e
+
+		err = eb.SetMetadata(&api.EditableEntryMetadata{
+			Title:        e.Title,
+			Author:       e.Author,
+			DateReleased: e.DateReleased,
+			Chapter:      e.Chapter,
+			Volume:       e.Volume,
+		})
+		if err != nil {
+			return err
+		}
 
 		if m.Archive.ModTime.Before(seriesModTime) {
 			seriesModTime = m.Archive.ModTime

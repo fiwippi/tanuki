@@ -14,6 +14,7 @@ func Filename(fp string) string {
 	return title
 }
 
+// FilenameWithExt returns a file's name with its extensions given its filepath
 func FilenameWithExt(fp string) string {
 	title := strings.TrimPrefix(fp, ".")
 	title = strings.TrimPrefix(title, filepath.Dir(title))
@@ -23,7 +24,7 @@ func FilenameWithExt(fp string) string {
 	return title
 }
 
-//
+// Exists returns whether a file exists on the filesystem
 func Exists(fp string) bool {
 	if _, err := os.Stat(fp); os.IsNotExist(err) {
 		return false

@@ -16,12 +16,13 @@ func EnsureFileDir(fp string) error {
 	return EnsureDir(filepath.Dir(fp))
 }
 
-//
+// DeleteFileDirIfEmpty deletes the parent directory for a
+// specified filepath if it's empty
 func DeleteFileDirIfEmpty(fp string) error {
 	return DeleteDirIfEmpty(filepath.Dir(fp))
 }
 
-//
+// DeleteDirIfEmpty deletes a directory if it's empty
 func DeleteDirIfEmpty(fp string) error {
 	files, err := os.ReadDir(fp)
 	if err != nil {

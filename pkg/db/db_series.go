@@ -26,8 +26,7 @@ func (db *DB) PopulateCatalog(series []*core.ParsedSeries) core.ErrorSlice {
 	mu := sync.Mutex{}
 	var cModTime time.Time
 
-	oldCatalog := db.GetCatalog()
-	newCatalog := make(api.Catalog, 0, len(oldCatalog))
+	newCatalog := make(api.Catalog, 0)
 	queue := make(chan *api.Series, 1)
 	errorQueue := make(chan error, 1)
 
@@ -46,7 +45,7 @@ func (db *DB) PopulateCatalog(series []*core.ParsedSeries) core.ErrorSlice {
 
 	for _, s := range series {
 		wg.Add(1)
-		go func(series *core.ParsedSeries, oldC api.Catalog) {
+		go func(series *core.ParsedSeries) {
 			err := db.Batch(func(tx *bolt.Tx) error {
 				// Add the series
 				root := db.catalogBucket(tx)
@@ -81,18 +80,26 @@ func (db *DB) PopulateCatalog(series []*core.ParsedSeries) core.ErrorSlice {
 				}
 
 				// We always choose to preserve old metadata if it's not zero value
-				o := sb.Order()
-				if len(oldCatalog) > 0 && sb.Order() != -1 {
-					oldData := oldC[o-1]
-					if oldData.Title != core.TitleZeroValue {
-						d.Title = oldData.Title
+				m := sb.Metadata()
+				if m != nil {
+					if m.Title != core.TitleZeroValue {
+						d.Title = m.Title
 					}
-					if oldData.Author != core.AuthorZeroValue {
-						d.Author = oldData.Author
+					if m.Author != core.AuthorZeroValue {
+						d.Author = m.Author
 					}
-					if oldData.DateReleased != nil && oldData.DateReleased.Time != core.TimeZeroValue {
-						d.DateReleased = oldData.DateReleased
+					if m.DateReleased != nil && m.DateReleased.Time != core.TimeZeroValue {
+						d.DateReleased = m.DateReleased
 					}
+				}
+
+				err = sb.SetMetadata(&api.EditableSeriesMetadata{
+					Title:        d.Title,
+					Author:       d.Author,
+					DateReleased: d.DateReleased,
+				})
+				if err != nil {
+					return err
 				}
 
 				queue <- d
@@ -101,7 +108,7 @@ func (db *DB) PopulateCatalog(series []*core.ParsedSeries) core.ErrorSlice {
 			if err != nil {
 				errorQueue <- err
 			}
-		}(s, oldCatalog)
+		}(s)
 	}
 
 	wg.Wait()
@@ -1007,16 +1014,25 @@ func (db *DB) SetSeriesMetadata(sid string, m *api.EditableSeriesMetadata) error
 	return db.Update(func(tx *bolt.Tx) error {
 		root := db.catalogBucket(tx)
 
+		// Set the metadata in the catalog entry
 		sm, err := root.SeriesMetadata(sid)
 		if err != nil {
 			return err
 		}
-
 		sm.Title = m.Title
 		sm.Author = m.Author
 		sm.DateReleased = m.DateReleased
+		err = root.SetSeriesMetadata(sid, sm)
+		if err != nil {
+			return err
+		}
 
-		return root.SetSeriesMetadata(sid, sm)
+		// Set the metadata in the series bucket
+		sb, err := root.Series(sid)
+		if err != nil {
+			return err
+		}
+		return sb.SetMetadata(m)
 	})
 }
 
@@ -1034,13 +1050,23 @@ func (db *DB) SetEntryMetadata(sid, eid string, m *api.EditableEntryMetadata) er
 			return err
 		}
 
+		// Set the metadata in the series entries-metadata key
 		oldM.Title = m.Title
 		oldM.Author = m.Author
 		oldM.DateReleased = m.DateReleased
 		oldM.Chapter = m.Chapter
 		oldM.Volume = m.Volume
+		err = sb.SetEntryMetadata(eid, oldM)
+		if err != nil {
+			return err
+		}
 
-		return sb.SetEntryMetadata(eid, oldM)
+		// Set the metadata in the actual entries bucket
+		eb, err := root.Entry(sid, eid)
+		if err != nil {
+			return err
+		}
+		return eb.SetMetadata(m)
 	})
 }
 

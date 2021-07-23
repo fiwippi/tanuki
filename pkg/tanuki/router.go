@@ -6,8 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
-
-	"github.com/fiwippi/tanuki/internal/pretty"
 )
 
 func createRouter(efs fs.FS) *gin.Engine {
@@ -30,7 +28,7 @@ func createRouter(efs fs.FS) *gin.Engine {
 
 	// Setup the template renderer
 	r.HTMLRender = templateRenderer(efs)
-	log.Info().Str("templates", pretty.MapKeys(r.HTMLRender)).Msg("templates loaded")
+	log.Info().Str("templates", MapKeys(r.HTMLRender)).Msg("templates loaded")
 
 	// Handle 404s
 	r.NoRoute(err404)

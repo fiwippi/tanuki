@@ -2,10 +2,10 @@ package fse
 
 import (
 	"io/fs"
-	"io/ioutil"
+	"os"
 )
 
-// EnsureWriteFile performs ioutil.WriteFile but ensures that
+// EnsureWriteFile performs os.WriteFile but ensures that
 // all directories leading up to the file will be created
 func EnsureWriteFile(filename string, data []byte, perm fs.FileMode) error {
 	err := EnsureFileDir(filename)
@@ -13,5 +13,5 @@ func EnsureWriteFile(filename string, data []byte, perm fs.FileMode) error {
 		return err
 	}
 
-	return ioutil.WriteFile(filename, data, perm)
+	return os.WriteFile(filename, data, perm)
 }
