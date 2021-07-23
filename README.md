@@ -38,17 +38,21 @@ On the first run Tanuki logs the default username and randomly generated passwor
 ## License
 `MIT`
 
-### OPDS
-This is the currnt [OPDS](https://specs.opds.io/) feature support
-#### v1.2
+## OPDS
+This is the current [OPDS](https://specs.opds.io/) feature support
+### v1.2
 - [x] Basic Auth
 - [x] Viewing library
 - [x] Downloading archive
 - [x] Getting cover/thumbnail of archive
 - [ ] Search
 - [ ] Page streaming
-#### v2.0
+### v2.0
 - N/A
+
+## Changelog
+### [0.1] - 2021-07-19
+Initial commit
 
 ## Development Roadmap
 ### Features
