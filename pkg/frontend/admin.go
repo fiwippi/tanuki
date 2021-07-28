@@ -5,9 +5,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// TODO change bind json to should bind json
-// TODO use validators for bindings
-
 // GET /admin
 func adminDashboard(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {

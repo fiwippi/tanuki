@@ -9,7 +9,6 @@ func NewService(g *server.RouterGroup) {
 	series := g.Group("/series")
 	series.Use(cookie.Auth(g.Server))
 
-	series.GET("/", GetCatalog) // TODO move this route to the catalog endpoint
 	series.GET("/:sid", GetSeries)
 	series.PATCH("/:sid", PatchSeries)
 	series.GET("/:sid/cover", GetSeriesCover)

@@ -73,6 +73,7 @@ This is the current [OPDS](https://specs.opds.io/) feature support
 - Encapsulate retrieval and automatic generation of thumbnail if it doesn't exist into one function so that the API that the gin router acesses is simpler
 - Clean up DB API by not returning an error for all functions since some don't need to
 - Progress bar when uploading covers
+- Use validators for binding
 
 ## Tests
 To run tests, an example archive file has to be supplied using the `SERIES_PATH` parameter, so for example:

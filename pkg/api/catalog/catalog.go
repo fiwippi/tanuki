@@ -1,4 +1,4 @@
-package series
+package catalog
 
 import (
 	"github.com/fiwippi/tanuki/pkg/server"

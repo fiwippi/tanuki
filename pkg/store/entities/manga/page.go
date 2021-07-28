@@ -6,7 +6,6 @@ import (
 )
 
 type Page struct {
-	IsCover   bool       `json:"cover"`      // Is the page a cover page // TODO remove this
 	ImageType image.Type `json:"image_type"` // Image encoding e.g. ".png"
 	Path      string     `json:"path"`       // Path to the file in the archive
 }

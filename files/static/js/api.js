@@ -189,7 +189,7 @@ async function apiAdminUserDelete(usernameHash) {
 
 // GET /api/series
 async function apiSeriesList() {
-    return await fetch('/api/series', {
+    return await fetch('/api/catalog/', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
