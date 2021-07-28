@@ -1,30 +1,38 @@
 package opds
 
 import (
-	"fmt"
+	"github.com/fiwippi/tanuki/pkg/opds/feed"
+	"github.com/fiwippi/tanuki/pkg/server"
+	"github.com/gin-gonic/gin"
 )
 
-type Catalog struct {
-	*Feed
-	Entries []*SeriesEntry `xml:"entry"`
-}
+// GET /opds/v1.2/catalog
+func GetCatalog(s *server.Server) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		catalog := feed.NewCatalog()
+		catalog.SetAuthor(s.Author)
 
-func NewCatalog() *Catalog {
-	c := &Catalog{
-		Feed:    NewFeed(),
-		Entries: make([]*SeriesEntry, 0),
-	}
-	c.Feed.ID = "root"
-	c.Feed.Title = "GetCatalog"
-	c.Feed.AddLink(&Link{Href: "/opds/v1.2/catalog", Rel: "self", Type: NavigationFeedType})
-	return c
-}
+		updated, err := s.Store.GetCatalogModTime()
+		if err != nil {
+			c.AbortWithStatus(500)
+			return
+		}
+		catalog.SetUpdated(updated)
 
-func (c *Catalog) AddEntry(e *SeriesEntry) {
-	e.Link = Link{
-		Href: fmt.Sprintf("/opds/v1.2/series/%s", e.ID),
-		Rel:  "subsection",
-		Type: AcquisitionFeedType,
+		list := s.Store.GetCatalog()
+		for _, series := range list {
+			seriesTime, err := s.Store.GetSeriesModTime(series.Hash)
+			if err != nil {
+				c.AbortWithStatus(500)
+				return
+			}
+			catalog.AddEntry(&feed.SeriesEntry{
+				Title:   series.Title,
+				Updated: feed.Time{Time: seriesTime},
+				ID:      series.Hash,
+			})
+		}
+
+		c.XML(200, catalog)
 	}
-	c.Entries = append(c.Entries, e)
 }

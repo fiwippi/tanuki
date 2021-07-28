@@ -1,0 +1,52 @@
+package auth
+
+import (
+	"github.com/fiwippi/tanuki/internal/hash"
+	"github.com/fiwippi/tanuki/pkg/server"
+	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
+)
+
+// We store the username hash in the session, it becomes more
+// efficient to access the database and improve security
+
+// LoginRequest defines the request to /api/auth/login
+type LoginRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+// LoginReply defines the reply from /api/auth/login
+type LoginReply struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+}
+
+// POST /api/auth/login
+func Login(s *server.Server) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Retrieve the request
+		var data LoginRequest
+		if err := c.ShouldBindJSON(&data); err != nil {
+			c.AbortWithStatusJSON(400, LoginReply{Success: false, Message: ""})
+			return
+		}
+
+		// Validate login details
+		valid, err := s.Store.ValidateLogin(data.Username, data.Password)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to validate user")
+			c.AbortWithStatusJSON(500, LoginReply{Success: false})
+			return
+		} else if !valid {
+			c.AbortWithStatusJSON(403, LoginReply{Success: false, Message: "invalid username/password"})
+			return
+		}
+		log.Debug().Str("username", data.Username).Msg("validated user")
+
+		// If valid then give user token they can identify themselves with
+		usernameHash := hash.SHA1(data.Username)
+		s.Session.Store(usernameHash, c)
+		c.JSON(200, LoginReply{Success: true})
+	}
+}

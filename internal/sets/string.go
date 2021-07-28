@@ -28,22 +28,9 @@ func (s *Set) Clear() {
 	s.Data = make(map[string]struct{})
 }
 
-func (s *Set) Copy() *Set {
-	ns := NewSet()
-	for x := range s.Data {
-		ns.Add(x)
-	}
-
-	return ns
-}
-
 func (s *Set) Has(value string) bool {
 	_, c := s.Data[value]
 	return c
-}
-
-func (s *Set) IsEmpty() bool {
-	return s.Size() == 0
 }
 
 func (s *Set) List() []string {
@@ -54,22 +41,6 @@ func (s *Set) List() []string {
 	}
 
 	return list
-}
-
-func (s *Set) Pop() string {
-	for item := range s.Data {
-		delete(s.Data, item)
-		return item
-	}
-	return ""
-}
-
-func (s *Set) Remove(value string) {
-	delete(s.Data, value)
-}
-
-func (s *Set) Size() int {
-	return len(s.Data)
 }
 
 func (s *Set) String() string {

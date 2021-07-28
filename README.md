@@ -54,8 +54,6 @@ This is the current [OPDS](https://specs.opds.io/) feature support
 ### Features
 - Favicon
 - Mangadex downloader
-- More supported archive formats, e.g. `.tar`
-- More supported image formats e.g. `.avif`
 - Automatic download of new chapters
 - Plugin support
 - Specify config file path with param
@@ -83,6 +81,14 @@ make test SERIES_PATH=./series/chapter.cbz
 ```
 
 ## Changelog
+### [0.3] - 2021-07-28
+- Missing entries renamed to missing items
+- Fixed bug where tanuki overwrites series/entry metadata with incorrect ones
+- Tanuki now recognises missing series and entries as missing items
+- Restructured project structure
+  - Packages used by multiple main packages moved to the `/internal` directory
+  - Packages used specifically to the user in the `/pkg` directory
+
 ### [0.2] - 2021-07-23
 - Go routines speed up parsing series and adding them to the DB
 - Properties like user progress bundles into one API call so less calls are made

@@ -1,5 +1,5 @@
 .idea
-bin/
-config/
-data/
-library/
+/bin/
+/config/
+/data/
+/library/

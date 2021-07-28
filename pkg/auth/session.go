@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"errors"
+	"github.com/fiwippi/tanuki/internal/encryption"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -9,17 +11,22 @@ import (
 	_ "github.com/shaj13/libcache/lru"
 )
 
+var (
+	ErrInvalidCookie = errors.New("invalid cookie")
+	ErrNotInCache    = errors.New("item not found in cache")
+)
+
 // Session stores a value in a cookie and encrypts it using a SecureKey.
 // A Time To Live (TTL) is specified, this is the duration the client
 // should hold onto the cookie.
 type Session struct {
 	cache      libcache.Cache // Locally store the data
-	secret     SecureKey      // Used to hash the uid in the cookie
+	secret     encryption.Key // Used to hash the uid in the cookie
 	cookieName string         // What name should the cookie have
 	ttl        time.Duration  // Time to live of the cookie and the key in the cache
 }
 
-func NewSession(ttl time.Duration, cookie string, secret SecureKey) *Session {
+func NewSession(ttl time.Duration, cookie string, secret encryption.Key) *Session {
 	s := &Session{
 		cache:      libcache.LRU.New(0),
 		secret:     secret,
