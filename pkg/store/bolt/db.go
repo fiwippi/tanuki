@@ -2,8 +2,11 @@ package bolt
 
 import (
 	"fmt"
+	"github.com/fiwippi/tanuki/internal/encryption"
 	"github.com/fiwippi/tanuki/pkg/store/bolt/keys"
 	"github.com/fiwippi/tanuki/pkg/store/bolt/util"
+	"github.com/fiwippi/tanuki/pkg/store/entities/users"
+	"github.com/rs/zerolog/log"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -24,7 +27,7 @@ func (db *DB) String() string {
 	return s
 }
 
-func Create(path string) (*DB, error) {
+func connect(path string) (*DB, error) {
 	temp, err := bolt.Open(path, 0666, nil)
 	if err != nil {
 		return nil, err
@@ -50,4 +53,23 @@ func Create(path string) (*DB, error) {
 	}
 
 	return db, nil
+}
+
+func Startup(path string) (*DB, error) {
+	db, err := connect(path)
+	if err != nil {
+		return nil, err
+	}
+
+	// If no users exist then create default user
+	if !db.HasUsers() {
+		pass := encryption.NewKey(32).Base64()
+		err := db.CreateUser(users.NewUser("default", pass, users.Admin))
+		if err != nil {
+			log.Fatal().Err(err).Msg("failed to create default user")
+		}
+		log.Info().Str("username", "default").Str("pass", pass).Msg("created default user")
+	}
+
+	return db, err
 }

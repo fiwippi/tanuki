@@ -45,6 +45,18 @@ func LoadConfig(fp string) *Config {
 		log.Error().Err(err).Msg("failed to load config file, using defaults instead")
 		return DefaultConfig()
 	}
+
+	// If in debug mode then set the log level to at least debug
+	if c.DebugMode && c.Logging.Level > logging.DebugLevel {
+		c.Logging.Level = logging.DebugLevel
+	}
+
+	// Ensures the file/dir paths which tanuki uses exist
+	err = c.Paths.EnsureExist()
+	if err != nil {
+		log.Panic().Err(err).Msg("paths can't be created")
+	}
+
 	return c
 }
 

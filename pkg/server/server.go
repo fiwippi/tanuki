@@ -7,6 +7,7 @@ import (
 	"github.com/fiwippi/tanuki/pkg/opds/feed"
 	"github.com/fiwippi/tanuki/pkg/store/bolt"
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 type Server struct {
@@ -28,6 +29,16 @@ func New(store *bolt.DB, session *auth.Session, conf *config.Config, a *feed.Aut
 	r.Use(logging.Middleware())
 	r.Use(gin.Recovery())
 
+	// Create the router
+	if !conf.DebugMode {
+		gin.SetMode(gin.ReleaseMode)
+	} else {
+		gin.SetMode(gin.DebugMode)
+	}
+
+	// Set the max memory size
+	r.MaxMultipartMemory = int64(conf.MaxUploadedFileSizeMiB) << 20
+
 	return &Server{
 		Store:   store,
 		Session: session,
@@ -37,13 +48,16 @@ func New(store *bolt.DB, session *auth.Session, conf *config.Config, a *feed.Aut
 	}
 }
 
-func (s *Server) SetMaxMultipartMemory(sizeMiB int64) {
-	s.Router.MaxMultipartMemory = sizeMiB << 20
-}
-
 func (s *Server) Group(relativePath string) *RouterGroup {
 	return &RouterGroup{
 		RouterGroup: s.Router.Group(relativePath),
 		Server:      s,
+	}
+}
+
+func (s *Server) HTTPServer() *http.Server {
+	return &http.Server{
+		Addr:    s.Conf.Host + ":" + s.Conf.Port,
+		Handler: s.Router,
 	}
 }

@@ -21,11 +21,23 @@ func NewJob(m *Minutes) *Job {
 	return &Job{Duration: m.Duration}
 }
 
-func (i *Job) Run(f func() error, taskName string) {
+func (i *Job) Run(f func() error, taskName string, runOnStart bool) {
 	i.Ticker = time.NewTicker(i.Duration)
 	i.Stop = make(chan struct{})
 
 	go func() {
+		if runOnStart {
+			start := time.Now()
+			log.Info().Str("task_name", taskName).Msg("running interval task on startup")
+			err := f()
+			if err != nil {
+				log.Error().Err(err).Str("task_name", taskName).Msg("error when running interval task")
+			} else {
+				log.Info().Str("task_name", taskName).Str("task_time", time.Now().Sub(start).String()).
+					Msg("finished running interval task on startup")
+			}
+		}
+
 		for {
 			select {
 			case <-i.Ticker.C:

@@ -2,7 +2,6 @@ package main
 
 import (
 	"embed"
-	"github.com/fiwippi/tanuki/internal/encryption"
 	"github.com/fiwippi/tanuki/pkg/api"
 	"github.com/fiwippi/tanuki/pkg/auth"
 	"github.com/fiwippi/tanuki/pkg/config"
@@ -12,7 +11,6 @@ import (
 	"github.com/fiwippi/tanuki/pkg/opds/feed"
 	"github.com/fiwippi/tanuki/pkg/server"
 	"github.com/fiwippi/tanuki/pkg/store/bolt"
-	"github.com/fiwippi/tanuki/pkg/store/entities/users"
 	"github.com/fiwippi/tanuki/pkg/task"
 	"github.com/fiwippi/tanuki/pkg/templates"
 	"github.com/gin-gonic/gin"
@@ -48,17 +46,6 @@ func main() {
 		log.Error().Err(err).Msg("failure to save config on startup")
 	}
 
-	// If in debug mode then set the log level to at least debug
-	if conf.DebugMode && conf.Logging.Level > logging.DebugLevel {
-		conf.Logging.Level = logging.DebugLevel
-	}
-
-	// Ensures the file/dir paths which tanuki uses exist
-	err = conf.Paths.EnsureExist()
-	if err != nil {
-		log.Fatal().Err(err).Msg("paths can't be created")
-	}
-
 	// Setup the logger
 	logging.SetupLogger(conf.Logging, conf.Paths.Log)
 
@@ -66,46 +53,18 @@ func main() {
 	session := auth.NewSession(SessionTTL, SessionCookieName, *conf.SessionSecret)
 
 	// Create the database
-	db, err := bolt.Create(conf.Paths.DB)
+	db, err := bolt.Startup(conf.Paths.DB)
 	if err != nil {
 		log.Fatal().Err(err).Msg("unable to create db")
 	}
 
+	// Create the server
 	s := server.New(db, session, conf, opdsAuthor)
-
-	log.Info().Msg("initialising db, this may take some time")
-	scanStart := time.Now()
-	err = s.ScanLibrary()
-	if err != nil {
-		log.Error().Err(err).Msg("failed to scan library on startup")
-	} else {
-		log.Info().Str("scan_time", time.Now().Sub(scanStart).String()).Msg("finished initial scan")
-	}
 
 	// Setup cron jobs
 	genThumbs := func() error { return s.Store.GenerateThumbnails(true) }
-	task.NewJob(conf.ScanInterval).Run(s.ScanLibrary, "scan library")
-	task.NewJob(conf.ThumbGenerationInterval).Run(genThumbs, "generate thumbnails")
-
-	// If no users exist then create default user
-	if !s.Store.HasUsers() {
-		pass := encryption.NewKey(32).Base64()
-		err := s.Store.CreateUser(users.NewUser("default", pass, users.Admin))
-		if err != nil {
-			log.Fatal().Err(err).Msg("failed to create default user")
-		}
-		log.Info().Str("username", "default").Str("pass", pass).Msg("created default user")
-	}
-
-	// Create the router
-	if !conf.DebugMode {
-		gin.SetMode(gin.ReleaseMode)
-	} else {
-		gin.SetMode(gin.DebugMode)
-	}
-
-	//
-	s.SetMaxMultipartMemory(int64(conf.MaxUploadedFileSizeMiB))
+	task.NewJob(conf.ScanInterval).Run(s.ScanLibrary, "scan library", true)
+	task.NewJob(conf.ThumbGenerationInterval).Run(genThumbs, "generate thumbnails", false)
 
 	// Serve static files
 	files := "files"
@@ -130,19 +89,13 @@ func main() {
 	frontend.NewService(s)
 	opds.NewService(s)
 
-	// Create the server
-	srv := &http.Server{
-		Addr:    conf.Host + ":" + conf.Port,
-		Handler: s.Router,
-	}
-
 	log.Info().Str("host", conf.Host).Str("port", conf.Port).Str("log_level", conf.Logging.Level.String()).
 		Bool("file_log", conf.Logging.LogToFile).Bool("console_log", conf.Logging.LogToConsole).Str("db_path", conf.Paths.DB).
 		Str("log_path", conf.Paths.Log).Str("library_path", conf.Paths.Library).Str("mode", gin.Mode()).
-		Int("max upload size", conf.MaxUploadedFileSizeMiB).Str("gin version", gin.Version).Msg("server created")
+		Int("max_upload_size", conf.MaxUploadedFileSizeMiB).Str("gin_version", gin.Version).Msg("server created")
 
 	g.Go(func() error {
-		err := srv.ListenAndServe()
+		err := s.HTTPServer().ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {
 			log.Fatal().Err(err).Msg("server setup error")
 		}
