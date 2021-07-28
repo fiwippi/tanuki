@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rs/xid"
 	"github.com/shaj13/libcache"
 	_ "github.com/shaj13/libcache/lru"
 )
@@ -75,7 +74,7 @@ func (s *Session) TTL() int {
 
 func (s *Session) Store(value string, c *gin.Context) {
 	// Store unencrypted version in local cache
-	key := xid.New().String()
+	key := encryption.NewKey(12).Base64()
 	s.cache.Store(key, value)
 
 	// Store encrypted version in the cookie store
