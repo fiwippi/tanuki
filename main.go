@@ -84,8 +84,8 @@ func main() {
 
 	// Setup cron jobs
 	genThumbs := func() error { return s.Store.GenerateThumbnails(true) }
-	task.NewInterval(conf.ScanInterval).RunTask(s.ScanLibrary, "scan library")
-	task.NewInterval(conf.ThumbGenerationInterval).RunTask(genThumbs, "generate thumbnails")
+	task.NewJob(conf.ScanInterval).Run(s.ScanLibrary, "scan library")
+	task.NewJob(conf.ThumbGenerationInterval).Run(genThumbs, "generate thumbnails")
 
 	// If no users exist then create default user
 	if !s.Store.HasUsers() {

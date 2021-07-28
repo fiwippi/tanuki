@@ -6,22 +6,22 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type Interval struct {
+type Job struct {
 	time.Duration
 
 	Ticker *time.Ticker
 	Stop   chan struct{}
 }
 
-func NewInterval(m *Minutes) *Interval {
+func NewJob(m *Minutes) *Job {
 	if m == nil {
 		panic("no minutes specified for interval")
 	}
 
-	return &Interval{Duration: m.Duration}
+	return &Job{Duration: m.Duration}
 }
 
-func (i *Interval) RunTask(f func() error, taskName string) {
+func (i *Job) Run(f func() error, taskName string) {
 	i.Ticker = time.NewTicker(i.Duration)
 	i.Stop = make(chan struct{})
 
