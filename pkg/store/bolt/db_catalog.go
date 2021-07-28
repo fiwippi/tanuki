@@ -11,7 +11,6 @@ import (
 	"os"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	bolt "go.etcd.io/bbolt"
@@ -30,101 +29,74 @@ func (db *DB) catalogBucket(tx *bolt.Tx) *buckets.CatalogBucket {
 
 // GetCatalog
 
-// TODO after commit, implement this without goroutine and check speed difference
 func (db *DB) PopulateCatalog(series []*manga.ParsedSeries) error {
 	var errs error
-	wg := sync.WaitGroup{}
-	mu := sync.Mutex{}
 	var cModTime time.Time
 
 	newCatalog := make(api.Catalog, 0)
-	queue := make(chan *api.Series, 1)
-	errorQueue := make(chan error, 1)
-
-	go func() {
-		for e := range errorQueue {
-			errs = fmt.Errorf("%w, %s", errs, e)
-		}
-	}()
-
-	go func() {
-		for s := range queue {
-			newCatalog = append(newCatalog, s)
-			wg.Done()
-		}
-	}()
-
 	for _, s := range series {
-		wg.Add(1)
-		go func(series *manga.ParsedSeries) {
-			err := db.Batch(func(tx *bolt.Tx) error {
-				// Add the series
-				root := db.catalogBucket(tx)
-				err := root.AddSeries(series)
-				if err != nil {
-					return err
-				}
+		err := db.Update(func(tx *bolt.Tx) error {
+			// Add the series
+			root := db.catalogBucket(tx)
+			err := root.AddSeries(s)
+			if err != nil {
+				return err
+			}
 
-				sid := hash.SHA1(series.Title)
-				sb, err := root.Series(sid)
-				if err != nil {
-					return err
-				}
+			sid := hash.SHA1(s.Title)
+			sb, err := root.Series(sid)
+			if err != nil {
+				return err
+			}
 
-				mu.Lock()
-				mt := sb.ModTime()
-				if cModTime == (time.Time{}) {
-					cModTime = mt
-				} else if mt.Before(cModTime) {
-					cModTime = mt
-				}
-				mu.Unlock()
+			mt := sb.ModTime()
+			if cModTime == (time.Time{}) {
+				cModTime = mt
+			} else if mt.Before(cModTime) {
+				cModTime = mt
+			}
 
-				// Create tentative metadata
-				d := &api.Series{
-					Hash:         sid,
-					Title:        sb.Title(),
-					Entries:      len(sb.EntriesMetadata()),
-					Tags:         sb.Tags().List(),
-					Author:       manga.AuthorZeroValue,
-					DateReleased: nil,
-				}
+			// Create tentative metadata
+			d := &api.Series{
+				Hash:         sid,
+				Title:        sb.Title(),
+				Entries:      len(sb.EntriesMetadata()),
+				Tags:         sb.Tags().List(),
+				Author:       manga.AuthorZeroValue,
+				DateReleased: nil,
+			}
 
-				// We always choose to preserve old metadata if it's not zero value
-				m := sb.Metadata()
-				if m != nil {
-					if m.Title != manga.TitleZeroValue {
-						d.Title = m.Title
-					}
-					if m.Author != manga.AuthorZeroValue {
-						d.Author = m.Author
-					}
-					if m.DateReleased != nil && m.DateReleased.Time != manga.TimeZeroValue {
-						d.DateReleased = m.DateReleased
-					}
+			// We always choose to preserve old metadata if it's not zero value
+			m := sb.Metadata()
+			if m != nil {
+				if m.Title != manga.TitleZeroValue {
+					d.Title = m.Title
 				}
-
-				err = sb.SetMetadata(&manga.SeriesMetadata{
-					Title:        d.Title,
-					Author:       d.Author,
-					DateReleased: d.DateReleased,
-				})
-				if err != nil {
-					return err
+				if m.Author != manga.AuthorZeroValue {
+					d.Author = m.Author
 				}
+				if m.DateReleased != nil && m.DateReleased.Time != manga.TimeZeroValue {
+					d.DateReleased = m.DateReleased
+				}
+			}
 
-				queue <- d
-				return nil
+			err = sb.SetMetadata(&manga.SeriesMetadata{
+				Title:        d.Title,
+				Author:       d.Author,
+				DateReleased: d.DateReleased,
 			})
 			if err != nil {
-				errorQueue <- err
+				return err
 			}
-		}(s)
-	}
 
-	wg.Wait()
-	close(queue)
-	close(errorQueue)
+			newCatalog = append(newCatalog, d)
+
+			return nil
+		})
+		if err != nil {
+			errs = fmt.Errorf("%w, %s", errs, err)
+		}
+	}
 
 	// Sort catalog in lowercase lexical order
 	sort.SliceStable(newCatalog, func(i, j int) bool {
