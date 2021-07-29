@@ -43,7 +43,7 @@ func LoadConfig(fp string) *Config {
 	c, err := readConfig(fp)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to load config file, using defaults instead")
-		return DefaultConfig()
+		c = DefaultConfig()
 	}
 
 	// If in debug mode then set the log level to at least debug

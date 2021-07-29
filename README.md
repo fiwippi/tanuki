@@ -62,7 +62,7 @@ This is the current [OPDS](https://specs.opds.io/) feature support
 
 ### Implementation Improvements
 - WASM frontend for the API
-- Minimise final JS and CSS file
+- Clean up JS and CSS code/classes
 - Make the UI more mobile friendly, e.g. so the modal loads in the centre of the phone screen
 - Full well formatted documentation for Go + Javascript
 - Single shareable modal class where esc key causes it to disappear
@@ -73,6 +73,10 @@ This is the current [OPDS](https://specs.opds.io/) feature support
 - Only include script src files where needed
 
 ## Changelog
+### [0.4] - 2021-07-30
+- Assets minified before embedding
+- Data preloaded through templating engine to reduce API calls
+
 ### [0.3] - 2021-07-28
 - Missing entries renamed to missing items
 - Fixed bug where tanuki overwrites series/entry metadata with incorrect ones

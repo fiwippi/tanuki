@@ -8,7 +8,7 @@ import (
 // GET /admin
 func adminDashboard(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.HTML(200, "admin.tmpl", nil)
+		c.HTML(200, "admin.tmpl", c)
 	}
 }
 
@@ -37,6 +37,6 @@ func adminUsersEdit(s *server.Server) gin.HandlerFunc {
 // GET /admin/users/create
 func adminUsersCreate(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.HTML(200, "admin-users-create.tmpl", nil)
+		c.HTML(200, "admin-users-create.tmpl", c)
 	}
 }

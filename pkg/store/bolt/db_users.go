@@ -156,6 +156,7 @@ func (db *DB) AdminCount() int {
 	return count
 }
 
+// TODO is this function used?
 func (db *DB) GetProgress(uid string) (*users.CatalogProgress, error) {
 	var p *users.CatalogProgress
 	err := db.View(func(tx *bolt.Tx) error {
@@ -177,7 +178,7 @@ func (db *DB) GetProgress(uid string) (*users.CatalogProgress, error) {
 	if err != nil {
 		return nil, err
 	}
-	return nil, nil
+	return p, nil
 }
 
 // Processing

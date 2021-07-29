@@ -24,7 +24,7 @@ import (
 
 var g errgroup.Group
 
-//go:embed files/*
+//go:embed files/minified*
 var efs embed.FS
 
 const ConfigPath = "./config/config.yml"
@@ -65,7 +65,7 @@ func main() {
 	task.NewJob(conf.ThumbGenerationInterval).Run(genThumbs, "generate thumbnails", false)
 
 	// Serve static files
-	files := "files"
+	files := "files/minified"
 	staticFp := files + "/static"
 	templatesFp := files + "/templates"
 

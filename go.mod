@@ -13,6 +13,7 @@ require (
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/rs/zerolog v1.23.0
 	github.com/shaj13/libcache v1.0.0
+	github.com/tdewolff/minify/v2 v2.9.20
 	github.com/ugorji/go v1.2.6 // indirect
 	go.etcd.io/bbolt v1.3.6
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
