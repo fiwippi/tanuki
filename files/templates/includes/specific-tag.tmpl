@@ -4,10 +4,10 @@
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('specficTag', () => ({
-            search: "",
-            entries: [],
-            images: [],
             tag: "",
+            search: "",
+            images: [],
+            entries: {{ seriesWithTag . }},
 
             get filteredEntries() {
                 return this.entries.filter(
@@ -19,43 +19,18 @@
                 let prefix = "/tags/"
                 this.tag = window.location.pathname.slice(prefix.length)
 
-                await this.refreshLibrary()
-            },
+                this.images = []
+                let promises = []
+                this.entries.sort(entryCompare)
 
-            async refreshLibrary() {
-                let resp = await apiGetSeriesWithTag(this.tag)
-
-                if (resp === undefined) {
-                    this.entries = []
-                } else if (!resp.success) {
-                    this.entries = []
-                } else {
-                    this.images = []
-                    let promises = []
-                    resp.entries.sort(entryCompare) // Sort before we bind images to indexes
-
-                    for (let i = 0; i < resp.entries.length; i++) {
-                        let img = new Image()
-                        promises.push(waitUntilLoad(img))
-                        img.src = '/api/series/{0}/cover?thumbnail=true'.format(resp.entries[i].hash)
-                        this.images.push(img)
-                    }
-
-                    await Promise.all(promises)
-                    this.entries = resp.entries
+                for (let i = 0; i < this.entries.length; i++) {
+                    let img = new Image()
+                    promises.push(waitUntilLoad(img))
+                    img.src = '/api/series/{0}/cover?thumbnail=true'.format(this.entries[i].hash)
+                    this.images.push(img)
                 }
-            },
 
-            async getProgress(series) {
-                let resp = await apiUserProgress(series, "")
-
-                if (resp === undefined) {
-                    return "Progress: N/A"
-                } else if (!resp.success) {
-                    return  "Progress: N/A"
-                } else {
-                    return "Progress: " + stringPercent(resp.progress_percent)
-                }
+                await Promise.all(promises)
             },
         }))
     })
@@ -85,7 +60,6 @@
                     <div style="padding: 9px 16px;" >
                         <h4 style="margin-block: 0.2em" x-text="e.title"></h4>
                         <span x-text="'Entries: {0}'.format(e.entries)"></span><br>
-                        <span x-text="await getProgress(e.hash)"></span>
                     </div>
                 </div>
             </a>

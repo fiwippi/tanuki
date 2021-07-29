@@ -17,7 +17,6 @@ func NewService(g *server.RouterGroup) {
 	a.GET("/db", GetDB)
 	a.GET("/users", GetUsers)
 	a.PUT("/users", PutUsers)
-	a.GET("/user/:id", GetUser)
 	a.PATCH("/user/:id", PatchUser)
 	a.DELETE("/user/:id", DeleteUser)
 }

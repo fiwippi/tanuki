@@ -4,14 +4,10 @@
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('userGrid', () => ({
-            users: [],
-            username: "",
+            users: {{ users }},
+            username: {{ username . }},
             showModal: false,
             modalText: "",
-
-            async init() {
-                await this.refreshUsers()
-            },
 
             async refreshUsers() {
                 this.username = await apiUserName()

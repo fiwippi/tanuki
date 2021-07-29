@@ -23,20 +23,6 @@ type UserReply struct {
 	User    users.User `json:"user,omitempty"`
 }
 
-// GET /api/admin/user/:id
-func GetUser(s *server.Server) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		user, err := s.Store.GetUser(c.Param("id"))
-		if err != nil {
-			c.AbortWithStatusJSON(500, UserReply{Success: false})
-			return
-		}
-		user.Pass = ""
-
-		c.JSON(200, UserReply{Success: true, User: *user})
-	}
-}
-
 // PATCH /api/admin/user/:id
 func PatchUser(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {

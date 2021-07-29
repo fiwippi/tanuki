@@ -14,6 +14,6 @@ func entries(s *server.Server) gin.HandlerFunc {
 			s.Err404(c)
 			return
 		}
-		c.HTML(200, "entries.tmpl", nil)
+		c.HTML(200, "entries.tmpl", c)
 	}
 }

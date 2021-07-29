@@ -15,13 +15,13 @@ func specificTag(s *server.Server) gin.HandlerFunc {
 			s.Err404(c)
 			return
 		}
-		c.HTML(200, "specific-tag.tmpl", nil)
+		c.HTML(200, "specific-tag.tmpl", c)
 	}
 }
 
 // GET /tags
 func tags(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.HTML(200, "tags.tmpl", nil)
+		c.HTML(200, "tags.tmpl", c)
 	}
 }

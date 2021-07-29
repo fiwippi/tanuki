@@ -64,22 +64,13 @@ This is the current [OPDS](https://specs.opds.io/) feature support
 - WASM frontend for the API
 - Minimise final JS and CSS file
 - Make the UI more mobile friendly, e.g. so the modal loads in the centre of the phone screen
-- Reduce API calls by:
-    - serving some data through the golang templating engine, e.g. sid, eid or isAdmin
 - Full well formatted documentation for Go + Javascript
 - Single shareable modal class where esc key causes it to disappear
-- Try and remove some dependencies e.g. xid to reduce file size
-- Log more less important routes as trace
 - Encapsulate retrieval and automatic generation of thumbnail if it doesn't exist into one function so that the API that the gin router acesses is simpler
 - Clean up DB API by not returning an error for all functions since some don't need to
 - Progress bar when uploading covers
 - Use validators for binding
-
-## Tests
-To run tests, an example archive file has to be supplied using the `SERIES_PATH` parameter, so for example:
-```console
-make test SERIES_PATH=./series/chapter.cbz
-```
+- Only include script src files where needed
 
 ## Changelog
 ### [0.3] - 2021-07-28

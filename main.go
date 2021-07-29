@@ -24,8 +24,6 @@ import (
 
 var g errgroup.Group
 
-// AJwPN9zUXfC675Io7edJ86zO-bF9fDcn7WlFJZPFDUA=
-
 //go:embed files/*
 var efs embed.FS
 
@@ -78,7 +76,7 @@ func main() {
 	s.Router.StaticFS("/static", http.FS(staticFS))
 
 	// Setup the template renderer
-	s.Router.HTMLRender = templates.Renderer(efs, conf.DebugMode, templatesFp)
+	s.Router.HTMLRender = templates.CreateRenderer(s, efs, conf.DebugMode, templatesFp)
 	log.Info().Msg("templates loaded")
 
 	// Handle 404s

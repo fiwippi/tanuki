@@ -3,11 +3,11 @@
 {{ define "scripts" }}
 <script>
     document.addEventListener('alpine:init', () => {
-        Alpine.data('homepage', () => ({
+        Alpine.data('catalog', () => ({
             search: "",
-            entries: [],
             images: [],
-            progress: [],
+            entries: {{ catalog }},
+            progress: {{ catalogProgress . }},
 
             get filteredEntries() {
                 return this.entries.filter(
@@ -16,48 +16,32 @@
             },
 
             async init() {
-                await this.getProgress()
-                await this.refreshLibrary()
-            },
-
-            async refreshLibrary() {
-                let resp = await apiSeriesList()
-                if (resp === undefined) {
+                // Ensure proper zero values if these don't exist
+                if (this.entries === null) {
                     this.entries = []
-                } else if (!resp.success) {
-                    this.entries = []
-                } else {
-                    this.images = []
-                    let promises = []
-                    resp.entries.sort(entryCompare) // Sort before we bind images to indexes
-                    for (let i = 0; i < resp.entries.length; i++) {
-                        let img = new Image()
-                        promises.push(waitUntilLoad(img))
-                        img.src = '/api/series/{0}/cover?thumbnail=true'.format(resp.entries[i].hash)
-                        this.images.push(img)
-                    }
-                    await Promise.all(promises).catch(function(err) {
-                        console.error(err.message);
-                    })
-
-                    this.entries = resp.entries
                 }
+                if (this.progress === null) {
+                    this.progress = {}
+                }
+
+                // Get the images for each entry
+                this.images = []
+                let promises = []
+                for (let i = 0; i < this.entries.length; i++) {
+                    let img = new Image()
+                    promises.push(waitUntilLoad(img))
+                    img.src = '/api/series/{0}/cover?thumbnail=true'.format(this.entries[i].hash)
+                    this.images.push(img)
+                }
+                await Promise.all(promises).catch(function(err) {
+                    console.error(err.message);
+                })
+
             },
 
-            async getProgress() {
-                let resp = await apiCatalogProgress()
-
-                if (resp === undefined || !resp.success) {
-                    this.progress = []
-                } else {
-                    this.progress = resp.progress
-                    console.log(this.progress)
-                }
-            },
-
-            calcSeriesProgress(seriesProgress) {
+            fmtProgress(seriesProgress) {
                 if (seriesProgress === undefined) {
-                    return "Progress: " + stringPercent(0)
+                    return "Progress: N/A"
                 }
 
                 let current = 0
@@ -76,7 +60,7 @@
 {{ end }}
 
 {{ define "content" }}
-<div x-data="homepage">
+<div x-data="catalog">
     <template x-if="entries.length > 0">
         <h2>Library</h2>
     </template>
@@ -98,7 +82,7 @@
                     <div style="padding: 9px 16px;" >
                         <h4 style="margin-block: 0.2em" x-text="e.title"></h4>
                         <span x-text="'Entries: {0}'.format(e.entries)"></span><br>
-                        <span x-text="calcSeriesProgress(progress[e.hash])"></span>
+                        <span x-text="fmtProgress(progress[e.hash])"></span>
                     </div>
                 </div>
             </a>

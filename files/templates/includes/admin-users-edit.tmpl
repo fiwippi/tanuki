@@ -13,19 +13,12 @@
             open: false,
 
             async init() {
-                const urlParams = new URLSearchParams(window.location.search);
-                const name = urlParams.get('hash');
+                const user = {{ user . }}
 
-                let resp = await apiAdminUserView(name)
-                if (resp === undefined || !resp.success) {
-                    this.modalText = 'FAILED TO GET USER DATA'
-                    this.showModal = true
-                } else {
-                    this.userHash = resp.user.hash
-                    this.username = resp.user.name
-                    this.password = resp.user.pass
-                    this.admin = resp.user.type === 'admin';
-                }
+                this.userHash = user.hash
+                this.username = user.name
+                this.password = user.pass
+                this.admin = user.type === 'admin';
             },
 
             async edit() {

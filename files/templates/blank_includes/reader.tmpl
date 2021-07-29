@@ -80,12 +80,6 @@
         {name: 'Paged (Left-to-Right)', value: 'paged-lr'}
     ]
 
-    /**
-     * Check whether the event occurred roughly inside (or above) the element.
-     *
-     * @param {MouseEvent} event Event to check.
-     * @param {Node} element Element to check.
-     */
     // https://stackoverflow.com/a/54000580
     function isEventInElement(event, element)   {
         let rect = element.getBoundingClientRect();
@@ -98,10 +92,11 @@
 
     document.addEventListener('alpine:init', () => {
         Alpine.data('reader', () => ({
-            // General EntriesMetadata
-            sid: "",
-            eid: "",
-            entry: { pages: 0 },
+            // General Data
+            sid: {{ sid . }},
+            eid: {{ eid . }},
+            entry: {{ entry . }},
+            initialProgress: {{ entryProgress . }},
 
             // Reader data
             images: [],
@@ -119,7 +114,7 @@
             selectedPage: 1,
             selectedMode: "mode",
             selectedEntry: "",
-            entries: [],
+            entries: {{ entries . }},
             entryIndex: -1,
             hasNextEntry: false,
             hasPreviousEntry: false,
@@ -148,44 +143,18 @@
             },
 
             async init() {
-                // Parse initial state of the reader
-                let prefix = "/reader/"
-                let ids = window.location.pathname.slice(prefix.length).split("/")
-                this.sid = ids[0]
-                this.eid = ids[1]
-
                 // Start at the specific page if specified, otherwise start
                 // at the user's last progress
                 let specifiedPage = new URLSearchParams(window.location.search).get('page')
                 if (specifiedPage === null || specifiedPage === undefined) {
-                    let pageResp = await apiUserProgress(this.sid, this.eid)
-                    if (pageResp === undefined || !pageResp.success) {
-                        this.currentPage = 0
-                    } else {
-                        this.currentPage = Number(pageResp.progress_page)
-                    }
+                    this.currentPage = this.initialProgress.current
                 } else {
                     this.currentPage = Math.max(Number(specifiedPage), 1)
-                    this.lastSavedPage = this.currentPage
                 }
+                this.lastSavedPage = this.currentPage
 
-                // Get the entry data
-                let success = await this.loadEntry()
-                if (!success) {
-                    console.error("failed to get entry")
-                    return
-                }
-
-                // Get series entries for the modal
-                let entriesResp = await apiSeriesEntries(this.sid)
-                if (entriesResp === undefined || !entriesResp.success) {
-                    console.error("failed to load series entries")
-                } else {
-                    this.entries = entriesResp.entries.sort(entryCompare)
-                }
                 // Determine which buttons can be displayed
                 this.entryIndex = this.entries.findIndex((e) => e.hash === this.eid)
-                console.log(this.entryIndex, this.entry.pages)
                 if (this.entryIndex + 1 < this.entries.length) {
                     this.hasNextEntry = true
                 }
@@ -196,17 +165,14 @@
                 // Load the images
                 this.images = new Array(this.entry.pages)
 
-                // Go to the current page
-                await this.jumpToPage(this.currentPage)
-
                 // If we don't do this x-intersect triggers a new
                 // update progress event before we can navigate to
                 // the current page
                 this.acceptUpdates = true
 
-                // Ensure the mode is saved
+                // Ensure the mode is saved, jumpToPage triggers here
                 this.changeMode(this.mode)
-            },
+         },
 
             async loadEntry() {
                 let resp = await apiGetEntry(this.sid, this.eid)

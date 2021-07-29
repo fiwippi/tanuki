@@ -17,6 +17,6 @@ func reader(s *server.Server) gin.HandlerFunc {
 			return
 		}
 
-		c.HTML(200, "reader.tmpl", nil)
+		c.HTML(200, "reader.tmpl", c)
 	}
 }

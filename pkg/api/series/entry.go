@@ -9,6 +9,8 @@ import (
 	"strconv"
 )
 
+// TODO remove the structs which aren't needed if we don't need to unmarshal data from them in the frontent
+
 // SeriesEntryReply for /api/series/:id/entries/:eid
 type SeriesEntryReply struct {
 	Success bool      `json:"success"`

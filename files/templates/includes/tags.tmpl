@@ -1,36 +1,20 @@
 {{ define "title" }}Home{{ end }}
 
-{{ define "styles" }}
-{{ end }}
-
 {{ define "scripts" }}
 <script>
+    // Tags added via a script tag instead of only
+    // x-data because otherwise the tempalating engine
+    // does not marshal each entry in tags as a string
     document.addEventListener('alpine:init', () => {
-        Alpine.data('tagspage', () => ({
-            tags: [],
-
-            async init() {
-                await this.refreshTags()
-            },
-
-            async refreshTags() {
-                let resp = await apiTags()
-
-                if (resp === undefined) {
-                    this.tags = []
-                } else if (!resp.success) {
-                    this.tags = []
-                } else {
-                    this.tags = resp.tags
-                }
-            },
+        Alpine.data('tags', () => ({
+            tags: {{ tags }},
         }))
     })
 </script>
 {{ end }}
 
 {{ define "content" }}
-<div x-data="tagspage">
+<div x-data="tags">
     <template x-if="tags.length > 0">
         <h2>Tags</h2>
     </template>

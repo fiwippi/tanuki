@@ -90,9 +90,9 @@
         Alpine.data('entrypage', () => ({
             // Main data
             search: "",
-            seriesData: {},
-            entries: [],
-            progress: [],
+            seriesData: {{ series . }},
+            entries: {{ entries . }},
+            progress: {{ seriesProgress . }},
             images: [],
             newTag: "",
             seriesMetadata: {},
@@ -155,11 +155,26 @@
 
             // Init
             async init() {
-                let prefix = "/entries/"
-                let sid = window.location.pathname.slice(prefix.length)
+                this.seriesMetadata.title = this.seriesData.title
+                this.seriesMetadata.author = this.seriesData.author
+                this.seriesMetadata.date_released = this.seriesData.date_released
 
-                await this.refreshEntries(sid)
+                let images = []
+                let promises = []
+                this.entries.sort((a, b) => {return a.order - b.order})
 
+                for (let i = 0; i < this.entries.length; i++) {
+                    let img = new Image()
+                    promises.push(waitUntilLoad(img))
+                    img.src = '/api/series/{0}/entries/{1}/cover?thumbnail=true'.format(this.seriesData.hash, this.entries[i].hash)
+                    images.push(img)
+                }
+
+                await Promise.all(promises)
+                    .catch(function(err) {
+                        console.log("error loading images", err.message);
+                    })
+                this.images = images
             },
 
             // General functions
@@ -188,9 +203,7 @@
                 } else {
                     let images = []
                     let promises = []
-                    resp.entries.sort(function (a, b) {
-                        return a.order - b.order
-                    }) // Sort before we bind images to indexes
+                    resp.entries.sort((a, b) => {return a.order - b.order})
 
                     for (let i = 0; i < resp.entries.length; i++) {
                         let img = new Image()

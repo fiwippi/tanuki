@@ -1,43 +1,30 @@
 package templates
 
 import (
-	"fmt"
-	"html/template"
+	"github.com/fiwippi/tanuki/internal/multitemplate"
+	"github.com/fiwippi/tanuki/pkg/server"
+	"github.com/rs/zerolog/log"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strconv"
-	"time"
-
-	"github.com/fiwippi/tanuki/internal/multitemplate"
-	"github.com/rs/zerolog/log"
 )
 
-var debug = false
-
-// Global functions which can be used in all templates
-var funcMap = template.FuncMap{
-	// Versions files so they dont get cached (used when debugging)
-	"versioning": func(filePath string) string {
-		if debug {
-			return fmt.Sprintf("%s?q=%s", filePath, strconv.Itoa(int(time.Now().Unix())))
-		}
-		return filePath
-	},
-}
-
 // Renderer renders the templates from the fs
-func Renderer(efs fs.FS, d bool, prefix string) multitemplate.Renderer {
-	debug = d
-
-	var r multitemplate.Renderer
+func CreateRenderer(s *server.Server, efs fs.FS, debug bool, prefix string) multitemplate.Renderer {
+	var temp multitemplate.Renderer
 	if os.Getenv("DOCKER") == "true" {
 		// Always static renderer
-		r = multitemplate.New()
+		temp = multitemplate.New()
 	} else {
 		// Static renderer unless gin is in debug
 		// mode where it then becomes a dynamic renderer
-		r = multitemplate.NewRenderer()
+		temp = multitemplate.NewRenderer()
+	}
+
+	r := &Renderer{
+		Renderer: temp,
+		server:   s,
+		debug:    debug,
 	}
 
 	// Generating our main templates
@@ -55,7 +42,7 @@ func Renderer(efs fs.FS, d bool, prefix string) multitemplate.Renderer {
 	return r
 }
 
-func addTemplates(layoutsDir, includesDir string, f fs.FS, r multitemplate.Renderer) (multitemplate.Renderer, error) {
+func addTemplates(layoutsDir, includesDir string, f fs.FS, r *Renderer) (*Renderer, error) {
 	layouts, err := fs.Glob(f, layoutsDir)
 	if err != nil {
 		log.Error().Err(err).Str("dir", layoutsDir).Msg("could not get layouts dir")
@@ -71,7 +58,7 @@ func addTemplates(layoutsDir, includesDir string, f fs.FS, r multitemplate.Rende
 		layoutCopy := make([]string, len(layouts))
 		copy(layoutCopy, layouts)
 		files := append(layoutCopy, include)
-		r.AddFromFilesFuncsFS(filepath.Base(include), funcMap, f, files...)
+		r.AddFromFilesFuncsFS(filepath.Base(include), r.FuncMap(), f, files...)
 	}
 
 	return r, nil

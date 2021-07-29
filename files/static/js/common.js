@@ -27,7 +27,8 @@ function stringCompare(a, b) {
 
 //
 function stringPercent(p) {
-    return percent(p).toString() + "%"
+    return (p * 100).toFixed(2) + "%"
+    // return percent(p).toString() + "%"
 }
 
 function percent(p) {

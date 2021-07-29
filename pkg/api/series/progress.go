@@ -42,7 +42,7 @@ func GetSeriesProgress(s *server.Server) gin.HandlerFunc {
 		sid := c.Param("sid")
 		uid := c.GetString("uid")
 
-		p, _, err := getSeriesProgress(uid, sid, s)
+		p, _, err := GetSeriesProgressInternal(uid, sid, s)
 		if err != nil {
 			log.Debug().Err(err).Str("uid", uid).Str("sid", sid).Msg("could not get progress")
 			c.AbortWithStatusJSON(500, SeriesProgressReply{Success: false})
@@ -72,7 +72,7 @@ func PatchSeriesProgress(s *server.Server) gin.HandlerFunc {
 			return
 		}
 
-		sp, cp, err := getSeriesProgress(uid, sid, s)
+		sp, cp, err := GetSeriesProgressInternal(uid, sid, s)
 		if err != nil {
 			log.Debug().Err(err).Str("uid", uid).Str("sid", sid).Msg("could not get progress")
 			c.AbortWithStatusJSON(500, SeriesProgressReply{Success: false})
@@ -105,7 +105,7 @@ func GetEntryProgress(s *server.Server) gin.HandlerFunc {
 		eid := c.Param("eid")
 		uid := c.GetString("uid")
 
-		p, _, err := getSeriesProgress(uid, sid, s)
+		p, _, err := GetSeriesProgressInternal(uid, sid, s)
 		if err != nil {
 			log.Debug().Err(err).Str("uid", uid).Str("sid", sid).Msg("could not get progress")
 			c.AbortWithStatusJSON(500, EntriesProgressReply{Success: false})
@@ -143,7 +143,7 @@ func PatchEntryProgress(s *server.Server) gin.HandlerFunc {
 			return
 		}
 
-		sp, cp, err := getSeriesProgress(uid, sid, s)
+		sp, cp, err := GetSeriesProgressInternal(uid, sid, s)
 		if err != nil {
 			log.Debug().Err(err).Str("uid", uid).Str("sid", sid).Msg("could not get progress")
 			c.AbortWithStatusJSON(500, EntriesProgressReply{Success: false})
@@ -178,7 +178,23 @@ func PatchEntryProgress(s *server.Server) gin.HandlerFunc {
 	}
 }
 
-func getSeriesProgress(uid, sid string, s *server.Server) (*users.SeriesProgress, *users.CatalogProgress, error) {
+func GetEntryProgressInternal(uid, sid, eid string, s *server.Server) (*users.EntryProgress, error) {
+	p, _, err := GetSeriesProgressInternal(uid, sid, s)
+	if err != nil {
+		log.Debug().Err(err).Str("uid", uid).Str("sid", sid).Msg("could not get progress")
+		return nil, err
+	}
+
+	o, err := s.Store.GetEntryOrder(sid, eid)
+	if err != nil {
+		log.Debug().Err(err).Str("sid", sid).Str("eid", eid).Msg("could not get entry order")
+		return nil, err
+	}
+
+	return p.GetEntryProgress(o - 1), nil
+}
+
+func GetSeriesProgressInternal(uid, sid string, s *server.Server) (*users.SeriesProgress, *users.CatalogProgress, error) {
 	// Get the user
 	user, err := s.Store.GetUser(uid)
 	if err != nil {

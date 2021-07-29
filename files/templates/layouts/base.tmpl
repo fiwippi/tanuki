@@ -11,17 +11,11 @@
     <script src='{{versioning "/static/js/theme.js"}}'></script>
     <script defer src='{{versioning "/static/js/alpine.js"}}'></script>
     <script>
-        document.addEventListener('alpine:init', () => {
+        document.addEventListener("DOMContentLoaded", function(event) {
             setTheme()
+        });
 
-            Alpine.data('adminSpecific', () => ({
-                isAdmin: true,
-
-                async init() {
-                    this.isAdmin = await apiUserAdmin()
-                },
-            }))
-
+        document.addEventListener('alpine:init', () => {
             Alpine.data('logoutButton', () => ({
                 async logout() {
                     await authLogout()
@@ -39,7 +33,7 @@
             <h1><a style="border-bottom: none;" href="/">Tanuki</a></h1>
             → <a href="/">Home</a>
             → <a href="/tags">Tags</a>
-            <span x-data="adminSpecific" x-show="isAdmin" x-cloak>
+            <span x-data="{ admin: {{ admin . }} }" x-show="admin" x-cloak>
                 → <a href="/admin">Admin</a>
             </span>
             → <a x-data="logoutButton" @click="await logout()" href="javascript:void(0)">Logout</a>

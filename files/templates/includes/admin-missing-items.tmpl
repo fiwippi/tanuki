@@ -4,13 +4,9 @@
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('entriesGrid', () => ({
-            entries: [],
+            entries: {{ missingItems }},
             showModal: false,
             modalText: "",
-
-            async init() {
-                await this.refreshEntries()
-            },
 
             async refreshEntries() {
                 let resp = await apiAdminLibraryMissingEntries()

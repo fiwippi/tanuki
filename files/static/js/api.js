@@ -16,33 +16,6 @@ async function apiUserAdmin() {
         })
 }
 
-// GET /api/user/progress
-async function apiUserProgress(series, entry) {
-    let url = '/api/user/progress?'
-
-    if (series.length > 0) {
-        url = url + 'series=' +series
-    }
-    if (entry.length > 0) {
-        url = url + '&entry=' + entry
-    }
-
-    return await fetch(url, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-        .then(response => response.json())
-        .then(data => {
-            return data
-        })
-        .catch((error) => {
-            console.error(error);
-            return undefined
-        })
-}
-
 // PATCH
 async function apiPatchUserProgress(sid, eid, progress) {
     let url
@@ -131,24 +104,6 @@ async function apiAdminUserCreate(username, password, userType) {
         })
 }
 
-// GET /api/admin/user/:id
-async function apiAdminUserView(usernameHash) {
-    return await fetch('/api/admin/user/' + usernameHash, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-        .then(response => response.json())
-        .then(data => {
-            return { success: data['success'], user: data['user'] }
-        })
-        .catch((error) => {
-            console.error(error);
-            return undefined
-        })
-}
-
 // PATCH /api/admin/user/:id
 async function apiAdminUserEdit(usernameHash, newUsername, newPassword, newType) {
     let data = { new_username: newUsername, new_password: newPassword, new_type: newType}
@@ -187,42 +142,6 @@ async function apiAdminUserDelete(usernameHash) {
         })
 }
 
-// GET /api/series
-async function apiSeriesList() {
-    return await fetch('/api/catalog/', {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-        .then(response => response.json())
-        .then(data => {
-            return { success: data['success'], entries: data['list'] }
-        })
-        .catch((error) => {
-            console.error(error);
-            return undefined
-        })
-}
-
-// GET /api/tag/:tag
-async function apiGetSeriesWithTag(tag) {
-    return await fetch('/api/tag/' + tag, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-        .then(response => response.json())
-        .then(data => {
-            return { success: data['success'], entries: data['list'] }
-        })
-        .catch((error) => {
-            console.error(error);
-            return undefined
-        })
-}
-
 // GET /api/series/:sid
 async function apiSeries(sid) {
     return await fetch('/api/series/' + sid, {
@@ -234,26 +153,6 @@ async function apiSeries(sid) {
         .then(response => response.json())
         .then(data => {
             return { success: data['success'], data: data['data'] }
-        })
-        .catch((error) => {
-            console.error(error);
-            return undefined
-        })
-}
-
-// GET /api/catalog/progress
-async function apiCatalogProgress() {
-    let url = '/api/catalog/progress'
-
-    return await fetch(url, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-        .then(response => response.json())
-        .then(data => {
-            return data
         })
         .catch((error) => {
             console.error(error);
@@ -536,23 +435,5 @@ async function apiPatchSeriesTags(sid, tags) {
         .catch((error) => {
             console.error(error);
             return false
-        })
-}
-
-// GET /api/tags
-async function apiTags() {
-    return await fetch('/api/tags', {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-        .then(response => response.json())
-        .then(data => {
-            return { success: data['success'], tags: data['tags'] }
-        })
-        .catch((error) => {
-            console.error(error);
-            return undefined
         })
 }
