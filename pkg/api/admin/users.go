@@ -24,13 +24,7 @@ type UsersReply struct {
 // GET /api/admin/users
 func GetUsers(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		list, err := s.Store.GetUsers(true)
-		if err != nil {
-			c.AbortWithStatusJSON(500, UsersReply{Success: false, Users: nil})
-			return
-		}
-
-		c.JSON(200, UsersReply{Success: true, Users: list})
+		c.JSON(200, UsersReply{Success: true, Users: s.Store.GetUsers(true)})
 	}
 }
 

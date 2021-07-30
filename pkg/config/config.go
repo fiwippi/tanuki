@@ -32,7 +32,7 @@ func DefaultConfig() *Config {
 		Paths:                   defaultPaths(),
 		SessionSecret:           encryption.NewKey(32),
 		ScanInterval:            task.NewMinutes(5),
-		ThumbGenerationInterval: task.NewMinutes(30),
+		ThumbGenerationInterval: task.NewMinutes(60),
 		MaxUploadedFileSizeMiB:  10,
 		DebugMode:               false,
 	}

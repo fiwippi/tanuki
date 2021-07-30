@@ -32,8 +32,8 @@ func Auth(realm string, store *bolt.DB) gin.HandlerFunc {
 			return
 		}
 
-		valid, err := store.ValidateLogin(user, pass)
-		if !valid || err != nil {
+		valid := store.ValidateLogin(user, pass)
+		if !valid {
 			log.Debug().Err(err).Msg("failed to validate auth credentials")
 			c.Header("WWW-Authenticate", realm)
 			c.AbortWithStatus(http.StatusUnauthorized)

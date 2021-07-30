@@ -85,6 +85,7 @@
 {{ end }}
 
 {{ define "scripts" }}
+<script src='{{versioning "/static/js/api.js"}}'></script>
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('entrypage', () => ({

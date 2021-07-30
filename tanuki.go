@@ -62,7 +62,7 @@ func main() {
 	// Setup cron jobs
 	genThumbs := func() error { return s.Store.GenerateThumbnails(true) }
 	task.NewJob(conf.ScanInterval).Run(s.ScanLibrary, "scan library", true)
-	task.NewJob(conf.ThumbGenerationInterval).Run(genThumbs, "generate thumbnails", false)
+	task.NewJob(conf.ThumbGenerationInterval).Run(genThumbs, "generate thumbnails", true)
 
 	// Serve static files
 	files := "files/minified"

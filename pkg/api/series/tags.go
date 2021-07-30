@@ -13,21 +13,7 @@ type TagsRequest struct {
 
 // TagsReply for the route /api/tag/:id/series
 type TagsReply struct {
-	Success bool     `json:"success"`
-	Tags    []string `json:"tags"`
-}
-
-// GET /api/series/:sid/tags TODO is this route being used
-func GetSeriesTags(s *server.Server) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		id := c.Param("sid")
-		t, err := s.Store.GetSeriesTags(id)
-		if err != nil {
-			c.AbortWithStatusJSON(500, TagsReply{Success: false})
-			return
-		}
-		c.JSON(200, TagsReply{Success: true, Tags: t.List()})
-	}
+	Success bool `json:"success"`
 }
 
 // PATCH /api/series/:sid/tags

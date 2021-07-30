@@ -109,9 +109,9 @@ func (db *DB) GetUser(uid string) (*users.User, error) {
 	return e, nil
 }
 
-func (db *DB) GetUsers(safe bool) ([]users.User, error) {
+func (db *DB) GetUsers(safe bool) []users.User {
 	users := make([]users.User, 0)
-	err := db.View(func(tx *bolt.Tx) error {
+	db.View(func(tx *bolt.Tx) error {
 		root := db.usersBucket(tx)
 
 		return root.ForEachUser(func(ub *buckets.UserBucket) error {
@@ -124,7 +124,7 @@ func (db *DB) GetUsers(safe bool) ([]users.User, error) {
 		})
 	})
 
-	return users, err
+	return users
 }
 
 func (db *DB) HasUser(uid string) bool {
@@ -156,8 +156,7 @@ func (db *DB) AdminCount() int {
 	return count
 }
 
-// TODO is this function used?
-func (db *DB) GetProgress(uid string) (*users.CatalogProgress, error) {
+func (db *DB) GetUserProgress(uid string) (*users.CatalogProgress, error) {
 	var p *users.CatalogProgress
 	err := db.View(func(tx *bolt.Tx) error {
 		root := db.usersBucket(tx)
@@ -202,20 +201,18 @@ func (db *DB) IsAdmin(uid string) (bool, error) {
 	return isAdmin, nil
 }
 
-func (db *DB) ValidateLogin(name, pass string) (bool, error) {
+func (db *DB) ValidateLogin(name, pass string) bool {
 	var valid bool
-	err := db.View(func(tx *bolt.Tx) error {
+	db.View(func(tx *bolt.Tx) error {
 		user, err := db.usersBucket(tx).GetUser(hash.SHA1(name))
 		if err != nil {
-			return err
+			valid = false
+		} else {
+			valid = user.ValidPassword(pass)
 		}
-		valid = user.ValidPassword(pass)
 
 		return nil
 	})
-	if err != nil {
-		return false, err
-	}
 
-	return valid, nil
+	return valid
 }

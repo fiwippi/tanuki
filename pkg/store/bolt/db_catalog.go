@@ -20,14 +20,15 @@ import (
 )
 
 var (
-	ErrCoverEmpty = errors.New("cover is empty")
+	ErrCoverEmpty     = errors.New("cover is empty")
+	ErrThumbnailEmpty = errors.New("thumbnail is empty")
 )
 
 func (db *DB) catalogBucket(tx *bolt.Tx) *buckets.CatalogBucket {
 	return &buckets.CatalogBucket{Bucket: tx.Bucket(keys.Catalog)}
 }
 
-// GetCatalog
+// Catalog
 
 func (db *DB) PopulateCatalog(series []*manga.ParsedSeries) error {
 	var errs error
@@ -142,7 +143,6 @@ func (db *DB) GetCatalog() api.Catalog {
 		c = db.catalogBucket(tx).Catalog()
 		return nil
 	})
-
 	return c
 }
 
@@ -675,7 +675,8 @@ func (db *DB) GenerateEntryThumbnail(sid, eid string, forceNew bool) error {
 }
 
 func (db *DB) GetSeriesThumbnail(sid string) ([]byte, string, error) {
-	return db.returnBytes(func(tx *bolt.Tx) ([]byte, string, error) {
+	// Get thumbnail
+	img, mimetype, err := db.returnBytes(func(tx *bolt.Tx) ([]byte, string, error) {
 		root := db.catalogBucket(tx)
 
 		// Get the custom series cover if exists
@@ -686,18 +687,52 @@ func (db *DB) GetSeriesThumbnail(sid string) ([]byte, string, error) {
 		if sb.HasThumbnail() {
 			return sb.Thumbnail(), "image/jpeg", nil
 		}
+		return nil, "", ErrThumbnailEmpty
+	})
+	if len(img) > 0 {
+		return img, mimetype, err
+	}
 
-		// Otherwise get first entry cover
-		firstEntry, err := root.FirstEntry(sid)
+	// If can't get custom thumbnail then get thumbnail from the first entry
+	var eid string
+	err = db.View(func(tx *bolt.Tx) error {
+		root := db.catalogBucket(tx)
+		eb, err := root.FirstEntry(sid)
+		if err != nil {
+			return err
+		}
+		eid = hash.SHA1(eb.Archive().Title)
+		return nil
+	})
+	if err != nil {
+		return nil, "", buckets.ErrEntryNotExist
+	}
+
+	return db.GetEntryThumbnail(sid, eid)
+}
+
+func (db *DB) GetEntryThumbnail(sid, eid string) ([]byte, string, error) {
+	// Get the thumbnail
+	img, mimetype, err := db.returnBytes(func(tx *bolt.Tx) ([]byte, string, error) {
+		b, err := db.catalogBucket(tx).Entry(sid, eid)
 		if err != nil {
 			return nil, "", err
 		}
 
-		return firstEntry.Thumbnail(), "image/jpeg", nil
+		return b.Thumbnail(), "image/jpeg", nil
 	})
-}
+	// Return it if it exists
+	if len(img) > 0 {
+		return img, mimetype, err
+	}
 
-func (db *DB) GetEntryThumbnail(sid, eid string) ([]byte, string, error) {
+	// If thumbnail doesn't exist try and recreate it
+	err = db.GenerateEntryThumbnail(sid, eid, true)
+	if err != nil {
+		// We have no thumbnail and can't generate another one
+		return nil, "", err
+	}
+	// Return the new thumbnail
 	return db.returnBytes(func(tx *bolt.Tx) ([]byte, string, error) {
 		b, err := db.catalogBucket(tx).Entry(sid, eid)
 		if err != nil {
@@ -1125,7 +1160,7 @@ func (db *DB) GetEntryOrder(sid, eid string) (int, error) {
 	return o, nil
 }
 
-//
+// Helper functions
 
 func (db *DB) returnBytes(f func(tx *bolt.Tx) ([]byte, string, error)) ([]byte, string, error) {
 	var data []byte

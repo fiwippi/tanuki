@@ -14,9 +14,8 @@ func NewService(g *server.RouterGroup) {
 	series.GET("/:sid/cover", GetSeriesCover)
 	series.PATCH("/:sid/cover", PatchSeriesCover)
 	series.DELETE("/:sid/cover", DeleteSeriesCover)
-	series.GET("/:sid/progress", GetSeriesProgress) // TODO is this route being used?
+	series.GET("/:sid/progress", GetSeriesProgress)
 	series.PATCH("/:sid/progress", PatchSeriesProgress)
-	series.GET("/:sid/tags", GetSeriesTags)
 	series.PATCH("/:sid/tags", PatchSeriesTags)
 
 	entries := series.Group("/:sid/entries")

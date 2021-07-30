@@ -39,7 +39,8 @@ On the first run Tanuki logs the default username and randomly generated passwor
 `MIT`
 
 ## OPDS
-This is the current [OPDS](https://specs.opds.io/) feature support
+- The route for the OPDS catalog is `/opds/v1.2/catalog`
+- This is the current [OPDS](https://specs.opds.io/) feature support:
 ### v1.2
 - [x] Basic Auth
 - [x] Viewing library
@@ -66,11 +67,8 @@ This is the current [OPDS](https://specs.opds.io/) feature support
 - Make the UI more mobile friendly, e.g. so the modal loads in the centre of the phone screen
 - Full well formatted documentation for Go + Javascript
 - Single shareable modal class where esc key causes it to disappear
-- Encapsulate retrieval and automatic generation of thumbnail if it doesn't exist into one function so that the API that the gin router acesses is simpler
-- Clean up DB API by not returning an error for all functions since some don't need to
 - Progress bar when uploading covers
 - Use validators for binding
-- Only include script src files where needed
 
 ## Changelog
 ### [0.4] - 2021-07-30

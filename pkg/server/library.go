@@ -63,5 +63,5 @@ func (s *Server) ScanLibrary() error {
 		log.Error().Err(err).Msg("failed to populate series db")
 	}
 
-	return s.Store.GenerateThumbnails(false)
+	return nil
 }

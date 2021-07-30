@@ -41,9 +41,6 @@ String.prototype.format = function() {
     for (let k in arguments) {
         a = a.replace("{" + k + "}", arguments[k])
     }
-    // if (a.startsWith("From")) {
-    //     console.log(a, arguments)
-    // }
 
     return a
 }

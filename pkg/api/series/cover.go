@@ -151,19 +151,7 @@ func GetEntryCover(s *server.Server) gin.HandlerFunc {
 		var err error
 		var mimetype string
 		if thumbnail == "true" {
-
 			img, mimetype, err = s.Store.GetEntryThumbnail(sid, eid)
-
-			// If thumbnail doesn't exist try and recreate it
-			if len(img) == 0 {
-				err = s.Store.GenerateEntryThumbnail(sid, eid, true)
-				if err != nil {
-					c.AbortWithStatus(500)
-					return
-				}
-
-				img, mimetype, err = s.Store.GetEntryThumbnail(sid, eid)
-			}
 		} else {
 			img, mimetype, err = s.Store.GetEntryCoverFile(sid, eid)
 		}

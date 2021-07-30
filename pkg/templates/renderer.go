@@ -20,8 +20,6 @@ type Renderer struct {
 	debug  bool
 }
 
-// TODO only include /api.js where it's needed, e.g. it's not needed for the catalog page
-
 func (r *Renderer) FuncMap() template.FuncMap {
 	return template.FuncMap{
 		// Versions files so they dont get cached (used when debugging)
@@ -39,7 +37,7 @@ func (r *Renderer) FuncMap() template.FuncMap {
 		"catalog": func() api.Catalog {
 			return r.server.Store.GetCatalog()
 		},
-		// Returns the progress for the user TODO no need for catalog endpoint? (OPDS NEEDS IT?)
+		// Returns the progress for the user
 		"catalogProgress": func(c *gin.Context) map[string]*users.SeriesProgress {
 			uid := c.GetString("uid")
 			user, err := r.server.Store.GetUser(uid)
@@ -48,7 +46,6 @@ func (r *Renderer) FuncMap() template.FuncMap {
 			}
 			return user.Progress.Data
 		},
-		// TODO remove the tags endpoint? + specfic tags endpoint (DOES OPDS NEED IT)
 		"tags": func() []string {
 			return r.server.Store.GetTags().List()
 		},
@@ -126,11 +123,7 @@ func (r *Renderer) FuncMap() template.FuncMap {
 			return u.Name
 		},
 		"users": func() []users.User {
-			list, err := r.server.Store.GetUsers(true)
-			if err != nil {
-				return nil
-			}
-			return list
+			return r.server.Store.GetUsers(true)
 		},
 		"user": func(c *gin.Context) users.User {
 			uid := c.Query("hash")

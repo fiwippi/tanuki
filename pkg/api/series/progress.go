@@ -195,38 +195,38 @@ func GetEntryProgressInternal(uid, sid, eid string, s *server.Server) (*users.En
 }
 
 func GetSeriesProgressInternal(uid, sid string, s *server.Server) (*users.SeriesProgress, *users.CatalogProgress, error) {
-	// Get the user
-	user, err := s.Store.GetUser(uid)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	// Ensure the series and its entries exist
 	entries, err := s.Store.GetEntries(sid)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// Get the progress for the series
-	p := user.Progress.GetSeries(sid)
-	if p == nil {
+	// Get the user progress
+	progress, err := s.Store.GetUserProgress(uid)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Get the series progress
+	seriesProgress := progress.GetSeries(sid)
+	if seriesProgress == nil {
 		// If the series exists but the progress for it doesnt
 		// exist then create the new progress for the user
-		user.Progress.AddSeries(sid, len(entries))
-		p = user.Progress.GetSeries(sid)
+		progress.AddSeries(sid, len(entries))
+		seriesProgress = progress.GetSeries(sid)
 		for i, e := range entries {
-			err := p.SetEntryProgress(i, users.NewEntryProgress(e.Pages))
+			err := seriesProgress.SetEntryProgress(i, users.NewEntryProgress(e.Pages))
 			if err != nil {
 				return nil, nil, err
 			}
 		}
 
 		// Save the newly created progress
-		err := s.Store.ChangeProgress(uid, user.Progress)
+		err := s.Store.ChangeProgress(uid, progress)
 		if err != nil {
 			return nil, nil, err
 		}
 	}
 
-	return p, user.Progress, err
+	return seriesProgress, progress, err
 }
