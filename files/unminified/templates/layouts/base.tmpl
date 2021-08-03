@@ -5,19 +5,14 @@
     <title>{{ block "title" . }}{{ end }}</title>
     <link rel="stylesheet" href='{{versioning "/static/css/style.css"}}'>
     <link rel="stylesheet" href='{{versioning "/static/css/fira_mono.css"}}'>
-    <script src='{{versioning "/static/js/auth.js"}}'></script>
-    <script src='{{versioning "/static/js/common.js"}}'></script>
     <script src='{{versioning "/static/js/theme.js"}}'></script>
-    <script defer src='{{versioning "/static/js/alpine.js"}}'></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function(event) {
-            setTheme()
-        });
+    <script type="module">
+        import * as API from {{ versioning "/static/js/api.js" }}
 
         document.addEventListener('alpine:init', () => {
-            Alpine.data('logoutButton', () => ({
+            Alpine.data('logout', () => ({
                 async logout() {
-                    await authLogout()
+                    await API.Auth.Logout()
                     window.location.replace('/login')
                 }
             }))
@@ -25,17 +20,18 @@
     </script>
     {{ block "styles" . }}{{ end }}
     {{ block "scripts" . }}{{ end }}
+    <script defer src='{{versioning "/static/js/alpine.js"}}'></script>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1><a style="border-bottom: none;" href="/">Tanuki</a></h1>
+            <h1><a class="no-bottom" href="/">Tanuki</a></h1>
             → <a href="/">Home</a>
             → <a href="/tags">Tags</a>
             <span x-data="{ admin: {{ admin . }} }" x-show="admin" x-cloak>
                 → <a href="/admin">Admin</a>
             </span>
-            → <a x-data="logoutButton" @click="await logout()" href="javascript:void(0)">Logout</a>
+            → <a x-data="logout" @click="await logout()" href="javascript:void(0)">Logout</a>
             <button x-data style="float: right" @click="toggleTheme()">Change Theme 🎨</button>
             <br><br>
         </div>

@@ -1,7 +1,9 @@
-{{ define "title" }}Home{{ end }}
+{{ define "title" }}Tag{{ end }}
 
 {{ define "scripts" }}
-<script>
+<script type="module">
+    import * as Util from {{ versioning "/static/js/util.js" }}
+
     document.addEventListener('alpine:init', () => {
         Alpine.data('specficTag', () => ({
             tag: "",
@@ -19,18 +21,12 @@
                 let prefix = "/tags/"
                 this.tag = window.location.pathname.slice(prefix.length)
 
-                this.images = []
-                let promises = []
-                this.entries.sort(entryCompare)
-
-                for (let i = 0; i < this.entries.length; i++) {
-                    let img = new Image()
-                    promises.push(waitUntilLoad(img))
-                    img.src = '/api/series/{0}/cover?thumbnail=true'.format(this.entries[i].hash)
-                    this.images.push(img)
-                }
-
-                await Promise.all(promises)
+                this.entries.sort(Util.Compare.EntryOrder)
+                let images = []
+                await Util.Images.LoadImages(images, this.entries.length, (i) => {
+                    return `/api/series/${this.entries[i].hash}/cover?thumbnail=true`
+                })
+                this.images = images
             },
         }))
     })
@@ -40,26 +36,26 @@
 {{ define "content" }}
 <div x-data="specficTag">
     <template x-if="entries.length > 0">
-        <h2 x-text="'Tag: ' + tag"></h2>
+        <h2 x-text="`Tag: ${tag}`"></h2>
     </template>
     <template x-if="entries.length === 0">
         <h3>Empty!</h3>
     </template>
 
     <template x-if="entries.length > 0">
-        <div class="searchWrapper">
-            <input x-model="search" class="searchbar" placeholder="Search..." type="text">
+        <div class="search">
+            <input x-model="search" class="search__bar" placeholder="Search..." type="text">
         </div>
     </template>
 
-    <div class="entriesDiv">
+    <div class="entries">
         <template x-for="(e, index) in filteredEntries">
-            <a style="border-bottom: none;" :href="'/entries/{0}'.format(e.hash)">
-                <div class="entry" :style="`flex: 0 1 ${images[index].naturalWidth}px`">
+            <a class="no-bottom" :href="`/entries/${e.hash}`">
+                <div class="entry" style="flex: 0 1 auto; max-width: 200px">
                     <img :src="images[index].src" style="width: 100%">
-                    <div style="padding: 9px 16px;" >
-                        <h4 style="margin-block: 0.2em" x-text="e.title"></h4>
-                        <span x-text="'Entries: {0}'.format(e.entries)"></span><br>
+                    <div class="entry__info" >
+                        <h4 class="entry__title" x-text="e.title"></h4>
+                        <span x-text="`Entries: ${e.entries}`"></span><br>
                     </div>
                 </div>
             </a>

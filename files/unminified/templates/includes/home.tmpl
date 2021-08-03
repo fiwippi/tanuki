@@ -1,13 +1,15 @@
 {{ define "title" }}Home{{ end }}
 
 {{ define "scripts" }}
-<script>
+<script type="module">
+    import * as Util from {{ versioning "/static/js/util.js" }}
+
     document.addEventListener('alpine:init', () => {
         Alpine.data('catalog', () => ({
             search: "",
             images: [],
-            entries: {{ catalog }},
-            progress: {{ catalogProgress . }},
+            entries: Util.Ensure.Array({{ catalog }}),
+            progress: Util.Ensure.Object({{ catalogProgress . }}),
 
             get filteredEntries() {
                 return this.entries.filter(
@@ -16,43 +18,15 @@
             },
 
             async init() {
-                // Ensure proper zero values if these don't exist
-                if (this.entries === null) {
-                    this.entries = []
-                }
-                if (this.progress === null) {
-                    this.progress = {}
-                }
-
-                // Get the images for each entry
-                this.images = []
-                let promises = []
-                for (let i = 0; i < this.entries.length; i++) {
-                    let img = new Image()
-                    promises.push(waitUntilLoad(img))
-                    img.src = '/api/series/{0}/cover?thumbnail=true'.format(this.entries[i].hash)
-                    this.images.push(img)
-                }
-                await Promise.all(promises).catch(function(err) {
-                    console.error(err.message);
+                let images = []
+                await Util.Images.LoadImages(images, this.entries.length, (i) => {
+                    return `/api/series/${this.entries[i].hash}/cover?thumbnail=true`
                 })
-
+                this.images = images
             },
 
-            fmtProgress(seriesProgress) {
-                if (seriesProgress === undefined) {
-                    return "Progress: N/A"
-                }
-
-                let current = 0
-                let total = 0
-                for (let i in seriesProgress.tracker) {
-                    let p = seriesProgress.tracker[i]
-                    current += p.current
-                    total += p.total
-                }
-
-                return "Progress: " + stringPercent(current / total)
+            fmtProgress(p) {
+                return `Progress: ${Util.Fmt.SeriesPercent(p)}`
             },
         }))
     })
@@ -69,19 +43,19 @@
     </template>
 
     <template x-if="entries.length > 0">
-        <div class="searchWrapper">
-            <input x-model="search" class="searchbar" placeholder="Search..." type="text">
+        <div class="search">
+            <input x-model="search" class="search__bar" placeholder="Search..." type="text">
         </div>
     </template>
 
-    <div class="entriesDiv">
+    <div class="entries">
         <template x-for="e in filteredEntries">
-            <a style="border-bottom: none;" :href="'/entries/{0}'.format(e.hash)">
-                <div class="entry" :style="`flex: 0 1 max(150px, ${images[e.order - 1].naturalWidth}px)`">
-                    <img :src="images[e.order - 1].src" style="width: 100%; max-height: 300px">
-                    <div style="padding: 9px 16px;" >
-                        <h4 style="margin-block: 0.2em" x-text="e.title"></h4>
-                        <span x-text="'Entries: {0}'.format(e.entries)"></span><br>
+            <a class="no-bottom" :href="`/entries/${e.hash}`">
+                <div class="entry" style="flex: 0 1 auto; max-width: 200px">
+                    <img class="entry__img" :src="images[e.order - 1].src">
+                    <div class="entry__info" >
+                        <h4 class="entry__title" x-text="e.title"></h4>
+                        <span x-text="`Entries: ${e.entries}`"></span><br>
                         <span x-text="fmtProgress(progress[e.hash])"></span>
                     </div>
                 </div>
@@ -89,5 +63,4 @@
         </template>
     </div>
 </div>
-
 {{ end }}

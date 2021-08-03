@@ -1,12 +1,13 @@
-build:
-		CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/minify minify.go
-		bin/minify -input-dir files/unminified -output-dir files/minified
-		rm -f bin/minify
-
+build: minify
 		CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/tanuki tanuki.go
 
 run:
 		./bin/tanuki
+
+minify:
+		CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/minify minify.go
+		bin/minify -input-dir files/unminified -output-dir files/minified
+		rm -f bin/minify
 
 clean:
 		go clean
@@ -16,7 +17,6 @@ clean:
 		rm -Rf config
 		rm -Rf files/minified/static/css
 		rm -Rf files/minified/static/js/api.js
-		rm -Rf files/minified/static/js/auth.js
-		rm -Rf files/minified/static/js/common.js
+		rm -Rf files/minified/static/js/util.js
 		rm -Rf files/minified/static/js/theme.js
 		rm -Rf files/minified/templates

@@ -92,3 +92,7 @@ const setTheme = (theme) => {
         document.body.classList.remove('dark')
     }
 };
+
+document.addEventListener("DOMContentLoaded", function(event) {
+    setTheme()
+});

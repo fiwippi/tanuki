@@ -1,11 +1,12 @@
 {{ define "title" }}Edit User{{ end }}
 
 {{ define "scripts" }}
-<script src='{{versioning "/static/js/api.js"}}'></script>
-<script>
+<script type="module">
+    import * as API from {{ versioning "/static/js/api.js" }}
+
     document.addEventListener('alpine:init', () => {
-        Alpine.data('editUser', () => ({
-            userHash: "",
+        Alpine.data('user_edit', () => ({
+            uid: "",
             username: "",
             password: "",
             admin: false,
@@ -16,39 +17,28 @@
             async init() {
                 const user = {{ user . }}
 
-                this.userHash = user.hash
+                this.uid = user.hash
                 this.username = user.name
-                this.password = user.pass
                 this.admin = user.type === 'admin';
             },
 
             async edit() {
-                let uType = 'admin'
-                if (!this.admin) {
-                    uType = 'standard'
-                }
-
-                let resp = await apiAdminUserEdit(this.userHash, this.username, this.password, uType)
-
-                if (resp === undefined) {
-                    this.modalText = 'ERROR ENCOUNTERED'
-                    this.showModal = true
-                } else if (!resp.success) {
-                    if (resp.message !== undefined && resp.message.length > 0) {
-                        this.modalText = 'FAILED: ' + resp.message.toUpperCase()
-                    } else {
+                let type = this.admin ? 'admin': 'standard'
+                await API.Admin.EditUser(this.uid, this.username, this.password, type)
+                    .then(() => {
+                        return API.User.IsAdmin()
+                    })
+                    .then(admin => {
+                        if (!admin) {
+                            window.location.replace('/login')
+                        } else {
+                            window.location.replace('/admin/users')
+                        }
+                    })
+                    .catch(() => {
                         this.modalText = 'FAILED'
-                    }
-                    this.showModal = true
-                } else {
-                    let isAdmin = await apiUserAdmin()
-                    if (!isAdmin) {
-                        window.location.replace('/login')
-                    } else {
-                        this.modalText = 'SUCCESS'
                         this.showModal = true
-                    }
-                }
+                    })
             }
         }))
     })
@@ -56,42 +46,39 @@
 {{ end }}
 
 {{ define "content" }}
-<div x-data="editUser">
-    <div class="flex_div">
-        <h3 class="flex_key">Username:</h3>
-        <label class="flex_value">
+<div x-data="user_edit">
+    <!-- Username -->
+    <div class="flex--row">
+        <h3 class="flex__key--centered flex__key--less-padding">Username:</h3>
+        <label class="flex__key--less-padding">
             <input type="text" placeholder="Username" x-model="username">
         </label>
     </div>
-
-    <div class="flex_div">
-        <h3 class="flex_key">Admin:</h3>
-        <label class="flex_value">
+    <!-- Admin -->
+    <div class="flex--row">
+        <h3 class="flex__key--centered flex__key--less-padding">Admin:</h3>
+        <label class="flex__key--less-padding">
             <input type="checkbox" x-model="admin">
         </label>
     </div>
-
-    <button @click="open = ! open">Change Password</button>
-    <div x-show="open" @click.away="open = false" class="flex_div">
-        <h3 class="flex_key">New Password:</h3>
-        <label class="flex_value">
+    <!-- Password -->
+    <button @click="open = !open">Change Password</button>
+    <div class="flex--row" x-show="open" @click.away="open = false">
+        <h3 class="flex__key--centered flex__key--less-padding">New Password:</h3>
+        <label class="flex__key--less-padding">
             <input type="password" placeholder="Password" x-model="password">
         </label>
     </div>
-
+    <!-- Modal -->
     <div x-cloak>
         <div  x-show="showModal" class="modal">
-            <div @click.away="showModal = false" x-show="showModal" x-transition class="modal-content">
-                <span class="close" @click="showModal = false">&times;</span>
+            <div @click.away="showModal = false" x-show="showModal" x-transition class="modal__content">
+                <span class="modal__close-button" @click="showModal = false">&times;</span>
                 <h3 x-text="modalText"></h3>
             </div>
         </div>
     </div>
-
-    <p>
-        --------------------<br>
-        <button @click="await edit()">Save</button>
-    </p>
-
+    <!-- Save Button -->
+    <button class="form-button" @click="await edit()">Save</button>
 </div>
 {{ end }}

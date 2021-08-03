@@ -1,10 +1,11 @@
-{{ define "title" }}Edit User{{ end }}
+{{ define "title" }}Create User{{ end }}
 
 {{ define "scripts" }}
-<script src='{{versioning "/static/js/api.js"}}'></script>
-<script>
+<script type="module">
+    import * as API from {{ versioning "/static/js/api.js" }}
+
     document.addEventListener('alpine:init', () => {
-        Alpine.data('createUser', () => ({
+        Alpine.data('user_create', () => ({
             username: "",
             password: "",
             admin: false,
@@ -12,27 +13,15 @@
             modalText: "",
 
             async create() {
-                let uType = 'admin'
-                if (!this.admin) {
-                    uType = 'standard'
-                }
-
-                let resp = await apiAdminUserCreate(this.username, this.password, uType)
-
-                if (resp === undefined) {
-                    this.modalText = 'ERROR ENCOUNTERED'
-                    this.showModal = true
-                } else if (!resp.success) {
-                    if (resp.message !== undefined && resp.message.length > 0) {
-                        this.modalText = 'FAILED: ' + resp.message.toUpperCase()
-                    } else {
-                        this.modalText = 'FAILED'
-                    }
-                    this.showModal = true
-                } else {
-                    this.modalText = 'SUCCESS'
-                    this.showModal = true
-                }
+                let type = this.admin ? 'admin': 'standard'
+                await API.Admin.CreateUser(this.username, this.password, type)
+                    .then(() => {
+                        this.modalText = 'SUCCESS'
+                    })
+                    .catch(() => {
+                        this.modalText = 'ERROR ENCOUNTERED'
+                    })
+                this.showModal = true
             }
         }))
     })
@@ -40,41 +29,38 @@
 {{ end }}
 
 {{ define "content" }}
-<div x-data="createUser">
-    <div class="flex_div">
-        <h3 class="flex_key">Username:</h3>
-        <label class="flex_value">
+<div x-data="user_create">
+    <!-- Username -->
+    <div class="flex--row">
+        <h3 class="flex__key--centered flex__key--less-padding">Username:</h3>
+        <label class="flex__key--less-padding">
             <input type="text" placeholder="Username" x-model="username">
         </label>
     </div>
-
-    <div class="flex_div">
-        <h3 class="flex_key">Password:</h3>
-        <label class="flex_value">
+    <!-- Password -->
+    <div class="flex--row">
+        <h3 class="flex__key--centered flex__key--less-padding">Password:</h3>
+        <label class="flex__key--less-padding">
             <input type="password" placeholder="Password" x-model="password">
         </label>
     </div>
-
-    <div class="flex_div">
-        <h3 class="flex_key">Admin:</h3>
-        <label class="flex_value">
+    <!-- Is Admin -->
+    <div class="flex--row">
+        <h3 class="flex__key--centered flex__key--less-padding">Admin:</h3>
+        <label class="flex__key--less-padding">
             <input type="checkbox" x-model="admin">
         </label>
     </div>
-
+    <!-- Create Button -->
+    <button class="form-button" @click="await create()">New User</button>
+    <!-- Modal -->
     <div x-cloak>
         <div  x-show="showModal" class="modal">
-            <div @click.away="showModal = false" x-show="showModal" x-transition class="modal-content">
-                <span class="close" @click="showModal = false">&times;</span>
+            <div @click.away="showModal = false" x-show="showModal" x-transition class="modal__content">
+                <span class="modal__close-button" @click="showModal = false">&times;</span>
                 <h3 x-text="modalText"></h3>
             </div>
         </div>
     </div>
-
-    <p>
-        --------------------<br>
-        <button @click="await create()">New User</button>
-    </p>
-
 </div>
 {{ end }}

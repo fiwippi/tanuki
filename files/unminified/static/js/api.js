@@ -1,439 +1,254 @@
-// GET /api/user/type
-async function apiUserAdmin() {
-    return await fetch('/api/user/type', {
+export const name = 'api';
+
+const API_URL = "/api/"
+
+Object.prototype.ensureSuccess = function() {
+    return new Promise((resolve, reject) => {
+        if (!this.success) {
+            if (this.message.length > 0) {
+                console.error(this.message)
+            }
+            reject()
+            return
+        }
+        resolve(this)
+    })
+}
+
+async function fetchResource(route, userOptions = {}, form) {
+    // Define default options
+    const defaultOptions = {
         method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-        .then(response => response.json())
-        .then(data => {
-            return data['type'] === 'admin';
-        })
-        .catch((error) => {
-            console.error(error);
-            return false
-        })
-}
+    };
+    // Define default headers
+    const defaultHeaders = {
+        'Content-Type': 'application/json',
+    };
 
-// PATCH
-async function apiPatchUserProgress(sid, eid, progress) {
-    let url
-
-    if (sid.length > 0) {
-        url = `/api/series/${sid}/progress`
-    }
-    if (eid.length > 0) {
-        url = `/api/series/${sid}/entries/${eid}/progress`
-    }
-
-    let data = { progress: progress }
-
-    console.log(sid, eid, progress, url, data)
-
-    return await fetch(url, {
-        method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-    })
-        .then(response => response.json())
-        .then(data => {
-            return { success: data['success'] }
-        })
-        .catch((error) => {
-            console.error(error);
-            return undefined
-        })
-}
-
-// GET /api/user/name
-async function apiUserName() {
-    return await fetch('/api/user/name', {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-        .then(response => response.json())
-        .then(data => {
-            return data['username']
-        })
-        .catch((error) => {
-            console.error(error);
-            return ""
-        })
-}
-
-// GET /api/admin/users
-async function apiAdminUsersView() {
-    return await fetch('/api/admin/users', {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-        .then(response => response.json())
-        .then(data => {
-            return { success: data['success'], users: data['users'] }
-        })
-        .catch((error) => {
-            console.error(error);
-            return undefined
-        })
-}
-
-// PUT /api/admin/users
-async function apiAdminUserCreate(username, password, userType) {
-    let data = { username: username, password: password, type: userType}
-    return await fetch('/api/admin/users', {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-    })
-        .then(response => response.json())
-        .then(data => {
-            return { success: data['success'], message: data['message'] }
-        })
-        .catch((error) => {
-            console.error(error);
-            return undefined
-        })
-}
-
-// PATCH /api/admin/user/:id
-async function apiAdminUserEdit(usernameHash, newUsername, newPassword, newType) {
-    let data = { new_username: newUsername, new_password: newPassword, new_type: newType}
-    return await fetch('/api/admin/user/' + usernameHash, {
-        method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-    })
-        .then(response => response.json())
-        .then(data => {
-            return { success: data['success'], message: data['message'] }
-        })
-        .catch((error) => {
-            console.error(error);
-            return undefined
-        })
-}
-
-// DELETE /api/admin/user/:id
-async function apiAdminUserDelete(usernameHash) {
-    return await fetch('/api/admin/user/' + usernameHash, {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-        .then(response => response.json())
-        .then(data => {
-            return { success: data['success'], message: data['message'] }
-        })
-        .catch((error) => {
-            console.error(error);
-            return undefined
-        })
-}
-
-// GET /api/series/:sid
-async function apiSeries(sid) {
-    return await fetch('/api/series/' + sid, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-        .then(response => response.json())
-        .then(data => {
-            return { success: data['success'], data: data['data'] }
-        })
-        .catch((error) => {
-            console.error(error);
-            return undefined
-        })
-}
-
-// GET /api/series/:sid/progress
-async function apiSeriesProgress(series) {
-    let url = '/api/series/{0}/progress'.format(series)
-
-    return await fetch(url, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-        .then(response => response.json())
-        .then(data => {
-            return data
-        })
-        .catch((error) => {
-            console.error(error);
-            return undefined
-        })
-}
-
-// PATCH /api/series/:sid
-async function apiPatchSeries(sid, title, author, date_released) {
-    let data = {
-        title: title,
-        author: author,
-        date_released: date_released
+    // If we are sending a form, we don't
+    // want to use the default content type
+    // since it's set automatically
+    if (form) {
+        delete defaultHeaders["Content-Type"]
     }
 
-    return await fetch('/api/series/' + sid, {
-        method: 'PATCH',
+    const options = {
+        // Merge options
+        ...defaultOptions,
+        ...userOptions,
+        // Merge headers
         headers: {
-            'Content-Type': 'application/json',
+            ...defaultHeaders,
+            ...userOptions.headers,
         },
-        body: JSON.stringify(data),
-    })
+    };
+
+    return fetch(API_URL + route, options)
         .then(response => response.json())
-        .then(data => {
-            return data['success']
-        })
-        .catch((error) => {
-            console.error(error);
-            return false
-        })
+        .catch(error => {throw error})
 }
 
-// GET /api/series/:sid/entries/:eid
-async function apiGetEntry(sid, eid) {
-    return await fetch('/api/series/' + sid + '/entries/' + eid, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-        .then(response => response.json())
-        .then(data => {
-            return data
-        })
-        .catch((error) => {
-            console.error(error);
-            return undefined
-        })
-}
+export class Auth {
+    static async Login(username, password) {
+        let data = {
+            username: username,
+            password: password,
+        }
 
-// PATCH /api/series/:sid/entries/:eid
-async function apiPatchEntry(sid, eid, title, author, date_released, chapter, volume) {
-    let data = {
-        title: title,
-        author: author,
-        date_released: date_released,
-        chapter: Number(chapter),
-        volume: Number(volume),
+        return fetchResource("auth/login", {
+            method: 'POST',
+            body: JSON.stringify(data),
+        })
+            .then(resp => resp.ensureSuccess())
     }
 
-    return await fetch('/api/series/' + sid + '/entries/' + eid, {
-        method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-    })
-        .then(response => response.json())
-        .then(data => {
-            return data['success']
-        })
-        .catch((error) => {
-            console.error(error);
-            return false
-        })
+    static async Logout(username, password) {
+        return fetchResource("auth/logout")
+    }
 }
 
-// PATCH /api/series/:sid/cover
-async function apiPatchSeriesCover(sid, formdata) {
-    return await fetch('/api/series/' + sid + '/cover', {
-        // ContentType is NOT set when sending file in form
-        method: 'PATCH',
-        body: formdata,
-    })
-        .then(response => response.json())
-        .then(data => {
-            return data['success']
-        })
-        .catch((error) => {
-            console.error(error);
-            return false
-        })
-}
-
-// PATCH /api/series/:sid/entries/:eid/cover
-async function apiPatchEntryCover(sid, eid, formdata) {
-    return await fetch('/api/series/' + sid + '/entries/' + eid + '/cover', {
-        // ContentType is NOT set when sending file in form
-        method: 'PATCH',
-        body: formdata,
-    })
-        .then(response => response.json())
-        .then(data => {
-            return data['success']
-        })
-        .catch((error) => {
-            console.error(error);
-            return false
-        })
-}
-
-// DELETE /api/series/:sid/cover
-async function apiDeleteSeriesCover(sid) {
-    return await fetch('/api/series/' + sid + '/cover', {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-        .then(response => response.json())
-        .then(data => {
-            return data['success']
-        })
-        .catch((error) => {
-            console.error(error);
-            return false
-        })
-}
-
-// DELETE /api/series/:sid/cover
-async function apiDeleteEntryCover(sid, eid) {
-    return await fetch('/api/series/' + sid + '/entries/' + eid + '/cover', {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-        .then(response => response.json())
-        .then(data => {
-            return data['success']
-        })
-        .catch((error) => {
-            console.error(error);
-            return false
-        })
-}
-
-// GET /api/series/:sid/entries
-async function apiSeriesEntries(sid) {
-    let url = '/api/series/' + sid + '/entries'
-
-    return await fetch(url, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-        .then(response => response.json())
-        .then(data => {
-            return { success: data['success'], entries: data['list'], series_hash: data["series_hash"]}
-        })
-        .catch((error) => {
-            console.error(error);
-            return undefined
-        })
-}
-
-// GET /api/admin/library/scan
-async function apiAdminLibraryScan() {
-    return await fetch('/api/admin/library/scan', {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-        .then(response => response.json())
-        .then(data => {
-            return { success: data['success'], message: data['message'] }
-        })
-        .catch((error) => {
-            console.error(error);
-            return undefined
-        })
-}
-
-// GET /api/admin/library/generate-thumbnails
-async function apiAdminLibraryGenerateThumbnails() {
-    return await fetch('/api/admin/library/generate-thumbnails', {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-        .then(response => response.json())
-        .then(data => {
-            return { success: data['success'], message: data['message'] }
-        })
-        .catch((error) => {
-            console.error(error);
-            return undefined
-        })
-}
-
-// GET /api/admin/library/missing-items
-async function apiAdminLibraryMissingEntries() {
-    return await fetch('/api/admin/library/missing-items', {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-        .then(response => response.json())
-        .then(data => {
-            return { success: data['success'], entries: data['entries'] }
-        })
-        .catch((error) => {
-            console.error(error);
-            return undefined
-        })
-}
-
-// DELETE /api/admin/library/missing-items
-async function apiDeleteAdminLibraryMissingEntries() {
-    return await fetch('/api/admin/library/missing-items', {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-        .then(response => response.json())
-        .then(data => {
-            return { success: data['success'] }
-        })
-        .catch((error) => {
-            console.error(error);
-            return false
-        })
-}
-
-// PATCH /api/series/:sid/tags
-async function apiPatchSeriesTags(sid, tags) {
-    if (sid === undefined) {
-        return undefined
-    } else if (sid.length === 0) {
-        return undefined
+export class User {
+    static async IsAdmin() {
+        return fetchResource("user/type/")
+            .then(resp => resp.ensureSuccess())
+            .then(data => {
+                return data.type === 'admin';
+            })
+            .catch(() => {
+                return false
+            })
     }
 
-    let data = { tags: tags }
-    return await fetch('/api/series/' + sid + '/tags', {
-        method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-    })
-        .then(response => response.json())
-        .then(data => {
-            return { success: data['success'] }
+    static async Name() {
+        return fetchResource("user/name/")
+            .then(resp => resp.ensureSuccess())
+            .then(data => {
+                return data.name
+            })
+            .catch(() => {
+                return ""
+            })
+    }
+}
+
+export class Admin {
+    static async ScanLibrary() {
+        return fetchResource("admin/library/scan/")
+            .then(resp => resp.ensureSuccess())
+    }
+
+    static async GenerateThumbnails() {
+        return fetchResource("admin/library/generate-thumbnails/")
+            .then(resp => resp.ensureSuccess())
+    }
+
+    static async GetMissingItems() {
+        return fetchResource("admin/library/missing-items/")
+            .then(resp => resp.ensureSuccess())
+    }
+
+    static async DeleteMissingItems() {
+        return fetchResource("admin/library/missing-items/", {method: 'DELETE'})
+            .then(resp => resp.ensureSuccess())
+    }
+
+    static async Users() {
+        return fetchResource("admin/users/")
+            .then(resp => resp.ensureSuccess())
+    }
+
+    static async CreateUser(username, password, type) {
+        let data = { username: username, password: password, type: type}
+        return fetchResource(`admin/users`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
         })
-        .catch((error) => {
-            console.error(error);
-            return false
+            .then(resp => resp.ensureSuccess())
+    }
+
+    static async DeleteUser(uid) {
+        return fetchResource(`admin/user/${uid}/`, {method: 'DELETE'})
+            .then(resp => resp.ensureSuccess())
+    }
+
+    static async EditUser(uid, newUsername, newPassword, newType) {
+        let data = { new_username: newUsername, new_password: newPassword, new_type: newType}
+        return fetchResource(`admin/user/${uid}/`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
         })
+            .then(resp => resp.ensureSuccess())
+    }
+
+}
+
+export class Catalog {
+    static async Series(sid) {
+        return fetchResource(`series/${sid}`)
+            .then(resp => resp.ensureSuccess())
+            .then(data => { return data.data })
+    }
+
+    static async Entries(sid) {
+        return fetchResource(`series/${sid}/entries`)
+            .then(resp => resp.ensureSuccess())
+            .then(data => {
+                return { entries: data.list, series_hash: data.series_hash }
+            })
+    }
+
+    static async SeriesProgress(sid) {
+        return fetchResource(`series/${sid}/progress`)
+            .then(resp => resp.ensureSuccess())
+            .then(data => { return data.progress })
+    }
+
+    static async PatchSeries(sid, title, author, date_released) {
+        let data = {
+            title: title,
+            author: author,
+            date_released: date_released
+        }
+
+        return fetchResource(`series/${sid}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        })
+            .then(resp => resp.ensureSuccess())
+    }
+
+    static async PatchTags(sid, tags) {
+        let data = { tags: tags }
+        return fetchResource(`series/${sid}/tags`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        })
+            .then(resp => resp.ensureSuccess())
+    }
+
+    static async PatchProgress(sid, eid, progress) {
+        let url
+        if (sid.length > 0) {
+            url = `series/${sid}/progress`
+        }
+        if (eid.length > 0) {
+            url = `series/${sid}/entries/${eid}/progress`
+        }
+
+        let data = { progress: progress }
+
+        return fetchResource(url, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        })
+            .then(resp => resp.ensureSuccess())
+    }
+
+    static async PatchSeriesCover(sid, file, filename) {
+        let url = `series/${sid}/cover`
+        return Catalog.patchCover(url, file, filename)
+    }
+
+    static async DeleteSeriesCover(sid) {
+        return fetchResource(`series/${sid}/cover`, {method: 'DELETE'})
+            .then(resp => resp.ensureSuccess())
+    }
+
+    static async PatchEntry(sid, eid, title, author, date_released, chapter, volume) {
+        let data = {
+            title: title,
+            author: author,
+            date_released: date_released,
+            chapter: Number(chapter),
+            volume: Number(volume),
+        }
+
+        return fetchResource(`series/${sid}/entries/${eid}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        })
+            .then(resp => resp.ensureSuccess())
+    }
+
+    static async PatchEntryCover(sid, eid, file, filename) {
+        let url = `series/${sid}/entries/${eid}/cover`
+        return Catalog.patchCover(url, file, filename)
+    }
+
+    static async DeleteEntryCover(sid, eid) {
+        return fetchResource(`series/${sid}/entries/${eid}/cover`, {method: 'DELETE'})
+            .then(resp => resp.ensureSuccess())
+    }
+
+    static async patchCover(url, file, filename) {
+        const form = new FormData();
+        form.append('file', file);
+        form.append('filename', filename);
+
+        return fetchResource(url, {
+            method: 'PATCH',
+            body: form,
+        }, true)
+            .then(resp => resp.ensureSuccess())
+    }
 }

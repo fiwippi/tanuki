@@ -22,6 +22,8 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// TODO remove setTheme() flickering when changing page
+
 var g errgroup.Group
 
 //go:embed files/minified*

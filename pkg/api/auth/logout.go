@@ -8,8 +8,7 @@ import (
 
 // LogoutReply defines the reply from /api/auth/logout
 type LogoutReply struct {
-	Success bool   `json:"success"`
-	Message string `json:"message"`
+	Success bool `json:"success"`
 }
 
 // GET /api/auth/logout

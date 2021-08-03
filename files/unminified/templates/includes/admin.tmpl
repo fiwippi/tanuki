@@ -1,38 +1,38 @@
 {{ define "title" }}Admin{{ end }}
 
 {{ define "scripts" }}
-<script src='{{versioning "/static/js/api.js"}}'></script>
-<script>
+<script type="module">
+    import * as API from {{ versioning "/static/js/api.js" }}
+
     document.addEventListener('alpine:init', () => {
         Alpine.data('dashboard', () => ({
-            showScanResult: false,
             scanResult: "",
-            showThumbnailsResult: false,
+            showScanResult: false,
             thumbnailsResult: "",
+            showThumbnailsResult: false,
 
             async thumbnails() {
-                let resp = await apiAdminLibraryGenerateThumbnails()
-                if (resp === undefined) {
-                    this.thumbnailsResult = "Failure!"
-                } else if (!resp.success) {
-                    this.thumbnailsResult = "Failure!"
-                } else {
-                    this.thumbnailsResult = "Success!, " + resp.message
-                }
+                await API.Admin.GenerateThumbnails()
+                    .then(resp => {
+                        this.thumbnailsResult = `Success!, ${resp.message}`
+                    })
+                    .catch(() => {
+                        this.thumbnailsResult = "Failure!"
+                    })
+
                 this.showThumbnailsResult = true
             },
 
             async scan() {
-                let resp = await apiAdminLibraryScan()
-                if (resp === undefined) {
-                    this.scanResult = "Failure!"
-                } else if (!resp.success) {
-                    this.scanResult = "Failure!"
-                } else {
-                    this.scanResult = "Success!, " + resp.message
-                }
-                this.showScanResult = true
+                await API.Admin.ScanLibrary()
+                    .then(resp => {
+                        this.scanResult = `Success!, ${resp.message}`
+                    })
+                    .catch(() => {
+                        this.scanResult = "Failure!"
+                    })
 
+                this.showScanResult = true
             }
         }))
     })
@@ -41,22 +41,22 @@
 
 {{ define "content" }}
 <div x-data="dashboard">
-    <div class="flex_div">
-        <span class="flex_key_unpadded">⦿ <a href="/admin/users" style="line-height: 1.8em; align-self: auto">User Management</a></span>
+    <div class="flex--row">
+        <span class="flex__key--centered flex__key--list">⦿ <a href="/admin/users">User Management</a></span>
     </div>
-    <div class="flex_div">
-        <span class="flex_key_unpadded">⦿ <a href="/api/admin/db" style="line-height: 1.8em; align-self: auto">View Database</a></span>
+    <div class="flex--row">
+        <span class="flex__key--centered flex__key--list">⦿ <a href="/api/admin/db">View Database</a></span>
     </div>
-    <div class="flex_div">
-        <span class="flex_key_unpadded">⦿ <a href="/admin/missing-items" style="line-height: 1.8em; align-self: auto">Missing Items</a></span>
+    <div class="flex--row">
+        <span class="flex__key--centered flex__key--list">⦿ <a href="/admin/missing-items">Missing Items</a></span>
     </div>
-    <div class="flex_div_col">
-        <span>⦿ <a href="javascript:void(0)" style="line-height: 1.8em; align-self: auto" @click="await scan()">Scan Library Files</a></span>
-        <span x-show="showScanResult" @click.away="showScanResult = false" class="flex_value_uncentred" x-text="scanResult"></span>
+    <div class="flex--col flex--no-gap">
+        <span>⦿ <a class="flex__key--list" href="javascript:void(0)" @click="await scan()">Scan Library Files</a></span>
+        <span x-show="showScanResult" @click.away="showScanResult = false" x-text="scanResult"></span>
     </div>
-    <div class="flex_div_col">
-        <span>⦿ <a href="javascript:void(0)" style="line-height: 1.8em; align-self: auto" @click="await thumbnails()">Generate Thumbnails</a></span>
-        <span x-show="showThumbnailsResult" @click.away="showThumbnailsResult = false" class="flex_value_uncentred" x-text="thumbnailsResult"></span>
+    <div class="flex--col flex--no-gap">
+        <span>⦿ <a class="flex__key--list" href="javascript:void(0)" @click="await thumbnails()">Generate Thumbnails</a></span>
+        <span x-show="showThumbnailsResult" @click.away="showThumbnailsResult = false" x-text="thumbnailsResult"></span>
     </div>
 </div>
 {{ end }}

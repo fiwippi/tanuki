@@ -9,11 +9,6 @@
     {{ block "styles" . }}{{ end }}
     {{ block "scripts" . }}{{ end }}
     <script defer src='{{versioning "/static/js/alpine.js"}}'></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function(event) {
-            setTheme()
-        });
-    </script>
 </head>
 <body>
     <div class="container" id="container">

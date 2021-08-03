@@ -18,7 +18,7 @@ type LibraryScanReply struct {
 // LibraryMissingEntriesReply for /api/admin/library/missing-items
 type LibraryMissingEntriesReply struct {
 	Success bool             `json:"success"`
-	Entries api.MissingItems `json:"entries"`
+	Items   api.MissingItems `json:"items"`
 }
 
 // GET /api/admin/library/scan
@@ -55,7 +55,7 @@ func GenerateThumbnails(s *server.Server) gin.HandlerFunc {
 // GET /api/admin/library/missing-items
 func GetMissingItems(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.JSON(200, LibraryMissingEntriesReply{Success: true, Entries: s.Store.GetMissingItems()})
+		c.JSON(200, LibraryMissingEntriesReply{Success: true, Items: s.Store.GetMissingItems()})
 	}
 }
 

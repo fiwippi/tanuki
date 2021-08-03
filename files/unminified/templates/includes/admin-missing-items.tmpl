@@ -1,34 +1,37 @@
-{{ define "title" }}User Management{{ end }}
+{{ define "title" }}Missing Items{{ end }}
 
 {{ define "scripts" }}
-<script src='{{versioning "/static/js/api.js"}}'></script>
-<script>
+<script type="module">
+    import * as API from {{ versioning "/static/js/api.js" }}
+
     document.addEventListener('alpine:init', () => {
-        Alpine.data('entriesGrid', () => ({
-            entries: {{ missingItems }},
+        Alpine.data('missing_items', () => ({
+            items: {{ missingItems }},
             showModal: false,
             modalText: "",
 
-            async refreshEntries() {
-                let resp = await apiAdminLibraryMissingEntries()
-                if (resp === undefined || !resp.success) {
-                    this.modalText = 'FAILED TO GET ITEMS'
-                    this.showModal = true
-                } else {
-                    this.entries = resp.entries
-                }
+            async refreshItems() {
+                await API.Admin.GetMissingItems()
+                    .then(resp => {
+                        this.items = resp.items
+                    })
+                    .catch(() => {
+                        this.modalText = 'FAILED TO GET ITEMS'
+                        this.showModal = true
+                    })
             },
 
-            async deleteEntries() {
-                let resp = await apiDeleteAdminLibraryMissingEntries()
-                if (!resp.success) {
-                    this.modalText = 'FAILED TO DELETE ITEMS'
-                } else {
-                    this.modalText = 'DELETED ENTRIES'
-                }
+            async deleteItems() {
+                await API.Admin.DeleteMissingItems()
+                    .then(() => {
+                        this.modalText = 'DELETED ITEMS'
+                    })
+                    .catch(() => {
+                        this.modalText = 'FAILED TO DELETE ITEMS'
+                    })
                 this.showModal = true
 
-                await this.refreshEntries()
+                await this.refreshItems()
             },
         }))
     })
@@ -36,48 +39,49 @@
 {{ end }}
 
 {{ define "content" }}
-<div x-data="entriesGrid">
-    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; row-gap: 0.8em; ">
-
-        <!-- Table Headings -->
-        <template x-if="entries.length > 0">
-            <b><span style="grid-column: 1; grid-row: 0">Type</span></b>
-        </template>
-        <template x-if="entries.length > 0">
-            <b><span style="grid-column: 1; grid-row: 0">Title</span></b>
-        </template>
-        <template x-if="entries.length > 0">
-            <b><span style="grid-column: 2; grid-row: 0">Path</span></b>
-        </template>
-
-        <template x-if="entries.length === 0">
+<div x-data="missing_items">
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; row-gap: 0.8em;">
+        <template x-if="items.length === 0">
             <h2>No Missing Items!</h2>
         </template>
 
+        <!-- Table Headings -->
+        <template x-if="items.length > 0">
+            <b><span style="grid-column: 1; grid-row: 0">Type</span></b>
+        </template>
+        <template x-if="items.length > 0">
+            <b><span style="grid-column: 1; grid-row: 0">Title</span></b>
+        </template>
+        <template x-if="items.length > 0">
+            <b><span style="grid-column: 2; grid-row: 0">Path</span></b>
+        </template>
+
         <!-- Type -->
-        <template x-for="(entry, index) in entries" :key="index">
-            <span x-text="entry.type" :style="`grid-column: 1; grid-row: ${index + 2}`"></span>
+        <template x-for="(item, index) in items" :key="index">
+            <span x-text="item.type" :style="`grid-column: 1; grid-row: ${index + 2}`"></span>
         </template>
 
         <!-- Title -->
-        <template x-for="(entry, index) in entries" :key="index">
-            <span x-text="entry.title" :style="`grid-column: 2; grid-row: ${index + 2}`"></span>
+        <template x-for="(item, index) in items" :key="index">
+            <span x-text="item.title" :style="`grid-column: 2; grid-row: ${index + 2}`"></span>
         </template>
 
         <!-- Path -->
-        <template x-for="(entry, index) in entries" :key="index">
-            <span x-text="entry.path" :style="`grid-column: 3; grid-row: ${index + 2}`"></span>
+        <template x-for="(item, index) in items" :key="index">
+            <span x-text="item.path" :style="`grid-column: 3; grid-row: ${index + 2}`"></span>
         </template>
     </div>
 
-    <template x-if="entries.length > 0">
-        <a style="border-bottom: none;" href="javascript:void(0)"><button style="margin-top: 1.5em" @click="await deleteEntries()">Delete Missing Items</button></a>
+    <!-- Delete Missing Items -->
+    <template x-if="items.length > 0">
+        <a class="no-bottom" href="javascript:void(0)"><button class="form-button" @click="await deleteItems()">Delete Missing Items</button></a>
     </template>
 
+    <!-- Modal -->
     <div x-cloak>
         <div  x-show="showModal" class="modal">
-            <div @click.away="showModal = false" x-show="showModal" x-transition class="modal-content">
-                <span class="close" @click="showModal = false">&times;</span>
+            <div @click.away="showModal = false" x-show="showModal" x-transition class="modal__content">
+                <span class="modal__close-button" @click="showModal = false">&times;</span>
                 <h3 x-text="modalText"></h3>
             </div>
         </div>

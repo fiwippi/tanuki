@@ -70,9 +70,10 @@
 
 {{ define "scripts" }}
 <script defer src='{{versioning "/static/js/intersect.js"}}'></script>
-<script src='{{versioning "/static/js/api.js"}}'></script>
-<script src='{{versioning "/static/js/common.js"}}'></script>
-<script>
+<script type="module">
+    import * as API from {{ versioning "/static/js/api.js" }}
+    import * as Util from {{ versioning "/static/js/util.js" }}
+
     const blankImage = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
     const modeList = [
         {name: 'Continuous', value: 'continuous'},
@@ -165,25 +166,14 @@
                 // Load the images
                 this.images = new Array(this.entry.pages)
 
+                // Ensure the mode is saved, jumpToPage triggers here
+                this.changeMode(this.mode)
+
                 // If we don't do this x-intersect triggers a new
                 // update progress event before we can navigate to
                 // the current page
                 this.acceptUpdates = true
-
-                // Ensure the mode is saved, jumpToPage triggers here
-                this.changeMode(this.mode)
          },
-
-            async loadEntry() {
-                let resp = await apiGetEntry(this.sid, this.eid)
-
-                if (resp === undefined || !resp.success) {
-                    return false
-                } else {
-                    this.entry = resp.data
-                    return true
-                }
-            },
 
             async getPage(num, buffer) {
                 // Ensure valid page num
@@ -196,8 +186,8 @@
                 if (this.images[num - 1] === undefined) {
                     // Fetch the image
                     let img = new Image()
-                    let p =  waitUntilLoad(img)
-                    img.src = '/api/series/{0}/entries/{1}/page/{2}'.format(this.sid, this.eid, num)
+                    let p =  Util.Images.WaitForLoad(img)
+                    img.src = `/api/series/${this.sid}/entries/${this.eid}/page/${num}`
                     let success = await p
                         .then(() => { return true })
                         .catch(err => {console.log("failed to load image", num, err); return false})
@@ -226,7 +216,6 @@
                     // User could be scrolling up or down
                     await this.getPage(num - 1, false)
                     await this.getPage(num - 2, false)
-                    await this.getPage(num - 3, false)
 
                     await this.getPage(num + 1, false)
                     await this.getPage(num + 2, false)
@@ -283,12 +272,12 @@
             },
 
             changeEntry(eid) {
-                let url = '/reader/{0}/{1}'.format(this.sid, eid)
+                let url = `/reader/${this.sid}/${eid}`
                 window.location.replace(url)
             },
 
             exitReader() {
-                let url = '/entries/{0}'.format(this.sid)
+                let url = `/entries/${this.sid}`
                 window.location.replace(url)
             },
 
@@ -305,10 +294,7 @@
 
                 if (a || b || c) {
                     this.lastSavedPage = this.currentPage
-                    let resp = await apiPatchUserProgress(this.sid, this.eid, this.currentPage.toString())
-                    if (!resp) {
-                        console.error('failed to set progress for entry')
-                    }
+                    await API.Catalog.PatchProgress(this.sid, this.eid, this.currentPage.toString())
                 }
             },
 
@@ -342,6 +328,10 @@
                     await this.flipPage("right")
                 }
 
+            },
+
+            fmtPercent(p) {
+                return Util.Fmt.Percent(p)
             }
         }))
     })
@@ -352,38 +342,38 @@
 <div x-data="reader">
     <!--  Modal  -->
     <div x-cloak>
-        <div  x-show="showModal" class="modal">
-            <div @click.away="showModal = false" x-show="showModal" x-transition class="modal-content">
-                <span class="close" @click="showModal = false">&times;</span>
-                <h2 x-text="entry.title" style="margin-block-end: 0.2em"></h2>
-                <p x-text="entry.path" style="margin-block-start: 0.5em"></p>
+        <div x-show="showModal" class="modal">
+            <div @click.away="showModal = false" x-show="showModal" x-transition class="modal__content">
+                <span class="modal__close-button" @click="showModal = false">&times;</span>
+                <h2 class="modal__header" x-text="entry.title"></h2>
+                <p class="modal__sub-header" x-text="entry.path"></p>
 
-                <h4 style="margin-block-end: 0.2em">Progress</h4>
-                <p x-text="'{0}/{1} ({2})'.format(currentPage, entry.pages, stringPercent((currentPage / entry.pages) * 100))"
+                <h4 class="modal__header">Progress</h4>
+                <p x-text="`${currentPage}/${entry.pages} (${fmtPercent(currentPage / entry.pages)})`"
                    style="margin-block-start: 0.1em"></p>
 
-                <h4 style="margin-block-end: 0.2em">Jump To Page</h4>
+                <h4 class="modal__header">Jump To Page</h4>
                 <select x-model="selectedPage" @change="await jumpToPage(selectedPage)">
                     <template x-for="i in filteredPages">
                         <option :value="i" x-text="i"></option>
                     </template>
                 </select>
 
-                <h4 style="margin-block-end: 0.2em">Mode</h4>
+                <h4 class="modal__header">Mode</h4>
                 <select x-model="selectedMode" @change="changeMode(selectedMode)">
                     <template x-for="m in filteredMode">
                         <option :value="m.value" x-text="m.name"></option>
                     </template>
                 </select>
 
-                <h4 style="margin-block-end: 0.2em">Jump To Entry</h4>
+                <h4 class="modal__header">Jump To Entry</h4>
                 <select x-model="selectedEntry" @change="changeEntry(selectedEntry)">
                     <template x-for="e in filteredEntries">
                         <option :value="e.hash" x-text="e.title"></option>
                     </template>
                 </select>
 
-                <div class="flex_div" style="column-gap: 10px; margin-top: 30px; justify-content: flex-end">
+                <div class="flex--row" style="margin-top: 30px; justify-content: flex-end">
                     <button @click="changeEntry(entries[entryIndex - 1].hash)" x-show="hasPreviousEntry">Previous Entry</button>
                     <button @click="changeEntry(entries[entryIndex + 1].hash)" x-show="hasNextEntry">Next Entry</button>
                     <button @click="exitReader()">Exit Reader</button>
@@ -394,7 +384,7 @@
     </div>
 
     <!--  Paged reader  -->
-    <template x-if="mode !==  'continuous'">
+    <template x-if="mode !== 'continuous'">
         <div class="pagedContainer" @click.document="await handlePagedClick">
             <img class="unloaded pagedImg" :src="blankImage" x-ref="page">
 
@@ -407,7 +397,7 @@
     </template>
 
     <!--  Continuous scrolling reader  -->
-    <template x-if="mode ===  'continuous'">
+    <template x-if="mode === 'continuous'">
         <div class="scrollContainer">
             <template x-for="i in entry.pages">
                 <img class="unloaded scrollImg" :src="blankImage" :id="`page-${i}`" x-intersect.once="await getPage(i, true)"
@@ -416,7 +406,6 @@
             <button @click="changeEntry(entries[entryIndex + 1].hash)" x-show="hasNextEntry">Next Entry</button>
             <button @click="exitReader()" x-show="!hasNextEntry">Exit Reader</button>
         </div>
-
     </template>
 </div>
 {{ end }}
