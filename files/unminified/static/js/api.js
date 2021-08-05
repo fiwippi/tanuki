@@ -163,6 +163,12 @@ export class Catalog {
             .then(data => { return data.progress })
     }
 
+    static async EntryProgress(sid, eid) {
+        return fetchResource(`series/${sid}/entries/${eid}/progress`)
+            .then(resp => resp.ensureSuccess())
+            .then(data => { return data.progress })
+    }
+
     static async PatchSeries(sid, title, author, date_released) {
         let data = {
             title: title,

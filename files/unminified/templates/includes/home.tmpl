@@ -2,33 +2,13 @@
 
 {{ define "scripts" }}
 <script type="module">
-    import * as Util from {{ versioning "/static/js/util.js" }}
+    import createCatalog from {{versioning "/static/js/components/catalog.js"}}
+
+    const _entries = {{ catalog }}
+    const _progress = {{ catalogProgress . }}
 
     document.addEventListener('alpine:init', () => {
-        Alpine.data('catalog', () => ({
-            search: "",
-            images: [],
-            entries: Util.Ensure.Array({{ catalog }}),
-            progress: Util.Ensure.Object({{ catalogProgress . }}),
-
-            get filteredEntries() {
-                return this.entries.filter(
-                    i => i.title.toLowerCase().startsWith(this.search.toLowerCase())
-                )
-            },
-
-            async init() {
-                let images = []
-                await Util.Images.LoadImages(images, this.entries.length, (i) => {
-                    return `/api/series/${this.entries[i].hash}/cover?thumbnail=true`
-                })
-                this.images = images
-            },
-
-            fmtProgress(p) {
-                return `Progress: ${Util.Fmt.SeriesPercent(p)}`
-            },
-        }))
+        Alpine.data('catalog', () => { return createCatalog(_entries, _progress) })
     })
 </script>
 {{ end }}

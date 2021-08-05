@@ -16,6 +16,7 @@ func Auth(s *server.Server) gin.HandlerFunc {
 			// Invalid cookie
 			log.Debug().Err(err).Msg("failed to auth request")
 			c.Redirect(302, "/login")
+			c.Abort()
 			return
 		}
 
@@ -48,6 +49,7 @@ func SkipIfAuthed(session *auth.Session, home string) gin.HandlerFunc {
 		_, err := session.Get(c)
 		if err == nil {
 			c.Redirect(302, home)
+			c.Abort()
 			return
 		}
 
@@ -62,6 +64,7 @@ func Admin(home string) gin.HandlerFunc { // ||
 		admin := c.GetBool("admin")
 		if !admin {
 			c.Redirect(302, home)
+			c.Abort()
 			return
 		}
 

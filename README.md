@@ -62,15 +62,22 @@ On the first run Tanuki logs the default username and randomly generated passwor
 - Full OPDS feature support for v1.2 and v2.0
 
 ### Implementation Improvements
-- WASM frontend for the API
-- Clean up JS and CSS code/classes
 - Make the UI more mobile friendly, e.g. so the modal loads in the centre of the phone screen
 - Full well formatted documentation for Go + Javascript
-- Single shareable modal class where esc key causes it to disappear
 - Progress bar when uploading covers
-- Use validators for binding
 
 ## Changelog
+### [0.5] - 2021-08-05
+- Redundant CSS and JS code removed
+- CSS classes all name appropriately
+- CSS colours all specified in minify.go which makes it simpler to organise colours for both CSS themes
+- Theme does not jitter on load anymore
+- Alpine.js behaviour encapsulated into smaller classes which
+  - enabled minification
+  - reduces duplicity because behaviour is reproduced
+- No more `can't find img.src` when loading images in the library view
+- Many bug fixes, notable selecting options in the modal works correctly
+
 ### [0.4] - 2021-07-30
 - Assets minified before embedding
 - Data preloaded through templating engine to reduce API calls

@@ -2,29 +2,15 @@
 
 {{ define "scripts" }}
 <script type="module">
-    import * as API from {{ versioning "/static/js/api.js" }}
+    import createLogin from {{versioning "/static/js/components/login.js"}}
+    import createModal from {{versioning "/static/js/components/modal.js"}}
+
+    let m = createModal()
+    let l = createLogin(m)
 
     document.addEventListener('alpine:init', () => {
-        Alpine.data('login', () => ({
-            username: '',
-            password: '',
-            modalText: '',
-            modalVisible: false,
-
-            async login() {
-                await API.Auth.Login(this.username, this.password)
-                .then(() => {
-                    window.location.replace('/')
-                })
-                .catch(() => {
-                    this.modalText = 'LOGIN FAILED'
-                    this.showModal()
-                })
-            },
-
-            showModal() { this.modalVisible = true },
-            hideModal() { this.modalVisible = false }
-        }))
+        Alpine.data('modal', () => { return m })
+        Alpine.data('login', () => { return l })
     })
 </script>
 {{ end }}
@@ -39,16 +25,14 @@
     </div>
     <div class="flex--row">
         <h3 class="flex__key--centered">Password:</h3>
-        <label class="flex__key--centered"><input type="password" placeholder="Password" x-model="password" @keyup.enter="await login()"></label>
+        <label class="flex__key--centered"><input type="password" placeholder="Password" x-model="password" x-bind='password_field'></label>
     </div>
-    <button @click="await login()">Login</button>
+    <button x-bind="login_btn">Login</button>
     <!-- Modal -->
-    <div x-cloak>
-        <div x-show="modalVisible" class="modal" @keyup.escape.document="hideModal()">
-            <div @click.away="showModal()" x-show="modalVisible" x-transition class="modal__content">
-                <span class="modal__close-button" @click="hideModal()">&times;</span>
-                <h3 x-text="modalText"></h3>
-            </div>
+    <div x-data="modal" x-bind="modal_bg" class="modal" x-cloak>
+        <div x-bind="modal_content" class="modal__content" x-transition>
+            <span class="modal__close-button" x-bind="modal_close">&times;</span>
+            <h3 x-text="response"></h3>
         </div>
     </div>
 </div>

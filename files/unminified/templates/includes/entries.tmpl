@@ -2,403 +2,37 @@
 
 {{ define "styles" }}
 <style>
-    .icon {
-        width: 17px;
-        height: 17px;
-    }
-
-    .icon:hover {
-        cursor: pointer;
-        fill: #ff0000;
-    }
-
-    .tags-input {
-        display: flex;
-        flex-wrap: wrap;
-        border-width: 1px;
-        border-radius: .25rem;
-        padding-left: .5rem;
-        padding-right: 1rem;
-        padding-top: .5rem;
-        padding-bottom: .25rem;
-    }
-
-    .tags-input-tag {
-        display: inline-flex;
-        line-height: 1;
-        align-items: center;
-        font-size: .875rem;
-        background-color: #f3d39e;
-        /*color: #1c3d5a;*/
-        border-radius: .25rem;
-        user-select: none;
-        padding: .25rem;
-        margin-right: .5rem;
-        margin-bottom: .25rem;
-    }
-
-    .tags-input-tag:last-of-type {
-        margin-right: 0;
-    }
-
-    .tags-input-remove {
-        /*color: #2779bd;*/
-        font-size: 1.125rem;
-        line-height: 1;
-    }
-
-    .tags-input-remove:first-child {
-        margin-right: .25rem;
-    }
-
-    .tags-input-remove:last-child {
-        margin-left: .25rem;
-    }
-
-    .tags-input-remove:focus {
-        outline: 0;
-    }
-
-    .tags-input-text {
-        flex: 1;
-        outline: 0;
-        border: 2px solid #eac57a;
-        background: #fffaf2;
-        padding-top: .25rem;
-        padding-bottom: .25rem;
-        padding-left: .5rem;
-        margin-left: .5rem;
-        margin-bottom: .25rem;
-        min-width: 10rem;
-    }
-
-    .tags-input-text:hover, .tags-input-text:focus {
-        border: 2px solid red;
-        background-color: white;
+    .active {
+        box-shadow: 0 0 11px #f3d39e;
     }
 </style>
 {{ end }}
 
 {{ define "scripts" }}
 <script type="module">
-    import * as API from {{ versioning "/static/js/api.js" }}
-    import * as Util from {{ versioning "/static/js/util.js" }}
+    import createModal from {{ versioning "/static/js/components/modal.js" }}
+    import createSeries from {{ versioning "/static/js/components/series.js" }}
+
+    let _seriesData = {{ series . }};
+    let _entriesData = {{ entries . }};
+    let _progressData = {{ seriesProgress . }};
+
+    let _seriesDataModal = createModal()
+    let _entryViewModal = createModal()
+    let _entryDataModal = createModal()
+    let _seriesView = createSeries(_seriesData, _entriesData, _progressData, _seriesDataModal, _entryViewModal, _entryDataModal)
 
     document.addEventListener('alpine:init', () => {
-        Alpine.data('entries', () => ({
-            // Main data
-            search: "",
-            seriesData: {{ series . }},
-            entries: {{ entries . }},
-            progress: {{ seriesProgress . }},
-            images: [],
-            newTag: "",
-            seriesMetadata: {},
-            entryMetadata: {},
-
-            // Series Modal related
-            seriesImage: {},
-            showSeriesModal: false,
-            showMetadataResult: false,
-            showCoverResult: false,
-            showProgressResult: false,
-            metadataResult: "",
-            coverResult: "",
-            progressResult: "",
-
-            // Entry Modals
-            selectedEntryProgress: "",
-            selectedEntryProgressPage: 0,
-            selectedEntry: {},
-
-            // Basic Entry Modal
-            showBasicEntryModal: false,
-            showEntryProgress: false,
-            entryProgress: "",
-
-            // Edit Entry Modal
-            showEditEntryModal: false,
-            entryImage: {},
-            entryMetadataResult: "",
-            showEntryMetadataResult: "",
-            entryCoverResult: "",
-            showEntryCoverResult: "",
-
-            // Items
-            get filteredEntries() {
-               return this.entries.filter(
-                    i => i.title.toLowerCase().startsWith(this.search.toLowerCase())
-                )
-            },
-
-            get sortedTags() {
-                if (this.seriesData === undefined) {
-                    return []
-                }
-                if (this.seriesData.tags === undefined) {
-                    return []
-                }
-                return this.seriesData.tags.sort(Util.Compare.Strings)
-            },
-
-            // Init
-            async init() {
-                // Load series data
-                this.seriesMetadata.title = this.seriesData.title
-                this.seriesMetadata.author = this.seriesData.author
-                this.seriesMetadata.date_released = this.seriesData.date_released
-
-                // Ensure entry order
-                this.entries.sort(Util.Compare.EntryOrder)
-
-                // Load images
-                let images = []
-                await Util.Images.LoadImages(images, this.entries.length, (i) => {
-                    return `/api/series/${this.seriesData.hash}/entries/${this.entries[i].hash}/cover?thumbnail=true`
-                })
-                this.images = images
-            },
-
-            // General functions
-            imageWidth(index) {
-                return Util.Images.Width(this.images, index)
-            },
-
-            async refreshEntries(sid, forceNew) {
-                await API.Catalog.Series(sid)
-                    .then(data => {
-                        this.seriesData = data
-                        this.seriesMetadata.title = data.title
-                        this.seriesMetadata.author = data.author
-                        this.seriesMetadata.date_released = data.date_released
-                    })
-
-                await API.Catalog.Entries(sid)
-                    .then(resp => {
-                        resp.entries.sort(Util.Compare.EntryOrder)
-                        let images = []
-                        Util.Images.LoadImages(this.images, resp.entries.length, (i) => {
-                            if (forceNew) {
-                                return `/api/series/${this.seriesData.hash}/entries/${resp.entries[i].hash}/cover?thumbnail=true&time=${new Date().getTime()}`
-                            } else {
-                                return `/api/series/${this.seriesData.hash}/entries/${resp.entries[i].hash}/cover?thumbnail=true`
-                            }
-                        })
-                        this.images = images
-                        this.getProgress(sid)
-                        this.entries = resp.entries
-                    })
-                    .catch(() => {
-                        this.entries = []
-                    })
-            },
-
-            async getProgress(sid) {
-                await API.Catalog.SeriesProgress(sid)
-                    .then(progress => {
-                        this.progress = progress
-                    })
-                    .catch(() => { this.progress = [] })
-            },
-
-            async patchTags(tags) {
-                let sid = this.seriesData.hash
-                if (sid === undefined || sid.length === 0) {
-                    return
-                }
-                await API.Catalog.PatchTags(sid, tags)
-            },
-
-            addTag() {
-                let newTag = this.newTag.trim()
-                if (newTag !== '' && !this.seriesData.tags.includes(newTag)) {
-                    this.seriesData.tags.push(newTag);
-                    this.newTag = ''
-                }
-            },
-
-            calcEntryProgress(p) {
-                return Util.Fmt.Percent(p.current / p.total)
-            },
-
-            calcEntryProgressFormatted(p) {
-               return  `Progress: ${Util.Fmt.Percent(p.current / p.total)}`
-            },
-
-            // Series Modal
-            async showSeriesEditModal() {
-                await this.refreshSeriesThumbnail(this.seriesData.hash, true)
-                this.showSeriesModal = true
-            },
-
-            async refreshSeriesThumbnail(sid, forceNew) {
-                let img = new Image()
-                let p =  Util.Images.WaitForLoad(img)
-                if (forceNew) {
-                    img.src = `/api/series/${sid}/cover?thumbnail=true&time=${new Date().getTime()}`
-                } else {
-                    img.src = `/api/series/${sid}/cover?thumbnail=true`
-                }
-                await p
-                this.seriesImage = img
-            },
-
-            async saveSeriesMetadata() {
-                await API.Catalog.PatchSeries(this.seriesData.hash, this.seriesMetadata.title,
-                    this.seriesMetadata.author, this.seriesMetadata.date_released)
-                    .then(() => {
-                        this.metadataResult = "Success!"
-
-                        // Refresh the metadata on the screen
-                        this.seriesData.title = this.seriesMetadata.title
-                    })
-                    .catch(() => { this.metadataResult = "Failed!" })
-
-                this.showMetadataResult = true
-            },
-
-            async setSeriesProgress(mode) {
-                let amount = (mode === "read") ? "100%" : "0%"
-                await API.Catalog.PatchProgress(this.seriesData.hash, "", amount)
-                    .then(() => { this.progressResult = "Success!" })
-                    .catch(() => { this.progressResult = "Failed!" })
-                this.showProgressResult = true
-
-                await this.getProgress(this.seriesData.hash)
-            },
-
-            async setNewSeriesCover(fileList) {
-                if (fileList.length > 0) {
-                    await API.Catalog.PatchSeriesCover(this.seriesData.hash, fileList[0], fileList[0].name)
-                        .then(() => { this.coverResult = "Success!" })
-                        .catch(() => { this.coverResult = "Failed!" })
-                    this.showCoverResult = true
-
-                    await this.refreshSeriesThumbnail(this.seriesData.hash, true)
-                }
-            },
-
-            async deleteSeriesCover() {
-                await API.Catalog.DeleteSeriesCover(this.seriesData.hash)
-                    .then(() => {
-                        this.coverResult = "Success!"
-                        this.refreshSeriesThumbnail(this.seriesData.hash, true)
-                    })
-                    .catch(() => { this.coverResult = "Failed!" })
-                this.showCoverResult = true
-
-
-            },
-
-            // Basic EntryProgress Modal
-            async showBasicEntry(entry) {
-                this.selectedEntry = entry
-
-                this.entryMetadata.title = entry.title
-                this.entryMetadata.author = entry.author
-                this.entryMetadata.date_released = entry.date_released
-                this.entryMetadata.chapter = entry.chapter
-                this.entryMetadata.volume = entry.volume
-
-                this.showBasicEntryModal = true
-            },
-
-            getEntryCurrentPage(entry) {
-                if (entry === undefined) {
-                    return 0
-                }
-                let p = this.progress[entry.order - 1]
-                if (p === undefined) {
-                    return 0
-                }
-                return p.current
-            },
-
-            async setEntryProgress(mode) {
-                // Set the progress
-                let amount = (mode === "read") ? "100%" : "0%"
-                await API.Catalog.PatchProgress(this.seriesData.hash, this.selectedEntry.hash, amount)
-                    .then(() => { this.entryProgress = "Success!" })
-                    .catch(() => { this.entryProgress = "Failed!" })
-                this.showEntryProgress = true
-
-                // Refresh it's new value
-                await this.getProgress(this.seriesData.hash)
-            },
-
-            // Edit EntryProgress Modal
-            async showEditEntry() {
-                await this.refreshEntryThumbnail(this.seriesData.hash, this.selectedEntry.hash, true)
-                this.showBasicEntryModal = false
-                this.showEditEntryModal = true
-            },
-
-            async refreshEntryThumbnail(sid, eid, forceNew) {
-                let img = new Image()
-                let p =  Util.Images.WaitForLoad(img)
-                if (forceNew) {
-                    img.src = `/api/series/${sid}/entries/${eid}/cover?thumbnail=true&time=${new Date().getTime()}`
-                } else {
-                    img.src = `/api/series/${sid}/entries/${eid}/cover?thumbnail=true`
-                }
-                await p
-                this.entryImage = img
-
-                for (let i in this.entries) {
-                    if (this.entries[i].hash === this.selectedEntry.hash) {
-                       this.images[i] = img
-                    }
-                }
-            },
-
-            async saveEntryMetadata() {
-                await API.Catalog.PatchEntry(this.seriesData.hash, this.selectedEntry.hash, this.entryMetadata.title,
-                    this.entryMetadata.author, this.entryMetadata.date_released, this.entryMetadata.chapter, this.entryMetadata.volume)
-                    .then(() => {
-                        this.entryMetadataResult = "Success!"
-
-                        // Refresh the local entry data
-                        for (let i in this.entries) {
-                            if (this.entries[i].hash === this.selectedEntry.hash) {
-                                this.entries[i].title = this.entryMetadata.title
-                            }
-                        }
-                    })
-                    .catch(() => { this.entryMetadataResult = "Failed!" })
-
-                this.showEntryMetadataResult = true
-            },
-
-            async setNewEntryCover(fileList) {
-                if (fileList.length > 0) {
-                    await API.Catalog.PatchEntryCover(this.seriesData.hash, this.selectedEntry.hash, fileList[0], fileList[0].name)
-                        .then(() => {
-                            this.entryCoverResult = "Success!"
-                            this.refreshEntryThumbnail(this.seriesData.hash, this.selectedEntry.hash, true)
-                        })
-                        .catch(() => { this.entryCoverResult = "Failed!" })
-
-                    this.showEntryCoverResult = true
-                }
-            },
-
-            async deleteEntryCover() {
-                await API.Catalog.DeleteEntryCover(this.seriesData.hash, this.selectedEntry.hash)
-                    .then(() => {
-                        this.entryCoverResult = "Success!"
-                        this.refreshEntryThumbnail(this.seriesData.hash, this.selectedEntry.hash, true)
-                    })
-                    .catch(() => { this.entryCoverResult = "Failed!" })
-
-                this.showEntryCoverResult = true
-            },
-        }))
+        Alpine.data('sdMod', () => { return _seriesDataModal })
+        Alpine.data('evMod', () => { return _entryViewModal })
+        Alpine.data('edMod', () => { return _entryDataModal })
+        Alpine.data('entries', () => { return _seriesView })
     })
 </script>
 {{ end }}
 
 {{ define "content" }}
-<div x-data="entries" x-effect="await patchTags(seriesData.tags)">
+<div x-data="entries">
     <template x-if="entries.length === 0">
         <h3>Empty!</h3>
     </template>
@@ -406,8 +40,8 @@
     <!--    Series Title    -->
     <template x-if="entries.length > 0">
         <div class="flex--row" style="align-items: baseline">
-            <h2 class="modal__header" x-text="seriesData.title"></h2>
-            <svg @click="await showSeriesEditModal()" class="icon" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+            <h2 class="modal__header" x-text="series.title"></h2>
+            <svg @click="await showSeriesDataModal()" class="icon" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
                 <path d="m368 511.957031h-309.332031c-32.363281 0-58.667969-26.304687-58.667969-58.667969v-309.332031c0-32.363281 26.304688-58.667969 58.667969-58.667969h181.332031c8.832031 0 16 7.167969 16 16 0 8.832032-7.167969 16-16 16h-181.332031c-14.699219 0-26.667969 11.96875-26.667969 26.667969v309.332031c0 14.699219 11.96875 26.667969 26.667969 26.667969h309.332031c14.699219 0 26.667969-11.96875 26.667969-26.667969v-181.332031c0-8.832031 7.167969-16 16-16s16 7.148438 16 16v181.332031c0 32.363282-26.304688 58.667969-58.667969 58.667969zm0 0"/><path d="m187.136719 340.820312c-4.203125 0-8.300781-1.664062-11.308594-4.691406-3.796875-3.777344-5.417969-9.21875-4.371094-14.445312l15.082031-75.433594c.617188-3.113281 2.152344-5.953125 4.371094-8.171875l220.953125-220.925781c22.867188-22.871094 60.074219-22.871094 82.964844 0 11.070313 11.070312 17.171875 25.792968 17.171875 41.472656s-6.101562 30.398438-17.195312 41.472656l-220.925782 220.949219c-2.21875 2.238281-5.078125 3.753906-8.171875 4.371094l-75.414062 15.082031c-1.046875.214844-2.113281.320312-3.15625.320312zm75.433593-31.082031h.214844zm-45.609374-52.457031-9.410157 47.144531 47.125-9.429687 217.515625-217.511719c5.035156-5.058594 7.808594-11.734375 7.808594-18.859375s-2.773438-13.804688-7.808594-18.859375c-10.367187-10.390625-27.285156-10.390625-37.714844 0zm0 0"/><path d="m453.332031 134.976562c-4.09375 0-8.191406-1.558593-11.304687-4.695312l-60.332032-60.351562c-6.25-6.25-6.25-16.382813 0-22.632813s16.382813-6.25 22.636719 0l60.328125 60.351563c6.25 6.25 6.25 16.382812 0 22.632812-3.136718 3.117188-7.230468 4.695312-11.328125 4.695312zm0 0"/>
             </svg>
         </div>
@@ -415,9 +49,9 @@
 
     <!--    Series Metadata Modal    -->
     <div x-cloak>
-        <div  x-show="showSeriesModal" class="modal">
-            <div @click.away="showSeriesModal = false" x-show="showSeriesModal" x-transition class="modal__content">
-                <span class="modal__close-button" @click="showSeriesModal = false">&times;</span>
+        <div x-data="sdMod" x-bind="modal_bg" class="modal">
+            <div x-bind="modal_content" x-transition class="modal__content">
+                <span class="modal__close-button" x-bind="modal_close">&times;</span>
                 <h2>Metadata</h2>
                 <div class="flex--row">
                     <h3 class="flex__key--centered flex__key--less-padding">Title:</h3>
@@ -432,17 +66,17 @@
                     <label class="flex__key--less-padding"><input type="date" x-model="seriesMetadata.date_released"></label>
                 </div>
                 <div class="flex--row" style="margin-top: 1em" >
-                    <span><button @click="await saveSeriesMetadata()">Save Metadata</button></span>
-                    <span x-show="showMetadataResult" @click.away="showMetadataResult = false" x-text="metadataResult"></span>
+                    <span><button x-bind="sModPatchDataBtn">Save Metadata</button></span>
+                    <span x-bind="sModMetadataResultSpan"></span>
                 </div>
 
                 <h2>Cover</h2>
                 <div class="flex--row" style="margin-top: 1em; justify-content: space-around" >
-                    <div :style="`flex: 0 1 auto; max-width: ${seriesImage.naturalWidth}px`">
-                        <img :src="seriesImage.src" style="width: 100%">
+                    <div :style="`flex: 0 1 auto; max-width: ${sModImg.naturalWidth}px`">
+                        <img :src="sModImg.src" style="width: 100%">
                     </div>
-                    <div :style="`border: 2.5px dashed #333; width: ${seriesImage.naturalWidth}px; display: flex; justify-content: center; align-items: center; position: relative;`"
-                         x-on:drop="$el.classList.remove('active'); await setNewSeriesCover($event.target.files)" x-on:dragover="$el.classList.add('active')" x-on:dragleave="$el.classList.remove('active')">
+                    <div :style="`border: 2.5px dashed #333; width: ${sModImg.naturalWidth}px; display: flex; justify-content: center; align-items: center; position: relative;`"
+                         x-on:drop="$el.classList.remove('active'); await patchSeriesCover($event.target.files)" x-on:dragover="$el.classList.add('active')" x-on:dragleave="$el.classList.remove('active')">
                         <p style="text-align: center;">
                             <svg width="20px" height="20px" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" data-svg="cloud-upload">
                                 <path fill="none" stroke-width="1.1" d="M6.5,14.61 L3.75,14.61 C1.96,14.61 0.5,13.17 0.5,11.39 C0.5,9.76 1.72,8.41 3.31,8.2 C3.38,5.31 5.75,3 8.68,3 C11.19,3 13.31,4.71 13.89,7.02 C14.39,6.8 14.93,6.68 15.5,6.68 C17.71,6.68 19.5,8.45 19.5,10.64 C19.5,12.83 17.71,14.6 15.5,14.6 L12.5,14.6"></path>
@@ -452,55 +86,55 @@
                             Click <label for="imageUploadSeries"><b>here</b></label> or drag an image to upload it
                         </p>
                         <input type="file" accept="image/*" style="cursor: pointer; opacity: 0; width: 100%; height: 100%; position: absolute; top: 0; left: 0" id="imageUploadSeries"
-                               x-on:change="await setNewSeriesCover($event.target.files)">
+                               x-on:change="await patchSeriesCover($event.target.files)">
                     </div>
                 </div>
                 <div class="flex--row" style="justify-content: space-around; align-items: center">
                     <button @click="await deleteSeriesCover()">Delete Custom Cover</button>
                     <p>If you set a custom cover this will delete it</p>
                 </div>
-                <span x-show="showCoverResult" @click.away="showCoverResult = false" x-text="coverResult"></span>
+                <span x-bind="sModCoverResultSpan"></span>
 
                 <h2>Progress</h2>
                 <div class="flex--row">
-                    <button @click="await setSeriesProgress('unread')">Mark All Unread (0%)</button>
-                    <button @click="await setSeriesProgress('read')">Mark All Read (100%)</button>
-                    <span x-show="showProgressResult" @click.away="showProgressResult = false" x-text="progressResult"></span>
+                    <button @click="await patchSeriesProgress('unread')">Mark All Unread (0%)</button>
+                    <button @click="await patchSeriesProgress('read')">Mark All Read (100%)</button>
+                    <span x-bind="sModProgressResultSpan"></span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!--    Basic Entry Modal    -->
+    <!--    Entry View Modal    -->
     <div x-cloak>
-        <div  x-show="showBasicEntryModal" class="modal">
-            <div @click.away="showBasicEntryModal = false" x-show="showBasicEntryModal" x-transition class="modal__content">
-                <span class="modal__close-button" @click="showBasicEntryModal = false">&times;</span>
+        <div x-data="evMod" x-bind="modal_bg" class="modal">
+            <div x-bind="modal_content" class="modal__content" x-transition>
+                <span class="modal__close-button" x-bind="modal_close">&times;</span>
                 <div class="flex--row" style="align-items: baseline">
-                    <h2 class="modal__header" x-text="selectedEntry.title"></h2>
-                    <svg @click="await showEditEntry()" class="icon" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                    <h2 class="modal__header" x-text="entry.title"></h2>
+                    <svg @click="await showEntryDataModal()" class="icon" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
                         <path d="m368 511.957031h-309.332031c-32.363281 0-58.667969-26.304687-58.667969-58.667969v-309.332031c0-32.363281 26.304688-58.667969 58.667969-58.667969h181.332031c8.832031 0 16 7.167969 16 16 0 8.832032-7.167969 16-16 16h-181.332031c-14.699219 0-26.667969 11.96875-26.667969 26.667969v309.332031c0 14.699219 11.96875 26.667969 26.667969 26.667969h309.332031c14.699219 0 26.667969-11.96875 26.667969-26.667969v-181.332031c0-8.832031 7.167969-16 16-16s16 7.148438 16 16v181.332031c0 32.363282-26.304688 58.667969-58.667969 58.667969zm0 0"/><path d="m187.136719 340.820312c-4.203125 0-8.300781-1.664062-11.308594-4.691406-3.796875-3.777344-5.417969-9.21875-4.371094-14.445312l15.082031-75.433594c.617188-3.113281 2.152344-5.953125 4.371094-8.171875l220.953125-220.925781c22.867188-22.871094 60.074219-22.871094 82.964844 0 11.070313 11.070312 17.171875 25.792968 17.171875 41.472656s-6.101562 30.398438-17.195312 41.472656l-220.925782 220.949219c-2.21875 2.238281-5.078125 3.753906-8.171875 4.371094l-75.414062 15.082031c-1.046875.214844-2.113281.320312-3.15625.320312zm75.433593-31.082031h.214844zm-45.609374-52.457031-9.410157 47.144531 47.125-9.429687 217.515625-217.511719c5.035156-5.058594 7.808594-11.734375 7.808594-18.859375s-2.773438-13.804688-7.808594-18.859375c-10.367187-10.390625-27.285156-10.390625-37.714844 0zm0 0"/><path d="m453.332031 134.976562c-4.09375 0-8.191406-1.558593-11.304687-4.695312l-60.332032-60.351562c-6.25-6.25-6.25-16.382813 0-22.632813s16.382813-6.25 22.636719 0l60.328125 60.351563c6.25 6.25 6.25 16.382812 0 22.632812-3.136718 3.117188-7.230468 4.695312-11.328125 4.695312zm0 0"/>
                     </svg>
-                    <a class="no-bottom" :href="`/api/series/${seriesData.hash}/entries/${selectedEntry.hash}/archive`">
+                    <a class="no-bottom" :href="`/api/series/${series.hash}/entries/${entry.hash}/archive`">
                         <svg class="icon" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 477.827 477.827" xml:space="preserve">
                         <g><g><path d="M441.537,160.625c1.489-7.981,2.243-16.082,2.253-24.201C443.699,61.019,382.498-0.035,307.093,0.056c-57.402,0.069-108.63,36.034-128.194,89.999c-35.029-13.944-74.73,3.148-88.675,38.177c-1.207,3.032-2.195,6.146-2.956,9.319c-55.932,8.365-94.492,60.488-86.127,116.42c7.502,50.163,50.596,87.275,101.316,87.254h85.333c9.426,0,17.067-7.641,17.067-17.067c0-9.426-7.641-17.067-17.067-17.067h-85.333c-37.703,0-68.267-30.564-68.267-68.267s30.564-68.267,68.267-68.267c9.426,0,17.067-7.641,17.067-17.067c0.031-18.851,15.338-34.108,34.189-34.077c8.915,0.015,17.471,3.517,23.837,9.757c6.713,6.616,17.519,6.537,24.135-0.176c2.484-2.521,4.123-5.751,4.69-9.245c9.264-55.733,61.954-93.403,117.687-84.139c55.733,9.264,93.403,61.954,84.139,117.687c-0.552,3.323-1.269,6.617-2.146,9.869c-1.962,7.124,0.883,14.701,7.049,18.773c31.416,20.845,39.985,63.212,19.139,94.628c-12.617,19.015-33.9,30.468-56.72,30.522h-51.2c-9.426,0-17.067,7.641-17.067,17.067c0,9.426,7.641,17.067,17.067,17.067h51.2c56.554-0.053,102.357-45.943,102.303-102.497C477.798,208.625,464.526,180.06,441.537,160.625z"/></g></g><g><g><path d="M353.07,363.292c-6.614-6.387-17.099-6.387-23.712,0l-56.235,56.201V170.558c0-9.426-7.641-17.067-17.067-17.067c-9.426,0-17.067,7.641-17.067,17.067v248.934l-56.201-56.201c-6.78-6.548-17.584-6.36-24.132,0.419c-6.388,6.614-6.388,17.099,0,23.713l85.333,85.333c6.656,6.673,17.463,6.687,24.136,0.03c0.01-0.01,0.02-0.02,0.031-0.03l85.333-85.333C360.038,380.644,359.85,369.84,353.07,363.292z"/></g></g>
                     </svg>
                     </a>
                 </div>
-                <p x-text="selectedEntry.path" style="margin-block-start: 0.5em"></p>
+                <p x-text="entry.path" style="margin-block-start: 0.5em"></p>
                 <h3>Read</h3>
-                <a :href="`/reader/${seriesData.hash}/${selectedEntry.hash}?page=1`"><button @click="">From Beginning</button></a>
-                <template x-if="getEntryCurrentPage(selectedEntry) > 0">
-                    <a :href="`/reader/${seriesData.hash}/${selectedEntry.hash}?page=${getEntryCurrentPage(selectedEntry)}`">
-                        <button @click="" x-text="`From ${calcEntryProgress(progress[selectedEntry.order - 1])}`"></button>
+                <a :href="`/reader/${series.hash}/${entry.hash}?page=1`"><button>From Beginning</button></a>
+                <template x-if="entryPageProgress() > 0">
+                    <a :href="`/reader/${series.hash}/${entry.hash}?page=${entryPageProgress()}`">
+                        <button x-text="`From ${fmtEntryProgress(progress[entry.order - 1])}`"></button>
                     </a>
                 </template>
 
                 <h3>Progress</h3>
                 <div class="flex--row">
-                    <button @click="await setEntryProgress('unread')">Mark Unread (0%)</button>
-                    <button @click="await setEntryProgress('read')">Mark Read (100%)</button>
-                    <span x-show="showEntryProgress" @click.away="showEntryProgress = false" x-text="entryProgress"></span>
+                    <button @click="await patchEntryProgress('unread')">Mark Unread (0%)</button>
+                    <button @click="await patchEntryProgress('read')">Mark Read (100%)</button>
+                    <span x-bind="evModProgressResultSpan"></span>
                 </div>
             </div>
         </div>
@@ -508,9 +142,9 @@
 
     <!--    Entry Edit Modal    -->
     <div x-cloak>
-        <div  x-show="showEditEntryModal" class="modal">
-            <div @click.away="showEditEntryModal = false" x-show="showEditEntryModal" x-transition class="modal__content">
-                <span class="modal__close-button" @click="showEditEntryModal = false">&times;</span>
+        <div  x-data="edMod" x-bind="modal_bg" class="modal">
+            <div x-bind="modal_content" class="modal__content" x-transition>
+                <span class="modal__close-button" x-bind="modal_close">&times;</span>
                 <h2>Metadata</h2>
                 <div class="flex--row">
                     <h3 class="flex__key--centered flex__key--less-padding">Title:</h3>
@@ -533,17 +167,17 @@
                     <label class="flex__key--less-padding"><input type="number" min="-1" x-model="entryMetadata.volume"></label>
                 </div>
                 <div class="flex--row" style="margin-top: 1em" >
-                    <span><button @click="await saveEntryMetadata()">Save Metadata</button></span>
-                    <span x-show="showEntryMetadataResult" @click.away="showEntryMetadataResult = false" x-text="entryMetadataResult"></span>
+                    <span><button @click="await patchEntryData()">Save Metadata</button></span>
+                    <span x-bind="edModMetadataResultSpan"></span>
                 </div>
 
                 <h2>Cover</h2>
                 <div class="flex--row" style="margin-top: 1em; justify-content: space-around" >
-                    <div :style="`flex: 0 1 auto; max-width: ${entryImage.naturalWidth}px`">
-                        <img :src="entryImage.src" style="width: 100%">
+                    <div :style="`flex: 0 1 auto; max-width: ${edModImg.naturalWidth}px`">
+                        <img :src="edModImg.src" style="width: 100%">
                     </div>
-                    <div :style="`border: 2.5px dashed #333; width: ${entryImage.naturalWidth}px; display: flex; justify-content: center; align-items: center; position: relative;`"
-                         x-on:drop="$el.classList.remove('active'); await setNewEntryCover($event.target.files)" x-on:dragover="$el.classList.add('active')" x-on:dragleave="$el.classList.remove('active')">
+                    <div :style="`border: 2.5px dashed #333; width: ${edModImg.naturalWidth}px; display: flex; justify-content: center; align-items: center; position: relative;`"
+                         x-on:drop="$el.classList.remove('active'); await patchEntryCover($event.target.files)" x-on:dragover="$el.classList.add('active')" x-on:dragleave="$el.classList.remove('active')">
                         <p style="text-align: center;">
                             <svg width="20px" height="20px" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" data-svg="cloud-upload">
                                 <path fill="none" stroke-width="1.1" d="M6.5,14.61 L3.75,14.61 C1.96,14.61 0.5,13.17 0.5,11.39 C0.5,9.76 1.72,8.41 3.31,8.2 C3.38,5.31 5.75,3 8.68,3 C11.19,3 13.31,4.71 13.89,7.02 C14.39,6.8 14.93,6.68 15.5,6.68 C17.71,6.68 19.5,8.45 19.5,10.64 C19.5,12.83 17.71,14.6 15.5,14.6 L12.5,14.6"></path>
@@ -553,34 +187,31 @@
                             Click <label for="imageUploadEntry"><b>here</b></label> or drag an image to upload it
                         </p>
                         <input type="file" accept="image/*" style="cursor: pointer; opacity: 0; width: 100%; height: 100%; position: absolute; top: 0; left: 0" id="imageUploadEntry"
-                               x-on:change="await setNewEntryCover($event.target.files)">
+                               x-on:change="await patchEntryCover($event.target.files)">
                     </div>
                 </div>
                 <div class="flex--row" style="justify-content: space-around; align-items: center">
                     <button @click="await deleteEntryCover()">Delete Custom Cover</button>
                     <p>If you set a custom cover this will delete it</p>
                 </div>
-                <span x-show="showEntryCoverResult" @click.away="showEntryCoverResult = false" x-text="entryCoverResult"></span>
+                <span x-bind="edModCoverResultSpan"></span>
             </div>
         </div>
     </div>
 
     <!--    Tag Editor    -->
     <template x-if="entries.length > 0">
-        <div class="tags-input">
+        <div class="tags" x-effect="await patchTags(series.tags)">
             <template x-for="tag in sortedTags" :key="tag">
-                    <span class="tags-input-tag">
+                    <span class="tags__tag">
                         <span x-text="tag"></span>
-                        <button type="button" class="tags-input-remove" @click="seriesData.tags = seriesData.tags.filter(i => i !== tag)">
+                        <button type="button" class="tags__tag__remove-btn" @click="filterTags(tag)">
                             &times;
                         </button>
                     </span>
             </template>
 
-            <input class="tags-input-text" placeholder="Add tag..."
-                   @keydown.enter.prevent="addTag()"
-                   x-model="newTag"
-            >
+            <input class="tags__input" placeholder="Add tag..." @keydown.enter.prevent="addTag()" x-model="newTag">
         </div>
     </template>
 
@@ -594,13 +225,13 @@
     <!--    Entries    -->
     <div class="entries">
         <template x-for="e in filteredEntries">
-            <a style="border-bottom: none; cursor: pointer" :href="void(0)" @click="await showBasicEntry(e)">
+            <a style="border-bottom: none; cursor: pointer" :href="void(0)" @click="await showEntryViewModal(e)">
                 <div class="entry" style="flex: 0 1 auto; max-width: 200px">
                     <img :src="images[e.order - 1].src" style="width: 100%; max-height: 300px">
                     <div class="entry__info" >
                         <h4 class="entry__title" x-text="e.title"></h4>
                         <span x-text="`Pages: ${e.pages}`"></span><br>
-                        <span x-text="calcEntryProgressFormatted(progress[e.order - 1])"></span>
+                        <span x-text="fmtEntryProgressLabel(progress[e.order - 1])"></span>
                     </div>
                 </div>
             </a>

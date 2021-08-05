@@ -2,39 +2,18 @@
 
 {{ define "scripts" }}
 <script type="module">
-    import * as Util from {{ versioning "/static/js/util.js" }}
+    import createST from {{versioning "/static/js/components/specific-tag.js"}}
+
+    const _entries = {{ seriesWithTag . }}
 
     document.addEventListener('alpine:init', () => {
-        Alpine.data('specficTag', () => ({
-            tag: "",
-            search: "",
-            images: [],
-            entries: {{ seriesWithTag . }},
-
-            get filteredEntries() {
-                return this.entries.filter(
-                    i => i.title.toLowerCase().startsWith(this.search.toLowerCase())
-                )
-            },
-
-            async init() {
-                let prefix = "/tags/"
-                this.tag = window.location.pathname.slice(prefix.length)
-
-                this.entries.sort(Util.Compare.EntryOrder)
-                let images = []
-                await Util.Images.LoadImages(images, this.entries.length, (i) => {
-                    return `/api/series/${this.entries[i].hash}/cover?thumbnail=true`
-                })
-                this.images = images
-            },
-        }))
+        Alpine.data('specificTag', () => { return createST(_entries) })
     })
 </script>
 {{ end }}
 
 {{ define "content" }}
-<div x-data="specficTag">
+<div x-data="specificTag">
     <template x-if="entries.length > 0">
         <h2 x-text="`Tag: ${tag}`"></h2>
     </template>

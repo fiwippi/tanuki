@@ -7,15 +7,9 @@
     <link rel="stylesheet" href='{{versioning "/static/css/fira_mono.css"}}'>
     <script src='{{versioning "/static/js/theme.js"}}'></script>
     <script type="module">
-        import * as API from {{ versioning "/static/js/api.js" }}
-
+        import logout from {{versioning "/static/js/components/logout.js"}}
         document.addEventListener('alpine:init', () => {
-            Alpine.data('logout', () => ({
-                async logout() {
-                    await API.Auth.Logout()
-                    window.location.replace('/login')
-                }
-            }))
+            Alpine.data('logout', logout)
         })
     </script>
     {{ block "styles" . }}{{ end }}
@@ -31,7 +25,7 @@
             <span x-data="{ admin: {{ admin . }} }" x-show="admin" x-cloak>
                 → <a href="/admin">Admin</a>
             </span>
-            → <a x-data="logout" @click="await logout()" href="javascript:void(0)">Logout</a>
+            → <a x-data="logout" x-bind="logout" href="javascript:void(0)">Logout</a>
             <button x-data style="float: right" @click="toggleTheme()">Change Theme 🎨</button>
             <br><br>
         </div>

@@ -1,5 +1,7 @@
 export const name = 'util';
 
+export const BlankImage = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
+
 export class Images {
     // Returns a promise which returns when an image is loaded
     static WaitForLoad(img) {
@@ -22,6 +24,14 @@ export class Images {
         return Promise.all(promises)
             .catch(error => { console.error("failed to load images:", error) }
         )
+    }
+
+    static BlankImageArray(length) {
+        return Array.from({length:5}).map(x => {
+            let img = new Image();
+            img.src = BlankImage
+            return img
+        } )
     }
 }
 
@@ -102,5 +112,21 @@ export class Ensure {
     }
 }
 
-// TODO use x-spread or something to create a reproducible library view
-// TODO better search function that doesn't use startswith
+export class Search {
+    static Match(search, text) {
+        search = search.toUpperCase();
+        text = text.toUpperCase();
+
+        var j = -1; // remembers position of last found character
+
+        // consider each search character one at a time
+        for (var i = 0; i < search.length; i++) {
+            var l = search[i];
+            if (l == ' ') continue;     // ignore spaces
+
+            j = text.indexOf(l, j+1);     // search for character & update position
+            if (j == -1) return false;  // if it's not found, exclude this item
+        }
+        return true;
+    }
+}
