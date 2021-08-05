@@ -62,6 +62,7 @@ On the first run Tanuki logs the default username and randomly generated passwor
 - Full OPDS feature support for v1.2 and v2.0
 
 ### Implementation Improvements
+- Ability to stop row gaps for webtoons
 - Make the UI more mobile friendly, e.g. so the modal loads in the centre of the phone screen
 - Full well formatted documentation for Go + Javascript
 - Progress bar when uploading covers

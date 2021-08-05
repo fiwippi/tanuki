@@ -219,14 +219,10 @@ export default function (sid, eid, entry, initialProgress, entries, modal) {
                 // are the selected ones, for some reason they aren't so
                 // this fixes it
                 let ps = document.getElementById("pageSelect")
-                if (ps !== undefined) {
-                    ps.selectedIndex = 0
-                }
+                if (ps !== undefined) ps.selectedIndex = 0;
 
                 let ms = document.getElementById("modeSelect")
-                if (ms !== undefined) {
-                    ms.selectedIndex = 0
-                }
+                if (ms !== undefined) ms.selectedIndex = 0;
             })
         },
 
@@ -261,7 +257,7 @@ export default function (sid, eid, entry, initialProgress, entries, modal) {
         },
 
         async handlePagedClick(e) {
-            if (!this.modalAllowed) {
+            if (this.modal.visible || !this.modalAllowed) {
                 return
             }
 
