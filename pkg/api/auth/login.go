@@ -35,7 +35,7 @@ func Login(s *server.Server) gin.HandlerFunc {
 		// Validate login details
 		valid := s.Store.ValidateLogin(data.Username, data.Password)
 		if !valid {
-			c.AbortWithStatusJSON(403, LoginReply{Success: false, Message: "invalid"})
+			c.AbortWithStatusJSON(401, LoginReply{Success: false, Message: "invalid"})
 			return
 		}
 		log.Debug().Str("username", data.Username).Msg("validated user")

@@ -62,12 +62,15 @@ On the first run Tanuki logs the default username and randomly generated passwor
 - Full OPDS feature support for v1.2 and v2.0
 
 ### Implementation Improvements
-- Make the UI more mobile friendly, e.g. so the modal loads in the centre of the phone screen
 - Full well formatted documentation for Go + Javascript
 - Progress bar when uploading covers
 - Why does generate thumbnails cause scan time to go up?
 
 ## Changelog
+### [0.6] - 2021-08-06
+- Webtoon support, in the reader modal you can select the webtoon option which removes gaps between rows
+- Mobile UI overhaul, tanuki is now smoother and works better on mobile
+
 ### [0.5] - 2021-08-05
 - Redundant CSS and JS code removed
 - CSS classes all name appropriately

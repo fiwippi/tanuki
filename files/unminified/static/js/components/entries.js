@@ -8,6 +8,7 @@ export default function (entries, progress, urlFunc, extra) {
         images: Util.Images.BlankImageArray(entries.length),
         entries: Util.Ensure.Array(entries),
         progress: Util.Ensure.Object(progress),
+        smallMedia: false,
 
         get filteredEntries() {
             return this.entries.filter(
@@ -15,9 +16,19 @@ export default function (entries, progress, urlFunc, extra) {
             )
         },
 
+        imageWidth() {
+            if (!this.smallMedia) return 200
+            return (window.innerWidth * 0.8) / 2
+        },
+
         async init() {
             if (this.preInit !== undefined) {
                 await this.preInit()
+            }
+
+            // Check if images need to be given smaller widths to fit into grid
+            if (window.innerWidth <= Util.SmallMediaLimit) {
+                this.smallMedia = true
             }
 
             let images = []

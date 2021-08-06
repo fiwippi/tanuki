@@ -27,6 +27,7 @@ var CSS = CSSData{
 		BackgroundFocus:       "white",
 		Color:                 "#333",
 		ColorStrong:           "black",
+		Highlight:             "#ff0000",
 		BorderColor:           "#f3daac",
 		BorderColorDarker:     "#eac57a",
 		BorderColorFocus:      "#ff0000",
@@ -36,7 +37,7 @@ var CSS = CSSData{
 		SVG:                   "#000",
 		SVGHover:              "#ff0000",
 	},
-	// Dark theme doesn't use a darker border color
+	// Dark theme doesn't use BorderColorDarker
 	Dark: CSSTheme{
 		Background:            "rgb(20, 20, 20)",
 		BackgroundLighter:     "rgb(31, 31, 31)",
@@ -46,6 +47,7 @@ var CSS = CSSData{
 		Color:                 "rgb(245, 245, 245)",
 		ColorStrong:           "white",
 		ColorPlaceholder:      "rgb(217, 217, 217)",
+		Highlight:             "#ff0000",
 		BorderColor:           "rgb(245, 245, 245)",
 		BorderColorFocus:      "#ff0000",
 		LinkColor:             "rgb(245, 245, 245)",
@@ -72,6 +74,9 @@ type CSSTheme struct {
 	Color            string
 	ColorStrong      string
 	ColorPlaceholder string
+
+	// Highlighting
+	Highlight string
 
 	// Borders
 	BorderColor       string

@@ -40,11 +40,12 @@
 
 {{ define "content" }}
 <div x-data="missing_items">
-    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; row-gap: 0.8em;">
-        <template x-if="items.length === 0">
-            <h2>No Missing Items!</h2>
-        </template>
+    <h2>Missing Items</h2>
+    <template x-if="items.length === 0">
+        <h3>No Missing Items!</h3>
+    </template>
 
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; row-gap: 0.8em;">
         <!-- Table Headings -->
         <template x-if="items.length > 0">
             <b><span style="grid-column: 1; grid-row: 0">Type</span></b>

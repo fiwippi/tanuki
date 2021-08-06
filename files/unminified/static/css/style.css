@@ -69,19 +69,21 @@ a:focus {
     grid-area: header;
     overflow: hidden;
     word-wrap: break-word;
+    margin-bottom: 15px;
+}
+
+.header h1 {
+    color: {{ .Light.ColorStrong }};
+    font-size: 2em;
+    padding-top: 10px;
+    margin-block-start: 0.35em;
+    margin-block-end: 0.35em;
 }
 
 .main {
     grid-area: main;
     overflow: hidden;
     word-wrap: break-word;
-}
-
-header h1 {
-    color: {{ .Light.ColorStrong }};
-    margin: 0;
-    font-size: 2em;
-    padding-top: 10px;
 }
 
 /* Modal styles -------------------------------------------------*/
@@ -110,7 +112,7 @@ header h1 {
 }
 
 .modal__sub-header {
-    margin-block-start: 0.5em
+    margin-block-start: 0.5em;
 }
 
 .modal__close-button {
@@ -311,6 +313,7 @@ svg {
 .tags__tag__remove-btn {
     font-size: 1.125rem;
     line-height: 1;
+    padding: 2px 6px;
 }
 
 .tags__tag__remove-btn:first-child {
@@ -362,4 +365,66 @@ svg {
     border: 2px solid {{ .Dark.BorderColor }};
     color: {{ .Dark.Color }};
     background: {{ .Dark.BackgroundUnfocus }}
+}
+
+/* Buttons -------------------------------------------------*/
+button {
+    width: initial;
+    background-color: white ;
+    color: {{ .Light.Color }};
+    border: 1px solid {{ .Light.Color }};
+    padding: 5px 15px;
+}
+
+button:hover, button:focus {
+    color: white;
+    cursor: pointer;
+    background-color: {{ .Light.Highlight }};
+    border: 1px solid {{ .Light.Highlight }};
+}
+
+/* Login -------------------------------------------------*/
+.login-div {
+    background-color: {{ .Light.BackgroundLighter }};
+    margin: 10% auto;
+    padding: 20px;
+    border: 3px solid {{ .Light.BorderColorDarker }};
+    max-width: 500px;
+    width: 100%
+}
+
+.dark .login-div {
+    background-color: {{ .Dark.BackgroundLighter }};
+    border: 3px solid {{ .Dark.BorderColor }};
+}
+
+.login-div input {
+    height: 20px;
+    width: 100%;
+}
+
+/* Mobile styles -------------------------------------------------*/
+@media only screen
+  and (max-device-width: 820px) {
+    /* Structure ------------*/
+    .container {
+        grid-template-rows: auto 1fr;
+        grid-template-columns: 1fr 95vw 1fr;
+    }
+
+    .header {
+        margin-bottom: 0;
+    }
+
+    /* Entries ------------*/
+    .entries {
+        justify-content: space-evenly;
+        width: auto;
+    }
+
+    /* Modal styles ------------*/
+    .modal__content {
+        margin: 10% auto; /* 15% from the top and centered */
+        width: 80%; /* Could be more or less, depending on screen size */
+    }
 }

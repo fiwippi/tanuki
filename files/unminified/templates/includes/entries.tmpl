@@ -226,8 +226,8 @@
     <div class="entries">
         <template x-for="e in filteredEntries">
             <a style="border-bottom: none; cursor: pointer" :href="void(0)" @click="await showEntryViewModal(e)">
-                <div class="entry" style="flex: 0 1 auto; max-width: 200px">
-                    <img :src="images[e.order - 1].src" style="width: 100%; max-height: 300px">
+                <div class="entry" :style="`flex: 0 1 auto; max-width: ${imageWidth()}px`">
+                    <img class="entry__img" :src="images[e.order - 1].src">
                     <div class="entry__info" >
                         <h4 class="entry__title" x-text="e.title"></h4>
                         <span x-text="`Pages: ${e.pages}`"></span><br>

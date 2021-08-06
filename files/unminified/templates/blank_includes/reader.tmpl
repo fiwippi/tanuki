@@ -2,14 +2,7 @@
 
 {{ define "styles" }}
 <style>
-    .dark body, .dark .container {
-        background: black;
-    }
-
-    body, .container {
-        background: white;
-    }
-
+    /* Container styles -------------------------------------------------*/
     .container {
         overflow: visible;
         grid-template-columns: auto minmax(450px, 900px) auto;
@@ -31,6 +24,30 @@
         margin: 0;
     }
 
+    .pagedContainer {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        height: 94vh;
+    }
+
+    .scrollContainer {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        row-gap: 40px;
+    }
+
+    /* Color styles -------------------------------------------------*/
+    body, .container {
+        background: white !important
+    }
+    .dark body, .dark .container {
+        background: black !important
+    }
+
+    /* Image styles -------------------------------------------------*/
     .scrollImg {
         width: 100%;
         height: auto;
@@ -51,23 +68,22 @@
         aspect-ratio: 2/3;
     }
 
-    .pagedContainer {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: center;
-        height: 94vh;
-    }
-
-    .scrollContainer {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        row-gap: 40px;
-    }
-
     .webtoon {
         row-gap: 0;
+    }
+
+    /* Mobile styles -------------------------------------------------*/
+    @media only screen
+    and (max-device-width: 820px) {
+        .container {
+            overflow: visible;
+            grid-template-columns: auto 1fr auto;
+        }
+
+        .pagedImg {
+            width: 95%;
+            height: auto;
+        }
     }
 </style>
 {{ end }}

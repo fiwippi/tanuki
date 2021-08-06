@@ -2,6 +2,8 @@ export const name = 'util';
 
 export const BlankImage = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
 
+export const SmallMediaLimit = 820;
+
 export class Images {
     // Returns a promise which returns when an image is loaded
     static WaitForLoad(img) {

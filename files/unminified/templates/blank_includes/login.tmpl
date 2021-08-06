@@ -1,5 +1,41 @@
 {{ define "title" }}Login{{ end }}
 
+{{ define "styles"}}
+<style>
+    @media only screen
+    and (max-device-width: 820px) {
+        .container {
+            padding-bottom: 0;
+            margin: 0;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            height: 100%;
+            grid-template-rows: 1fr;
+            grid-template-areas:
+			"lblank main rblank";
+        }
+
+        .login-div {
+            margin: 0;
+            align-self: center
+        }
+
+        #login {
+            display: flex;
+            justify-content: center;
+            height: 100%;
+        }
+    }
+</style>
+{{end}}
+
 {{ define "scripts" }}
 <script type="module">
     import createLogin from {{versioning "/static/js/components/login.js"}}
@@ -16,18 +52,22 @@
 {{ end }}
 
 {{ define "content" }}
-<h1><a class="no-bottom" href="/">Tanuki</a></h1>
-<div x-data="login">
+<div x-data="login" id="login">
     <!-- Login Form -->
-    <div class="flex--row">
-        <h3 class="flex__key--centered flex__key--less-padding">Username:</h3>
-        <label class="flex__key--centered flex__key--less-padding"><input type="text" placeholder="Username" x-model="username"></label>
+    <div class="login-div">
+        <h1 class="flex__key--less-padding">Tanuki</h1>
+        <div class="flex--row" style="justify-content: center">
+            <h3 class="flex__key--centered flex__key--less-padding">Username:</h3>
+            <label class="flex__key--centered flex__key--less-padding"><input type="text" placeholder="Username" x-model="username" autofocus></label>
+        </div>
+        <div class="flex--row" style="justify-content: center">
+            <h3 class="flex__key--centered">Password:</h3>
+            <label class="flex__key--centered"><input type="password" placeholder="Password" x-model="password" x-bind='password_field'></label>
+        </div>
+        <div class="flex--row" style="justify-content: center">
+            <button x-bind="login_btn">Login</button>
+        </div>
     </div>
-    <div class="flex--row">
-        <h3 class="flex__key--centered">Password:</h3>
-        <label class="flex__key--centered"><input type="password" placeholder="Password" x-model="password" x-bind='password_field'></label>
-    </div>
-    <button x-bind="login_btn">Login</button>
     <!-- Modal -->
     <div x-data="modal" x-bind="modal_bg" class="modal" x-cloak>
         <div x-bind="modal_content" class="modal__content" x-transition>
