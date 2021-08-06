@@ -76,9 +76,30 @@ export default function (sid, eid, entry, initialProgress, entries, modal) {
             return Util.Fmt.Percent(p)
         },
 
+        // Webtoon functions
+        webtoon: false,
+
+        loadWebtoon() {
+            let val = localStorage.getItem('webtoon')
+            if (['true', 'false'].indexOf(val) >= 0) {
+                this.webtoon = (val === 'true') ? true: false
+            }
+        },
+
+        saveWebtoon() {
+            if (this.webtoon === true) {
+                localStorage.setItem('webtoon', 'true')
+            } else {
+                localStorage.setItem('webtoon', 'false')
+            }
+        },
+
         // Init related
 
         async init() {
+            // Load the webtoon state
+            this.loadWebtoon()
+
             // Redefine modal functionality, this stops bugs, e.g. if you are on
             // paged view and click to the left of the modal, it stops the page
             // trying to scroll left
