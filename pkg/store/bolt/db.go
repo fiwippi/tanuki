@@ -46,6 +46,11 @@ func connect(path string) (*DB, error) {
 			return err
 		}
 
+		_, err = tx.CreateBucketIfNotExists(keys.Downloads)
+		if err != nil {
+			return err
+		}
+
 		return nil
 	})
 	if err != nil {

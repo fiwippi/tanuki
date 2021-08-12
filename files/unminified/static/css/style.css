@@ -2,6 +2,30 @@
 [x-cloak] { display: none !important; }
 
 /* Generic styles -------------------------------------------------*/
+.bg {
+    background: {{ .Light.Background }};
+}
+
+.bg--lighter {
+    background: {{ .Light.BackgroundLighter }};
+}
+
+.bg--lighter-plus {
+    background: {{ .Light.BackgroundLighterPlus }};
+}
+
+.dark .bg {
+    background: {{ .Dark.Background }};
+}
+
+.dark .bg--lighter {
+    background: {{ .Dark.BackgroundLighter }};
+}
+
+.dark .bg--lighter-plus {
+    background: {{ .Dark.BackgroundLighterPlus }};
+}
+
 body {
     color: {{ .Light.Color }};
     background: {{ .Light.Background }};
@@ -247,6 +271,18 @@ svg {
     align-self: auto
 }
 
+/* Tables -------------------------------------------------*/
+
+thead {
+    font-weight: bold;
+}
+
+table {
+    margin: 0 auto;
+    text-align: center;
+    border-spacing: 10px
+}
+
 /* Entries -------------------------------------------------*/
 .entries {
     display: flex;
@@ -376,11 +412,15 @@ button {
     padding: 5px 15px;
 }
 
-button:hover, button:focus {
+button:hover:enabled {
     color: white;
     cursor: pointer;
     background-color: {{ .Light.Highlight }};
     border: 1px solid {{ .Light.Highlight }};
+}
+
+button:disabled {
+    background-color: #999999;
 }
 
 /* Login -------------------------------------------------*/

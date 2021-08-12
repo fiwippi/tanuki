@@ -56,7 +56,7 @@ func ParseArchive(fp string) (*ParsedEntry, error) {
 	err = a.Walk(func(f archiver.File) error {
 		if !f.IsDir() && !strings.HasPrefix(f.Name(), ".") {
 			// Validate page has correct image type
-			t, err := image.InferType(filepath.Ext(f.Name()))
+			t, err := image.InferType(f.Name())
 			if err != nil {
 				return err
 			}

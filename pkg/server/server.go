@@ -4,6 +4,7 @@ import (
 	"github.com/fiwippi/tanuki/pkg/auth"
 	"github.com/fiwippi/tanuki/pkg/config"
 	"github.com/fiwippi/tanuki/pkg/logging"
+	"github.com/fiwippi/tanuki/pkg/mangadex"
 	"github.com/fiwippi/tanuki/pkg/opds/feed"
 	"github.com/fiwippi/tanuki/pkg/store/bolt"
 	"github.com/gin-gonic/gin"
@@ -12,11 +13,12 @@ import (
 
 type Server struct {
 	//
-	Store   *bolt.DB
-	Session *auth.Session
-	Conf    *config.Config
-	Author  *feed.Author
-	Router  *gin.Engine
+	Store    *bolt.DB
+	Session  *auth.Session
+	Conf     *config.Config
+	Author   *feed.Author
+	Router   *gin.Engine
+	Mangadex *mangadex.Client
 
 	//
 	err404 gin.HandlerFunc
@@ -40,11 +42,12 @@ func New(store *bolt.DB, session *auth.Session, conf *config.Config, a *feed.Aut
 	r.MaxMultipartMemory = int64(conf.MaxUploadedFileSizeMiB) << 20
 
 	return &Server{
-		Store:   store,
-		Session: session,
-		Conf:    conf,
-		Author:  a,
-		Router:  r,
+		Store:    store,
+		Session:  session,
+		Conf:     conf,
+		Author:   a,
+		Router:   r,
+		Mangadex: mangadex.NewClient(),
 	}
 }
 

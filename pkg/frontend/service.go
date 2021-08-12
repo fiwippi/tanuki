@@ -19,6 +19,10 @@ func NewService(s *server.Server) {
 	authorised.GET("/tags/:tag", specificTag)
 	authorised.GET("/entries/:sid", entries)
 	authorised.GET("/reader/:sid/:eid", reader)
+	authorised.GET("/download", downloadHome)
+	authorised.GET("/download/mangadex", downloadMangadex)
+	authorised.GET("/download/mangadex/:uid", downloadMangadexChapters)
+	authorised.GET("/download/manager", downloadManager)
 
 	// Must be authorised and an admin to access these routes i.e. /admin
 	admin := authorised.Group("/admin")

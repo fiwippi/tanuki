@@ -134,5 +134,8 @@ func (r *Renderer) FuncMap() template.FuncMap {
 			user.Pass = ""
 			return *user
 		},
+		"mangadexUid": func(c *gin.Context) string {
+			return c.Param("uid")
+		},
 	}
 }

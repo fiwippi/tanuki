@@ -7,6 +7,7 @@ import (
 	"image/jpeg"
 	"image/png"
 	"io"
+	"path/filepath"
 	"strings"
 
 	"golang.org/x/image/bmp"
@@ -52,7 +53,8 @@ func (t Type) Decode(r io.Reader) (image.Image, error) {
 	panic(fmt.Sprintf("invalid image type: '%d'", t))
 }
 
-func InferType(ext string) (Type, error) {
+func InferType(fp string) (Type, error) {
+	ext := filepath.Ext(fp)
 	ext = strings.TrimPrefix(ext, ".")
 	ext = strings.ToLower(ext)
 

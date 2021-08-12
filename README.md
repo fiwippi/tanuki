@@ -11,6 +11,7 @@ Self hosted manga server + reader
 - Single binary (19 MB)
 - Dark/light mode
 - Metadata editor
+- Mangadex downloader
 
 ## Installation
 ### Build from Source
@@ -54,9 +55,6 @@ On the first run Tanuki logs the default username and randomly generated passwor
 ## Development Roadmap
 ### Features
 - Favicon
-- Mangadex downloader
-- Automatic download of new chapters
-- Plugin support
 - Specify config file path with param
 - Docker file on the Github Container Registry
 - Full OPDS feature support for v1.2 and v2.0
@@ -65,8 +63,12 @@ On the first run Tanuki logs the default username and randomly generated passwor
 - Full well formatted documentation for Go + Javascript
 - Progress bar when uploading covers
 - Why does generate thumbnails cause scan time to go up?
+- Generate thumbnails in smaller transactions to not cause bottleneck
 
 ## Changelog
+### [0.7] - 2021-08-12
+- Mangadex downloader
+
 ### [0.6] - 2021-08-06
 - Webtoon support, in the reader modal you can select the webtoon option which removes gaps between rows
 - Mobile UI overhaul, tanuki is now smoother and works better on mobile

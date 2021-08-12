@@ -36,6 +36,8 @@ var opdsAuthor = &feed.Author{
 	URI:  "https://github.com/fiwippi",
 }
 
+// TODO better way to generate thumbnails than to always wait 30 sec each load to display theme
+
 func main() {
 	// Load the config
 	conf := config.LoadConfig(ConfigPath)

@@ -258,3 +258,37 @@ export class Catalog {
             .then(resp => resp.ensureSuccess())
     }
 }
+
+export class Download {
+    static async Chapters(chapters) {
+        return fetchResource(`download/chapters`, {
+            method: 'POST',
+            body: JSON.stringify(chapters),
+        })
+            .then(resp => resp.ensureSuccess())
+    }
+
+    static Manager() {
+        return new EventSource(`${API_URL}download/manager`)
+    }
+
+    static async DeleteFinishedTasks() {
+        return fetchResource(`download/manager/delete-finished-tasks`)
+            .then(resp => resp.ensureSuccess())
+    }
+
+    static async Pause() {
+        return fetchResource(`download/manager/pause-downloads`)
+            .then(resp => resp.ensureSuccess())
+    }
+
+    static async Resume() {
+        return fetchResource(`download/manager/resume-downloads`)
+            .then(resp => resp.ensureSuccess())
+    }
+
+    static async Cancel() {
+        return fetchResource(`download/manager/cancel-downloads`)
+            .then(resp => resp.ensureSuccess())
+    }
+}

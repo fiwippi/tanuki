@@ -550,6 +550,9 @@ func (db *DB) DeleteEntryCover(sid, eid string) error {
 func (db *DB) GenerateThumbnails(forceNew bool) error {
 	var errs error
 
+	// TODO first view thumbnails that need updating
+	// TODO then update them in a for loop to allow other functions to be called in the meantime???
+
 	db.Update(func(tx *bolt.Tx) error {
 		root := db.catalogBucket(tx)
 

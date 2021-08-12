@@ -96,6 +96,21 @@ export class Fmt {
         }
         return (p * 100).toFixed(2) + "%"
     }
+
+    static RFCDate(date) {
+        let d = new Date(date)
+
+        let month = '' + (d.getMonth() + 1),
+            day = '' + d.getDate(),
+            year = d.getFullYear();
+
+        if (month.length < 2)
+            month = '0' + month;
+        if (day.length < 2)
+            day = '0' + day;
+
+        return [year, month, day].join('-');
+    }
 }
 
 export class Ensure {
@@ -109,6 +124,13 @@ export class Ensure {
     static Object(i) {
         if (i === undefined || i === null) {
             return {}
+        }
+        return i
+    }
+
+    static String(i) {
+        if (i === undefined || i === null) {
+            return ""
         }
         return i
     }

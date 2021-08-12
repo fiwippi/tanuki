@@ -1,0 +1,20 @@
+package fse
+
+import (
+	"regexp"
+	"strings"
+)
+
+var sanitise *regexp.Regexp
+
+func init() {
+	sanitise = regexp.MustCompile("[^\\w\\-. ]+")
+}
+
+func Sanitise(input string) string {
+	var sb strings.Builder
+	for _, r := range input {
+		sb.WriteString(sanitise.ReplaceAllString(string(r), "_"))
+	}
+	return sb.String()
+}

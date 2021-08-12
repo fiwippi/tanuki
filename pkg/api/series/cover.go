@@ -68,7 +68,7 @@ func PatchSeriesCover(s *server.Server) gin.HandlerFunc {
 			return
 		}
 
-		imageType, err := image.InferType(filepath.Ext(filename))
+		imageType, err := image.InferType(filename)
 		if err != nil {
 			log.Debug().Err(err).Str("filename", filepath.Ext(filename)).Msg("failed getting image type for new cover")
 			c.AbortWithStatusJSON(400, PatchCoverReply{Success: false})
@@ -193,7 +193,7 @@ func PatchEntryCover(s *server.Server) gin.HandlerFunc {
 			c.AbortWithStatusJSON(500, PatchCoverReply{Success: false})
 			return
 		}
-		imageType, err := image.InferType(filepath.Ext(filename))
+		imageType, err := image.InferType(filename)
 		if err != nil {
 			log.Debug().Err(err).Str("filename", filepath.Ext(filename)).Msg("failed getting image type for new cover")
 			c.AbortWithStatusJSON(400, PatchCoverReply{Success: false})

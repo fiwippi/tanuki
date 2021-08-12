@@ -27,6 +27,8 @@ var (
 
 	// Related to the root buckets
 
-	Users = Key("users")
+	Users     = Key("users")
+	Downloads = Key("downloads")
 	// Catalog key should be here but is specified earlier
+
 )
