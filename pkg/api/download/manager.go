@@ -1,12 +1,14 @@
 package download
 
 import (
+	"io"
+	"time"
+
+	"github.com/gin-gonic/gin"
+
 	"github.com/fiwippi/tanuki/pkg/downloading"
 	"github.com/fiwippi/tanuki/pkg/server"
 	"github.com/fiwippi/tanuki/pkg/store/entities/api"
-	"github.com/gin-gonic/gin"
-	"io"
-	"time"
 )
 
 var manager *downloading.Manager

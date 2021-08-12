@@ -14,15 +14,17 @@ type SeriesEntry struct {
 }
 
 type ArchiveEntry struct {
-	Title   string  `xml:"title"`   // Title of the series
-	Updated Time    `xml:"updated"` // When the series was last updated
-	ID      string  `xml:"id"`      // EntryProgress hash
-	Content string  `xml:"content"` // Empty but tag should still exist
-	Links   []*Link `xml:"link"`
+	Title   string        `xml:"title"`   // Title of the series
+	Updated Time          `xml:"updated"` // When the series was last updated
+	ID      string        `xml:"id"`      // EntryProgress hash
+	Content string        `xml:"content"` // Empty but tag should still exist
+	Links   []interface{} `xml:"link"`
+	//PSE     *pseLink `xml:"link"`
 
 	//
-	CoverType, ThumbType image.Type     `xml:"-"`
-	Archive              *manga.Archive `xml:"-"`
+	CoverType, ThumbType, PageType image.Type     `xml:"-"`
+	Archive                        *manga.Archive `xml:"-"`
+	Pages                          int            `xml:"-"`
 }
 
 func (e *ArchiveEntry) AddLink(l *Link) {

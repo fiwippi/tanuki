@@ -2,10 +2,11 @@ package util
 
 import (
 	"fmt"
-	"github.com/fiwippi/tanuki/pkg/store/bolt/keys"
 	"strings"
 
 	bolt "go.etcd.io/bbolt"
+
+	"github.com/fiwippi/tanuki/pkg/store/bolt/keys"
 )
 
 // DumpCursor adds a string representation of the current bucket to

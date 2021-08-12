@@ -1,12 +1,14 @@
 package server
 
 import (
-	"github.com/fiwippi/tanuki/internal/fse"
-	"github.com/fiwippi/tanuki/pkg/store/entities/manga"
-	"github.com/rs/zerolog/log"
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/rs/zerolog/log"
+
+	"github.com/fiwippi/tanuki/internal/fse"
+	"github.com/fiwippi/tanuki/pkg/store/entities/manga"
 )
 
 func (s *Server) ScanLibrary() error {

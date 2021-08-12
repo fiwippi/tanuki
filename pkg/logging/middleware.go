@@ -1,10 +1,11 @@
 package logging
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 )
 
 // Middleware which provides ability to log with gin

@@ -1,11 +1,13 @@
 package cookie
 
 import (
-	"github.com/fiwippi/tanuki/pkg/auth"
-	"github.com/fiwippi/tanuki/pkg/server"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
-	"time"
+
+	"github.com/fiwippi/tanuki/pkg/auth"
+	"github.com/fiwippi/tanuki/pkg/server"
 )
 
 // Auth middleware which ensures the user is authorised

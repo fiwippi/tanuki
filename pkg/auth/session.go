@@ -2,12 +2,13 @@ package auth
 
 import (
 	"errors"
-	"github.com/fiwippi/tanuki/internal/encryption"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/shaj13/libcache"
 	_ "github.com/shaj13/libcache/lru"
+
+	"github.com/fiwippi/tanuki/internal/encryption"
 )
 
 var (

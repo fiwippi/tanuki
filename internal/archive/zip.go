@@ -3,9 +3,10 @@ package archive
 import (
 	"bytes"
 	"compress/flate"
-	"github.com/mholt/archiver/v3"
 	"io"
 	"os"
+
+	"github.com/mholt/archiver/v3"
 )
 
 type ZipFile struct {

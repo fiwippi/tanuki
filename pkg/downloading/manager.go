@@ -3,12 +3,14 @@ package downloading
 import (
 	"errors"
 	"fmt"
+
+	"github.com/rs/zerolog/log"
+
 	"github.com/fiwippi/tanuki/internal/fse"
 	"github.com/fiwippi/tanuki/internal/sync"
 	"github.com/fiwippi/tanuki/pkg/mangadex"
 	"github.com/fiwippi/tanuki/pkg/store/bolt"
 	"github.com/fiwippi/tanuki/pkg/store/entities/api"
-	"github.com/rs/zerolog/log"
 )
 
 var downloadsPool = NewPool()

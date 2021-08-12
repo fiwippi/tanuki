@@ -1,8 +1,9 @@
 package downloading
 
 import (
-	"github.com/fiwippi/tanuki/pkg/store/entities/api"
 	"sync"
+
+	"github.com/fiwippi/tanuki/pkg/store/entities/api"
 )
 
 type DownloadList struct {

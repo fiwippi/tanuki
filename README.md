@@ -47,25 +47,25 @@ On the first run Tanuki logs the default username and randomly generated passwor
 - [x] Viewing library
 - [x] Downloading archive
 - [x] Getting cover/thumbnail of archive
-- [ ] Search
-- [ ] Page streaming
-### v2.0
-- N/A
+- [x] Search
+- [x] Page streaming
 
 ## Development Roadmap
 ### Features
 - Favicon
-- Specify config file path with param
 - Docker file on the Github Container Registry
-- Full OPDS feature support for v1.2 and v2.0
 
 ### Implementation Improvements
 - Full well formatted documentation for Go + Javascript
 - Progress bar when uploading covers
-- Why does generate thumbnails cause scan time to go up?
-- Generate thumbnails in smaller transactions to not cause bottleneck
 
 ## Changelog
+### [0.8] - 2021-08-12
+- Specifying a zero/negative interval disables periodic tasks
+- Ability to specify config path with param
+- Stops thumbnail generation blocking populating the DB
+- Added OPDS Search & Page Streaming
+
 ### [0.7] - 2021-08-12
 - Mangadex downloader
 

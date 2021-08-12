@@ -1,9 +1,10 @@
 package series
 
 import (
+	"github.com/gin-gonic/gin"
+
 	"github.com/fiwippi/tanuki/pkg/server"
 	"github.com/fiwippi/tanuki/pkg/store/entities/api"
-	"github.com/gin-gonic/gin"
 )
 
 // SeriesEntriesReply for /api/series/:id/entries

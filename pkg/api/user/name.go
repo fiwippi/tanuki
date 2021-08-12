@@ -1,8 +1,9 @@
 package user
 
 import (
-	"github.com/fiwippi/tanuki/pkg/server"
 	"github.com/gin-gonic/gin"
+
+	"github.com/fiwippi/tanuki/pkg/server"
 )
 
 // NameReply defines the reply from /api/user/name

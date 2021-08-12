@@ -2,9 +2,11 @@ package buckets
 
 import (
 	"encoding/binary"
+
+	bolt "go.etcd.io/bbolt"
+
 	"github.com/fiwippi/tanuki/internal/json"
 	"github.com/fiwippi/tanuki/pkg/store/entities/api"
-	bolt "go.etcd.io/bbolt"
 )
 
 type DownloadsBucket struct {

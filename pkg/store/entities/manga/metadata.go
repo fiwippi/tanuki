@@ -2,8 +2,9 @@ package manga
 
 import (
 	"encoding/json"
-	"github.com/fiwippi/tanuki/internal/date"
 	"time"
+
+	"github.com/fiwippi/tanuki/internal/date"
 )
 
 const (

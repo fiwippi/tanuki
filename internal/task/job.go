@@ -22,6 +22,10 @@ func NewJob(m *Minutes) *Job {
 }
 
 func (i *Job) Run(f func() error, taskName string, runOnStart bool) {
+	if i.Duration <= 0 {
+		return
+	}
+
 	i.Ticker = time.NewTicker(i.Duration)
 	i.Stop = make(chan struct{})
 

@@ -1,10 +1,11 @@
 package buckets
 
 import (
+	bolt "go.etcd.io/bbolt"
+
 	"github.com/fiwippi/tanuki/internal/json"
 	"github.com/fiwippi/tanuki/pkg/store/bolt/keys"
 	"github.com/fiwippi/tanuki/pkg/store/entities/manga"
-	bolt "go.etcd.io/bbolt"
 )
 
 type EntryBucket struct {

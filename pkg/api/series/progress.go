@@ -2,11 +2,13 @@ package series
 
 import (
 	"errors"
-	"github.com/fiwippi/tanuki/pkg/server"
-	"github.com/fiwippi/tanuki/pkg/store/entities/users"
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
-	"strconv"
+
+	"github.com/fiwippi/tanuki/pkg/server"
+	"github.com/fiwippi/tanuki/pkg/store/entities/users"
 )
 
 // Progress can be defined as 100%, 0% or an int

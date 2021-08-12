@@ -15,8 +15,9 @@ func NewCatalog() *Catalog {
 		Entries: make([]*SeriesEntry, 0),
 	}
 	c.Feed.ID = "root"
-	c.Feed.Title = "GetCatalog"
+	c.Feed.Title = "Catalog"
 	c.Feed.AddLink(&Link{Href: "/opds/v1.2/catalog", Rel: "self", Type: NavigationFeedType})
+	c.Feed.AddLink(&Link{Href: "/opds/v1.2/search", Rel: "search", Type: OpenSearchType})
 	return c
 }
 

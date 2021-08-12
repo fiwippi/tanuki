@@ -2,16 +2,23 @@ package bolt
 
 import (
 	"fmt"
+
+	"github.com/rs/zerolog/log"
+	bolt "go.etcd.io/bbolt"
+
 	"github.com/fiwippi/tanuki/internal/encryption"
+	"github.com/fiwippi/tanuki/internal/sync"
 	"github.com/fiwippi/tanuki/pkg/store/bolt/keys"
 	"github.com/fiwippi/tanuki/pkg/store/bolt/util"
 	"github.com/fiwippi/tanuki/pkg/store/entities/users"
-	"github.com/rs/zerolog/log"
-	bolt "go.etcd.io/bbolt"
 )
 
 type DB struct {
 	*bolt.DB
+
+	// Ensures generating thumbnails only happens
+	//until after all series has been scanned
+	cont *sync.Controller
 }
 
 func (db *DB) String() string {
@@ -32,7 +39,10 @@ func connect(path string) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	db := &DB{DB: temp}
+	db := &DB{
+		DB:   temp,
+		cont: sync.NewController(),
+	}
 
 	// Guarantees the buckets exist
 	err = db.Update(func(tx *bolt.Tx) error {

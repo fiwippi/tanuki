@@ -1,14 +1,16 @@
 package server
 
 import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+
 	"github.com/fiwippi/tanuki/pkg/auth"
 	"github.com/fiwippi/tanuki/pkg/config"
 	"github.com/fiwippi/tanuki/pkg/logging"
 	"github.com/fiwippi/tanuki/pkg/mangadex"
 	"github.com/fiwippi/tanuki/pkg/opds/feed"
 	"github.com/fiwippi/tanuki/pkg/store/bolt"
-	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 type Server struct {

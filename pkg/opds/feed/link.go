@@ -12,4 +12,5 @@ type Link struct {
 const (
 	NavigationFeedType  = "application/atom+xml;profile=opds-catalog;kind=navigation"
 	AcquisitionFeedType = "application/atom+xml;profile=opds-catalog;kind=acquisition"
+	OpenSearchType      = "application/opensearchdescription+xml"
 )

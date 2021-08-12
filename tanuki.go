@@ -2,6 +2,16 @@ package main
 
 import (
 	"embed"
+	"flag"
+	"io/fs"
+	"net/http"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
+	"golang.org/x/sync/errgroup"
+
+	"github.com/fiwippi/tanuki/internal/task"
 	"github.com/fiwippi/tanuki/pkg/api"
 	"github.com/fiwippi/tanuki/pkg/auth"
 	"github.com/fiwippi/tanuki/pkg/config"
@@ -11,15 +21,7 @@ import (
 	"github.com/fiwippi/tanuki/pkg/opds/feed"
 	"github.com/fiwippi/tanuki/pkg/server"
 	"github.com/fiwippi/tanuki/pkg/store/bolt"
-	"github.com/fiwippi/tanuki/pkg/task"
 	"github.com/fiwippi/tanuki/pkg/templates"
-	"github.com/gin-gonic/gin"
-	"io/fs"
-	"net/http"
-	"time"
-
-	"github.com/rs/zerolog/log"
-	"golang.org/x/sync/errgroup"
 )
 
 var g errgroup.Group
@@ -36,12 +38,14 @@ var opdsAuthor = &feed.Author{
 	URI:  "https://github.com/fiwippi",
 }
 
-// TODO better way to generate thumbnails than to always wait 30 sec each load to display theme
-
 func main() {
+	// TODO add --help to readme
+	cfPath := flag.String("config", ConfigPath, "path to the config file, if it does not exist then it will be created")
+	flag.Parse()
+
 	// Load the config
-	conf := config.LoadConfig(ConfigPath)
-	err := conf.Save(ConfigPath)
+	conf := config.LoadConfig(*cfPath)
+	err := conf.Save(*cfPath)
 	if err != nil {
 		log.Error().Err(err).Msg("failure to save config on startup")
 	}

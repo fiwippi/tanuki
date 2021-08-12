@@ -2,11 +2,13 @@ package buckets
 
 import (
 	"errors"
+
+	bolt "go.etcd.io/bbolt"
+
 	"github.com/fiwippi/tanuki/internal/json"
 	"github.com/fiwippi/tanuki/pkg/store/bolt/keys"
 	"github.com/fiwippi/tanuki/pkg/store/bolt/util"
 	"github.com/fiwippi/tanuki/pkg/store/entities/users"
-	bolt "go.etcd.io/bbolt"
 )
 
 var (

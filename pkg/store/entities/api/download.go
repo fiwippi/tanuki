@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/fiwippi/tanuki/internal/fse"
 	"github.com/fiwippi/tanuki/internal/pretty"
 	"github.com/fiwippi/tanuki/pkg/mangadex"
-	"time"
 )
 
 var ErrDownloadCancelled = errors.New("download cancelled")

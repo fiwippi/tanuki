@@ -3,12 +3,14 @@ package basic
 import (
 	"encoding/base64"
 	"errors"
-	"github.com/fiwippi/tanuki/pkg/store/bolt"
-	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
+
+	"github.com/fiwippi/tanuki/pkg/store/bolt"
 )
 
 var (

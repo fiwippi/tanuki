@@ -1,11 +1,12 @@
 package series
 
 import (
+	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
+
 	"github.com/fiwippi/tanuki/pkg/server"
 	"github.com/fiwippi/tanuki/pkg/store/entities/api"
 	"github.com/fiwippi/tanuki/pkg/store/entities/manga"
-	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 )
 
 // SeriesReply for /api/series/:sid

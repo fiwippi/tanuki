@@ -1,10 +1,11 @@
 package admin
 
 import (
-	"github.com/fiwippi/tanuki/pkg/server"
-	"github.com/fiwippi/tanuki/pkg/store/entities/users"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
+
+	"github.com/fiwippi/tanuki/pkg/server"
+	"github.com/fiwippi/tanuki/pkg/store/entities/users"
 )
 
 // UsersPutRequest for /api/admin/users

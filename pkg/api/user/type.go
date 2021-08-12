@@ -1,9 +1,10 @@
 package user
 
 import (
+	"github.com/gin-gonic/gin"
+
 	"github.com/fiwippi/tanuki/pkg/server"
 	"github.com/fiwippi/tanuki/pkg/store/entities/users"
-	"github.com/gin-gonic/gin"
 )
 
 // TypeReply defines the reply from /api/user/type

@@ -1,10 +1,11 @@
 package bolt
 
 import (
+	bolt "go.etcd.io/bbolt"
+
 	"github.com/fiwippi/tanuki/pkg/store/bolt/buckets"
 	"github.com/fiwippi/tanuki/pkg/store/bolt/keys"
 	"github.com/fiwippi/tanuki/pkg/store/entities/api"
-	bolt "go.etcd.io/bbolt"
 )
 
 func (db *DB) downloadsBucket(tx *bolt.Tx) *buckets.DownloadsBucket {

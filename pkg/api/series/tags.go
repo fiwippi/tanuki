@@ -1,9 +1,10 @@
 package series
 
 import (
-	"github.com/fiwippi/tanuki/pkg/server"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
+
+	"github.com/fiwippi/tanuki/pkg/server"
 )
 
 // TagsRequest for the route /api/tag/:id/series

@@ -2,13 +2,15 @@ package manga
 
 import (
 	"archive/zip"
-	"github.com/fiwippi/tanuki/internal/archive"
-	"github.com/fiwippi/tanuki/internal/fse"
-	"github.com/fiwippi/tanuki/internal/image"
-	"github.com/mholt/archiver/v3"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/mholt/archiver/v3"
+
+	"github.com/fiwippi/tanuki/internal/archive"
+	"github.com/fiwippi/tanuki/internal/fse"
+	"github.com/fiwippi/tanuki/internal/image"
 )
 
 // ParsedEntry represents an entry which you read, i.e. an archive file

@@ -1,12 +1,13 @@
 package manga
 
 import (
-	"fmt"
-	"github.com/fiwippi/tanuki/internal/archive"
-	"github.com/fiwippi/tanuki/internal/fse"
 	"io/fs"
 	"path/filepath"
 	"sync"
+
+	"github.com/fiwippi/tanuki/internal/archive"
+	"github.com/fiwippi/tanuki/internal/errors"
+	"github.com/fiwippi/tanuki/internal/fse"
 )
 
 // ParsedSeries is a collection of ParsedEntry volumes/chapters
@@ -16,7 +17,7 @@ type ParsedSeries struct {
 }
 
 func ParseSeriesFolder(dir string) (*ParsedSeries, error) {
-	var errors error
+	var errs error
 	series := &ParsedSeries{}
 	entries := make([]*ParsedEntry, 0)
 	errorQueue := make(chan error, 1)
@@ -31,7 +32,7 @@ func ParseSeriesFolder(dir string) (*ParsedSeries, error) {
 
 	go func() {
 		for e := range errorQueue {
-			errors = fmt.Errorf("%w, %s", errors, e)
+			errs = errors.Wrap(errs, e)
 		}
 	}()
 
@@ -67,5 +68,5 @@ func ParseSeriesFolder(dir string) (*ParsedSeries, error) {
 	close(entriesQueue)
 	series.Entries = entries
 
-	return series, errors
+	return series, errs
 }

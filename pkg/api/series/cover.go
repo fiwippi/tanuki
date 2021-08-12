@@ -2,12 +2,14 @@ package series
 
 import (
 	"fmt"
+	"path/filepath"
+
+	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
+
 	"github.com/fiwippi/tanuki/internal/fse"
 	"github.com/fiwippi/tanuki/internal/image"
 	"github.com/fiwippi/tanuki/pkg/server"
-	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
-	"path/filepath"
 )
 
 // PatchCoverReply for /api/series/:sid/cover

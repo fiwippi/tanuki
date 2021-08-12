@@ -6,8 +6,9 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"golang.org/x/time/rate"
 )
-import "golang.org/x/time/rate"
 
 const ApiUrl = "https://api.mangadex.org"
 

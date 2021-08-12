@@ -1,12 +1,13 @@
 package admin
 
 import (
+	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
+
 	"github.com/fiwippi/tanuki/internal/hash"
 	"github.com/fiwippi/tanuki/pkg/server"
 	"github.com/fiwippi/tanuki/pkg/store/bolt"
 	"github.com/fiwippi/tanuki/pkg/store/entities/users"
-	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 )
 
 // UserPatchRequest for /api/admin/user

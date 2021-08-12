@@ -1,8 +1,9 @@
 package downloading
 
 import (
-	"github.com/fiwippi/tanuki/pkg/store/entities/api"
 	"sync"
+
+	"github.com/fiwippi/tanuki/pkg/store/entities/api"
 )
 
 const poolStartCap = 20

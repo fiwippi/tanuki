@@ -2,15 +2,17 @@ package templates
 
 import (
 	"fmt"
+	"html/template"
+	"strconv"
+	"time"
+
+	"github.com/gin-gonic/gin"
+
 	"github.com/fiwippi/tanuki/internal/multitemplate"
 	"github.com/fiwippi/tanuki/pkg/api/series"
 	"github.com/fiwippi/tanuki/pkg/server"
 	"github.com/fiwippi/tanuki/pkg/store/entities/api"
 	"github.com/fiwippi/tanuki/pkg/store/entities/users"
-	"github.com/gin-gonic/gin"
-	"html/template"
-	"strconv"
-	"time"
 )
 
 type Renderer struct {

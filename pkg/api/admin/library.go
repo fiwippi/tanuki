@@ -2,11 +2,13 @@ package admin
 
 import (
 	"fmt"
-	"github.com/fiwippi/tanuki/pkg/server"
-	"github.com/fiwippi/tanuki/pkg/store/entities/api"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
-	"time"
+
+	"github.com/fiwippi/tanuki/pkg/server"
+	"github.com/fiwippi/tanuki/pkg/store/entities/api"
 )
 
 // LibraryScanReply for /api/admin/library

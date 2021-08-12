@@ -2,6 +2,7 @@ package manga
 
 import (
 	"encoding/json"
+
 	"github.com/fiwippi/tanuki/internal/image"
 )
 

@@ -1,12 +1,14 @@
 package series
 
 import (
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
+
 	"github.com/fiwippi/tanuki/pkg/server"
 	"github.com/fiwippi/tanuki/pkg/store/entities/api"
 	"github.com/fiwippi/tanuki/pkg/store/entities/manga"
-	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
-	"strconv"
 )
 
 // SeriesEntryReply for /api/series/:id/entries/:eid
@@ -76,7 +78,7 @@ func GetEntryArchive(s *server.Server) gin.HandlerFunc {
 	}
 }
 
-// GET /api/series/:sid/entries/:eid/page/:num
+// GET /api/series/:sid/entries/:eid/page/:num?zero_based={true|false}
 func GetEntryPage(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		sid := c.Param("sid")
@@ -87,6 +89,18 @@ func GetEntryPage(s *server.Server) gin.HandlerFunc {
 		if err != nil {
 			c.AbortWithStatus(400)
 			return
+		}
+
+		zbQuery := c.Query("zero_based")
+		if len(zbQuery) > 0 {
+			zb, err := strconv.ParseBool(zbQuery)
+			if err != nil {
+				c.AbortWithStatus(400)
+				return
+			}
+			if zb {
+				num += 1
+			}
 		}
 
 		a, err := s.Store.GetEntryArchive(sid, eid)

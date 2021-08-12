@@ -1,8 +1,9 @@
 package frontend
 
 import (
-	"github.com/fiwippi/tanuki/pkg/server"
 	"github.com/gin-gonic/gin"
+
+	"github.com/fiwippi/tanuki/pkg/server"
 )
 
 // GET /

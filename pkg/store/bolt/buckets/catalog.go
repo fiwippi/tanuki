@@ -1,16 +1,18 @@
 package buckets
 
 import (
-	"errors"
+	"sort"
+	"time"
+
+	bolt "go.etcd.io/bbolt"
+
+	"github.com/fiwippi/tanuki/internal/errors"
 	"github.com/fiwippi/tanuki/internal/hash"
 	"github.com/fiwippi/tanuki/internal/json"
 	"github.com/fiwippi/tanuki/internal/sets"
 	"github.com/fiwippi/tanuki/pkg/store/bolt/keys"
 	"github.com/fiwippi/tanuki/pkg/store/entities/api"
 	"github.com/fiwippi/tanuki/pkg/store/entities/manga"
-	bolt "go.etcd.io/bbolt"
-	"sort"
-	"time"
 )
 
 var (
@@ -26,7 +28,7 @@ type CatalogBucket struct {
 func (b *CatalogBucket) Series(sid string) (*SeriesBucket, error) {
 	bucket := b.Bucket.Bucket([]byte(sid))
 	if bucket == nil {
-		return nil, ErrSeriesNotExist
+		return nil, ErrSeriesNotExist.Fmt(sid)
 	}
 
 	return &SeriesBucket{Bucket: bucket}, nil
@@ -40,7 +42,7 @@ func (b *CatalogBucket) Entry(sid, eid string) (*EntryBucket, error) {
 
 	entryBucket := seriesBucket.getEntry([]byte(eid))
 	if entryBucket == nil {
-		return nil, ErrEntryNotExist
+		return nil, ErrEntryNotExist.Fmt(eid)
 	}
 
 	return entryBucket, nil
@@ -63,7 +65,7 @@ func (b *CatalogBucket) FirstEntry(sid string) (*EntryBucket, error) {
 
 func (b *CatalogBucket) AddSeries(s *manga.ParsedSeries) error {
 	if len(s.Entries) == 0 {
-		return ErrEntryNotExist
+		return ErrEntriesNotExist.Fmt(s.Title)
 	}
 
 	// Create the bucket for the series
@@ -234,13 +236,13 @@ func (b *CatalogBucket) ForEachSeries(f func(sid string, b *SeriesBucket) error)
 func (b *CatalogBucket) SeriesMetadata(sid string) (*api.Series, error) {
 	sb, err := b.Series(sid)
 	if err != nil {
-		return nil, ErrSeriesNotExist
+		return nil, ErrSeriesNotExist.Fmt(sid)
 	}
 	i := sb.Order() - 1
 
 	c := b.Catalog()
 	if i >= len(c) {
-		return nil, ErrCatalogEntryNotExist
+		return nil, ErrCatalogEntryNotExist.Fmt(sid)
 	}
 
 	return c[i], nil
@@ -249,13 +251,13 @@ func (b *CatalogBucket) SeriesMetadata(sid string) (*api.Series, error) {
 func (b *CatalogBucket) SetSeriesMetadata(sid string, s *api.Series) error {
 	sb, err := b.Series(sid)
 	if err != nil {
-		return ErrSeriesNotExist
+		return ErrSeriesNotExist.Fmt(sid)
 	}
 	i := sb.Order() - 1
 
 	c := b.Catalog()
 	if i >= len(c) {
-		return ErrCatalogEntryNotExist
+		return ErrCatalogEntryNotExist.Fmt(sid)
 	}
 	c[i] = s
 

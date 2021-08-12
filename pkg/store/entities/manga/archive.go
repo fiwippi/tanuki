@@ -5,16 +5,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/fiwippi/tanuki/internal/archive"
-	"github.com/fiwippi/tanuki/internal/image"
 	"io"
 	"io/ioutil"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/fiwippi/tanuki/internal/fse"
 	"github.com/mholt/archiver/v3"
+
+	"github.com/fiwippi/tanuki/internal/archive"
+	"github.com/fiwippi/tanuki/internal/fse"
+	"github.com/fiwippi/tanuki/internal/image"
 )
 
 var (

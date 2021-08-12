@@ -1,20 +1,22 @@
 package buckets
 
 import (
-	"errors"
+	"time"
+
+	bolt "go.etcd.io/bbolt"
+
+	"github.com/fiwippi/tanuki/internal/errors"
 	"github.com/fiwippi/tanuki/internal/hash"
 	"github.com/fiwippi/tanuki/internal/json"
+	"github.com/fiwippi/tanuki/internal/sets"
 	"github.com/fiwippi/tanuki/pkg/store/bolt/keys"
 	"github.com/fiwippi/tanuki/pkg/store/entities/api"
 	"github.com/fiwippi/tanuki/pkg/store/entities/manga"
-	bolt "go.etcd.io/bbolt"
-	"time"
-
-	"github.com/fiwippi/tanuki/internal/sets"
 )
 
 var (
 	ErrEntryNotExist           = errors.New("entry does not exist")
+	ErrEntriesNotExist         = errors.New("entries do not exist")
 	ErrEntryMetadataNotExist   = errors.New("entry metadata does not exist")
 	ErrEntriesMetadataNotExist = errors.New("entries metadata does not exist")
 )
@@ -83,7 +85,7 @@ func (b *SeriesBucket) AddEntry(e *manga.ParsedEntry, order int) error {
 func (b *SeriesBucket) DeleteEntry(eid string) error {
 	eb := b.getEntry([]byte(eid))
 	if eb == nil {
-		return ErrEntryNotExist
+		return ErrEntryNotExist.Fmt(eid)
 	}
 
 	// Get index of the entry data in the metadata
@@ -133,7 +135,7 @@ func (b *SeriesBucket) RegenerateEntriesMetadata() error {
 		if e != nil {
 			eb := b.getEntry([]byte(e.Hash))
 			if eb == nil {
-				return ErrEntryNotExist
+				return ErrEntryNotExist.Fmt(e.Hash)
 			}
 
 			err := eb.SetOrder(o)
@@ -217,13 +219,13 @@ func (b *SeriesBucket) SetMetadata(d *manga.SeriesMetadata) error {
 func (b *SeriesBucket) EntryMetadata(eid string) (*api.Entry, error) {
 	eb := b.getEntry([]byte(eid))
 	if eb == nil {
-		return nil, ErrEntryNotExist
+		return nil, ErrEntryNotExist.Fmt(eid)
 	}
 	i := eb.Order() - 1
 
 	m := b.EntriesMetadata()
 	if i >= len(m) {
-		return nil, ErrEntryMetadataNotExist
+		return nil, ErrEntryMetadataNotExist.Fmt(eid)
 	}
 
 	return m[i], nil
@@ -232,13 +234,13 @@ func (b *SeriesBucket) EntryMetadata(eid string) (*api.Entry, error) {
 func (b *SeriesBucket) SetEntryMetadata(eid string, m *api.Entry) error {
 	eb := b.getEntry([]byte(eid))
 	if eb == nil {
-		return ErrEntryNotExist
+		return ErrEntryNotExist.Fmt(eid)
 	}
 	i := eb.Order() - 1
 
 	em := b.EntriesMetadata()
 	if i >= len(em) {
-		return ErrEntryMetadataNotExist
+		return ErrEntryMetadataNotExist.Fmt(eid)
 	}
 	em[i] = m
 

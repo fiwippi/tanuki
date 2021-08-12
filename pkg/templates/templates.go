@@ -1,12 +1,14 @@
 package templates
 
 import (
-	"github.com/fiwippi/tanuki/internal/multitemplate"
-	"github.com/fiwippi/tanuki/pkg/server"
-	"github.com/rs/zerolog/log"
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"github.com/rs/zerolog/log"
+
+	"github.com/fiwippi/tanuki/internal/multitemplate"
+	"github.com/fiwippi/tanuki/pkg/server"
 )
 
 // Renderer renders the templates from the fs

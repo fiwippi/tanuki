@@ -1,6 +1,8 @@
 package feed
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Series struct {
 	*Feed
@@ -41,6 +43,16 @@ func (s *Series) AddEntry(e *ArchiveEntry) {
 		Rel:  RelAcquisition,
 		Type: e.Archive.Type.MimeType(),
 	})
+
+	// Page streaming link
+	pse := &pseLink{
+		Ns:        pseNs,
+		PageCount: e.Pages,
+		Href:      entryPath + "/page/{pageNumber}?zero_based=true",
+		Rel:       RelPageStream,
+		Type:      e.PageType.MimeType(),
+	}
+	e.Links = append(e.Links, pse)
 
 	s.Entries = append(s.Entries, e)
 }

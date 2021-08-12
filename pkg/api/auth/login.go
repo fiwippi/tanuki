@@ -1,10 +1,11 @@
 package auth
 
 import (
-	"github.com/fiwippi/tanuki/internal/hash"
-	"github.com/fiwippi/tanuki/pkg/server"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
+
+	"github.com/fiwippi/tanuki/internal/hash"
+	"github.com/fiwippi/tanuki/pkg/server"
 )
 
 // We store the username hash in the session, it becomes more

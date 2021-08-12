@@ -1,13 +1,15 @@
 package config
 
 import (
-	"github.com/fiwippi/tanuki/internal/encryption"
-	"github.com/fiwippi/tanuki/internal/fse"
-	"github.com/fiwippi/tanuki/pkg/logging"
-	"github.com/fiwippi/tanuki/pkg/task"
+	"os"
+
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
-	"os"
+
+	"github.com/fiwippi/tanuki/internal/encryption"
+	"github.com/fiwippi/tanuki/internal/fse"
+	"github.com/fiwippi/tanuki/internal/task"
+	"github.com/fiwippi/tanuki/pkg/logging"
 )
 
 //

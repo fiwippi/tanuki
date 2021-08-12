@@ -1,10 +1,11 @@
 package opds
 
 import (
+	"github.com/gin-gonic/gin"
+
 	"github.com/fiwippi/tanuki/internal/image"
 	"github.com/fiwippi/tanuki/pkg/opds/feed"
 	"github.com/fiwippi/tanuki/pkg/server"
-	"github.com/gin-gonic/gin"
 )
 
 // GET /opds/v1.2/series/:sid
@@ -47,6 +48,11 @@ func GetEntries(s *server.Server) gin.HandlerFunc {
 				c.AbortWithStatus(500)
 				return
 			}
+			p, err := s.Store.GetEntryPage(id, e.Hash, 1)
+			if err != nil {
+				c.AbortWithStatus(500)
+				return
+			}
 
 			series.AddEntry(&feed.ArchiveEntry{
 				Title:     e.Title,
@@ -54,7 +60,9 @@ func GetEntries(s *server.Server) gin.HandlerFunc {
 				ID:        e.Hash,
 				CoverType: cover.ImageType,
 				ThumbType: image.JPEG,
+				PageType:  p.ImageType,
 				Archive:   a,
+				Pages:     e.Pages,
 			})
 		}
 

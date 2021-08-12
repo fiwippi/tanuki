@@ -1,13 +1,7 @@
 package bolt
 
 import (
-	"errors"
 	"fmt"
-	"github.com/fiwippi/tanuki/internal/hash"
-	"github.com/fiwippi/tanuki/pkg/store/bolt/buckets"
-	"github.com/fiwippi/tanuki/pkg/store/bolt/keys"
-	"github.com/fiwippi/tanuki/pkg/store/entities/api"
-	"github.com/fiwippi/tanuki/pkg/store/entities/manga"
 	"os"
 	"sort"
 	"strings"
@@ -15,8 +9,14 @@ import (
 
 	bolt "go.etcd.io/bbolt"
 
+	"github.com/fiwippi/tanuki/internal/errors"
 	"github.com/fiwippi/tanuki/internal/fse"
+	"github.com/fiwippi/tanuki/internal/hash"
 	"github.com/fiwippi/tanuki/internal/sets"
+	"github.com/fiwippi/tanuki/pkg/store/bolt/buckets"
+	"github.com/fiwippi/tanuki/pkg/store/bolt/keys"
+	"github.com/fiwippi/tanuki/pkg/store/entities/api"
+	"github.com/fiwippi/tanuki/pkg/store/entities/manga"
 )
 
 var (
@@ -31,6 +31,9 @@ func (db *DB) catalogBucket(tx *bolt.Tx) *buckets.CatalogBucket {
 // Catalog
 
 func (db *DB) PopulateCatalog(series []*manga.ParsedSeries) error {
+	db.cont.Pause()
+	defer db.cont.Resume()
+
 	var errs error
 	var cModTime time.Time
 
@@ -95,7 +98,7 @@ func (db *DB) PopulateCatalog(series []*manga.ParsedSeries) error {
 			return nil
 		})
 		if err != nil {
-			errs = fmt.Errorf("%w, %s", errs, err)
+			errs = errors.Wrap(errs, err)
 		}
 	}
 
@@ -103,7 +106,6 @@ func (db *DB) PopulateCatalog(series []*manga.ParsedSeries) error {
 	sort.SliceStable(newCatalog, func(i, j int) bool {
 		return strings.ToLower(newCatalog[i].Title) < strings.ToLower(newCatalog[j].Title)
 	})
-
 	err := db.Update(func(tx *bolt.Tx) error {
 		root := db.catalogBucket(tx)
 
@@ -131,7 +133,7 @@ func (db *DB) PopulateCatalog(series []*manga.ParsedSeries) error {
 		return root.SetCatalog(newCatalog)
 	})
 	if err != nil {
-		errs = fmt.Errorf("%w, %s", errs, err)
+		errs = errors.Wrap(errs, err)
 	}
 
 	return errs
@@ -429,7 +431,7 @@ func (db *DB) GetSeriesCoverFile(sid string) ([]byte, string, error) {
 			if err != nil {
 				return nil, "", err
 			} else if len(data) == 0 {
-				return nil, "", ErrCoverEmpty
+				return nil, "", ErrCoverEmpty.Fmt(sid)
 			}
 
 			return data, c.ImageType.MimeType(), nil
@@ -467,7 +469,7 @@ func (db *DB) GetEntryCoverFile(sid, eid string) ([]byte, string, error) {
 			if err != nil {
 				return nil, "", err
 			} else if len(data) == 0 {
-				return nil, "", ErrCoverEmpty
+				return nil, "", ErrCoverEmpty.Fmt(sid, eid)
 			}
 
 			return data, c.ImageType.MimeType(), nil
@@ -550,13 +552,17 @@ func (db *DB) DeleteEntryCover(sid, eid string) error {
 func (db *DB) GenerateThumbnails(forceNew bool) error {
 	var errs error
 
-	// TODO first view thumbnails that need updating
-	// TODO then update them in a for loop to allow other functions to be called in the meantime???
+	items := db.GetCatalog()
+	for _, i := range items {
+		db.cont.WaitIfPaused()
+		db.Update(func(tx *bolt.Tx) error {
+			root := db.catalogBucket(tx)
 
-	db.Update(func(tx *bolt.Tx) error {
-		root := db.catalogBucket(tx)
+			sb, err := root.Series(i.Hash)
+			if err != nil {
+				return err
+			}
 
-		return root.ForEachSeries(func(_ string, sb *buckets.SeriesBucket) error {
 			seriesThumbnailExists := sb.HasThumbnail()
 
 			// Generate series thumbnail
@@ -565,13 +571,13 @@ func (db *DB) GenerateThumbnails(forceNew bool) error {
 				if c.Fp != "" && c.ExistsOnFS() {
 					img, err := c.ThumbnailFile()
 					if err != nil {
-						errs = fmt.Errorf("%w, %s", errs, err)
+						errs = errors.Wrap(errs, err)
 						return nil
 					}
 
 					err = sb.SetThumbnail(img)
 					if err != nil {
-						errs = fmt.Errorf("%w, %s", errs, err)
+						errs = errors.Wrap(errs, err)
 						return nil
 					}
 				}
@@ -586,13 +592,13 @@ func (db *DB) GenerateThumbnails(forceNew bool) error {
 					if c.Fp != "" && c.ExistsOnFS() {
 						img, err := c.ThumbnailFile()
 						if err != nil {
-							errs = fmt.Errorf("%w, %s", errs, err)
+							errs = errors.Wrap(errs, err)
 							return nil
 						}
 
 						err = sb.SetThumbnail(img)
 						if err != nil {
-							errs = fmt.Errorf("%w, %s", errs, err)
+							errs = errors.Wrap(errs, err)
 						}
 
 						return nil
@@ -601,7 +607,7 @@ func (db *DB) GenerateThumbnails(forceNew bool) error {
 					// Otherwise use thumbnail of default cover
 					img, err := eb.Archive().ThumbnailFile()
 					if err != nil {
-						errs = fmt.Errorf("%w, %s", errs, err)
+						errs = errors.Wrap(errs, err)
 						return nil
 					}
 					return eb.SetThumbnail(img)
@@ -609,7 +615,7 @@ func (db *DB) GenerateThumbnails(forceNew bool) error {
 				return nil
 			})
 		})
-	})
+	}
 
 	return errs
 }
@@ -656,7 +662,7 @@ func (db *DB) GenerateEntryThumbnail(sid, eid string, forceNew bool) error {
 				if err != nil {
 					return err
 				} else if len(data) == 0 {
-					return ErrCoverEmpty
+					return ErrCoverEmpty.Fmt(sid, eid)
 				}
 				err = b.SetThumbnail(data)
 				if err != nil {
@@ -690,7 +696,7 @@ func (db *DB) GetSeriesThumbnail(sid string) ([]byte, string, error) {
 		if sb.HasThumbnail() {
 			return sb.Thumbnail(), "image/jpeg", nil
 		}
-		return nil, "", ErrThumbnailEmpty
+		return nil, "", ErrThumbnailEmpty.Fmt(sid)
 	})
 	if len(img) > 0 {
 		return img, mimetype, err

@@ -4,17 +4,19 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"github.com/fiwippi/tanuki/internal/fse"
-	"github.com/tdewolff/minify/v2"
-	"github.com/tdewolff/minify/v2/css"
-	"github.com/tdewolff/minify/v2/html"
-	"github.com/tdewolff/minify/v2/js"
 	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
+
+	"github.com/tdewolff/minify/v2"
+	"github.com/tdewolff/minify/v2/css"
+	"github.com/tdewolff/minify/v2/html"
+	"github.com/tdewolff/minify/v2/js"
+
+	"github.com/fiwippi/tanuki/internal/fse"
 )
 
 var CSS = CSSData{

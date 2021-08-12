@@ -1,9 +1,10 @@
 package download
 
 import (
+	"github.com/gin-gonic/gin"
+
 	"github.com/fiwippi/tanuki/pkg/mangadex"
 	"github.com/fiwippi/tanuki/pkg/server"
-	"github.com/gin-gonic/gin"
 )
 
 type ChaptersReply struct {

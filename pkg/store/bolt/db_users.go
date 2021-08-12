@@ -1,12 +1,13 @@
 package bolt
 
 import (
-	"errors"
+	bolt "go.etcd.io/bbolt"
+
+	"github.com/fiwippi/tanuki/internal/errors"
 	"github.com/fiwippi/tanuki/internal/hash"
 	"github.com/fiwippi/tanuki/pkg/store/bolt/buckets"
 	"github.com/fiwippi/tanuki/pkg/store/bolt/keys"
 	"github.com/fiwippi/tanuki/pkg/store/entities/users"
-	bolt "go.etcd.io/bbolt"
 )
 
 var (
@@ -168,7 +169,7 @@ func (db *DB) GetUserProgress(uid string) (*users.CatalogProgress, error) {
 
 		progress := user.Progress()
 		if progress == nil {
-			return ErrProgressNotExist
+			return ErrProgressNotExist.Fmt(uid)
 		}
 		p = progress
 

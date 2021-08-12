@@ -1,11 +1,12 @@
 package users
 
 import (
-	"errors"
 	"sync"
+
+	"github.com/fiwippi/tanuki/internal/errors"
 )
 
-var ErrEntryNotExist = errors.New("entry does not exist")
+var ErrProgressEntryNotExist = errors.New("entry does not exist")
 
 type SeriesProgress struct {
 	Entries []*EntryProgress `json:"tracker"`
@@ -37,7 +38,7 @@ func (p *SeriesProgress) SetEntryProgress(i int, e *EntryProgress) error {
 		p.Entries[i] = e
 		return nil
 	}
-	return ErrEntryNotExist
+	return ErrProgressEntryNotExist.Fmt(i)
 }
 
 func (p *SeriesProgress) SetAllRead() {

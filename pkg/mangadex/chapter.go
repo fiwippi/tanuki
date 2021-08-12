@@ -2,11 +2,12 @@ package mangadex
 
 import (
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/fiwippi/tanuki/internal/archive"
 	"github.com/fiwippi/tanuki/internal/image"
 	"github.com/fiwippi/tanuki/internal/sync"
-	"net/http"
-	"time"
 )
 
 type Chapter struct {

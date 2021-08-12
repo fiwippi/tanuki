@@ -2,9 +2,10 @@ package image
 
 import (
 	"bytes"
-	"github.com/nfnt/resize"
 	"image"
 	"image/jpeg"
+
+	"github.com/nfnt/resize"
 )
 
 var jpegOption = &jpeg.Options{Quality: 70}
