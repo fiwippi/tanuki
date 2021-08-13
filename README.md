@@ -72,9 +72,6 @@ debug_mode: false
 ### Initial Login
 On the first run Tanuki logs the default username and randomly generated password to STDOUT. It is advised to immediately change the password.
 
-## License
-`MIT`
-
 ## OPDS
 - The route for the OPDS catalog is `/opds/v1.2/catalog`
 - This is the current [OPDS](https://specs.opds.io/) feature support:
@@ -85,9 +82,6 @@ On the first run Tanuki logs the default username and randomly generated passwor
 - [x] Getting cover/thumbnail of archive
 - [x] Search
 - [x] Page streaming
-
-## Screenshots
-##### Login
 
 ## Changelog
 ### [0.9.1] - 2021-08-13
@@ -145,3 +139,6 @@ On the first run Tanuki logs the default username and randomly generated passwor
 
 ### [0.1] - 2021-07-19
 - Initial commit
+
+## License
+`MIT`
