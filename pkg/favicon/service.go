@@ -1,7 +1,6 @@
 package favicon
 
 import (
-	"fmt"
 	"io/fs"
 	"io/ioutil"
 
@@ -37,7 +36,6 @@ func NewService(s *server.Server, efs fs.FS, path string) {
 					status = 405
 				}
 				c.Header("Allow", "GET,HEAD,OPTIONS")
-				fmt.Println("ABORTING", status)
 				c.AbortWithStatus(status)
 				return
 			}

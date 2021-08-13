@@ -29,6 +29,10 @@ func formatUrl(endpoint string) string {
 	return fmt.Sprintf("%s/%s", ApiUrl, endpoint)
 }
 
+func (c *Client) Request(method, endpoint string, payload io.Reader) (*http.Response, error) {
+	return c.fmtAndSend(method, endpoint, payload)
+}
+
 func (c *Client) fmtAndSend(method, endpoint string, payload io.Reader) (*http.Response, error) {
 	r, err := http.NewRequest(method, formatUrl(endpoint), payload)
 	if err != nil {

@@ -9,7 +9,7 @@ Self hosted manga server + reader
 - Nested folders in library
 - Track reading progress
 - Thumbnail generation
-- Single binary (19.5 MB)
+- Single binary (~19.6 MB)
 - Dark/light mode
 - Metadata editor
 - Mangadex downloader
@@ -84,6 +84,9 @@ On the first run Tanuki logs the default username and randomly generated passwor
 - [x] Page streaming
 
 ## Changelog
+### [0.9.3] - 2021-08-13
+- Stops CORS policy error when searching for Mangadex entries
+
 ### [0.9.2] - 2021-08-13
 - Removed delay on page load where navbar mobile shows until it detected it was on desktop
 
