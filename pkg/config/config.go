@@ -12,6 +12,11 @@ import (
 	"github.com/fiwippi/tanuki/pkg/task"
 )
 
+const (
+	ScanInterval      = 5
+	ThumbnailInterval = 60
+)
+
 type Config struct {
 	Host                    string          `yaml:"host"`
 	Port                    string          `yaml:"port"`
@@ -31,8 +36,8 @@ func DefaultConfig() *Config {
 		Logging:                 logging.DefaultConfig(),
 		Paths:                   defaultPaths(),
 		SessionSecret:           encryption.NewKey(32),
-		ScanInterval:            task.NewJob(5),
-		ThumbGenerationInterval: task.NewJob(60),
+		ScanInterval:            task.NewJob(ScanInterval),
+		ThumbGenerationInterval: task.NewJob(ThumbnailInterval),
 		MaxUploadedFileSizeMiB:  10,
 		DebugMode:               false,
 	}
@@ -56,6 +61,14 @@ func LoadConfig(fp string) *Config {
 	err = c.Paths.EnsureExist()
 	if err != nil {
 		log.Panic().Err(err).Msg("paths can't be created")
+	}
+
+	// Ensure Job intervals can't be nil
+	if c.ThumbGenerationInterval == nil {
+		c.ThumbGenerationInterval = task.NewJob(ThumbnailInterval)
+	}
+	if c.ScanInterval == nil {
+		c.ScanInterval = task.NewJob(ScanInterval)
 	}
 
 	return c

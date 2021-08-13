@@ -90,6 +90,9 @@ On the first run Tanuki logs the default username and randomly generated passwor
 ##### Login
 
 ## Changelog
+### [0.9.1] - 2021-08-13
+- If unspecified intervals in config then uses defaults
+
 ### [0.9] - 2021-08-13
 - Added favicon
 - Added more documentation
