@@ -36,7 +36,7 @@ $ make build && make run
 4. Open `localhost:8096` or another port if you specified one
 
 #### GitHub Container Registry
-An official container image exists at `ghcr.io/fiwippi/tanuki`
+An official container image exists at `ghcr.io/fiwippi/tanuki:latest`
 
 ## Usage
 ### CLI
