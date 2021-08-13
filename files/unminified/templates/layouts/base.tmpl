@@ -9,10 +9,11 @@
     <script src='{{versioning "/static/js/theme.js"}}'></script>
     <script type="module">
         import logout from {{versioning "/static/js/components/logout.js"}}
-        import navbar from {{versioning "/static/js/components/navbar.js"}}
         document.addEventListener('alpine:init', () => {
             Alpine.data('logout', logout)
-            Alpine.data('navbar', navbar)
+            Alpine.data('navbar', () => ({
+                showNavbar: window.innerWidth > 820,
+            }))
         })
     </script>
     {{ block "styles" . }}{{ end }}
@@ -22,7 +23,7 @@
 <body>
     <div class="container" x-data="navbar">
         <div class="header" >
-            <svg x-show="smallMedia" @click="showNavbar = !showNavbar" width="20" height="20" style="margin-block-start: 0.3em"
+            <svg id="toggleIcon" @click="showNavbar = !showNavbar" width="20" height="20" style="margin-block-start: 0.3em"
                  viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" data-svg="navbar-toggle-icon">
                 <rect y="9" width="20" height="2"></rect>
                 <rect y="3" width="20" height="2"></rect>
@@ -30,9 +31,9 @@
             </svg>
             <nav x-show="showNavbar" class="flex--col" style="row-gap: 0">
                 <div class="flex--col">
-                    <h1 :class="smallMedia ? 'flex__key--centered' : ''"><a class="no-bottom" href="/">Tanuki</a></h1>
+                    <h1 id="navHeader"><a class="no-bottom" href="/">Tanuki</a></h1>
                 </div>
-                <div class="flex--col flex--row" :style="`flex-direction: ${smallMedia ? 'column' : 'row'}`">
+                <div id="navBar" class="flex--col flex--row">
                     <div class="flex__key--centered">→ <a href="/">Home</a></div>
                     <div class="flex__key--centered">→ <a href="/tags">Tags</a></div>
                     <div class="flex__key--centered">→ <a href="/download">Download</a></div>

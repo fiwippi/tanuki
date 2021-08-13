@@ -443,6 +443,15 @@ button:disabled {
     width: 100%;
 }
 
+/* Navbar styles -------------------------------------------------*/
+#toggleIcon {
+    display: none;
+}
+
+#navBar {
+    flex-direction: row;
+}
+
 /* Mobile styles -------------------------------------------------*/
 @media only screen
   and (max-device-width: 820px) {
@@ -466,5 +475,18 @@ button:disabled {
     .modal__content {
         margin: 10% auto; /* 15% from the top and centered */
         width: 80%; /* Could be more or less, depending on screen size */
+    }
+
+    /* Navbar ------------*/
+    #toggleIcon {
+        display: block;
+    }
+
+    #navHeader {
+        align-self: center;
+    }
+
+    #navBar {
+        flex-direction: column;
     }
 }

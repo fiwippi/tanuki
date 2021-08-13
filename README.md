@@ -84,6 +84,9 @@ On the first run Tanuki logs the default username and randomly generated passwor
 - [x] Page streaming
 
 ## Changelog
+### [0.9.2] - 2021-08-13
+- Removed delay on page load where navbar mobile shows until it detected it was on desktop
+
 ### [0.9.1] - 2021-08-13
 - If unspecified intervals in config then uses defaults
 

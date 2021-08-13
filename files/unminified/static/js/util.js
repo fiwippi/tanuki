@@ -2,6 +2,8 @@ export const name = 'util';
 
 export const BlankImage = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
 
+// Navbar doesn't use this limit in order not to load Util to be more efficient
+// so if changing this limit, Navbar needs to be updated manually
 export const SmallMediaLimit = 820;
 
 export class Images {
