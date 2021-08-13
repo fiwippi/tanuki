@@ -1,3 +1,4 @@
+// Package multitemplate implements dynamic and static template rendering
 package multitemplate
 
 import (

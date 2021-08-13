@@ -1,3 +1,4 @@
+// Package sets implements a string set with some set operations
 package sets
 
 import (

@@ -38,7 +38,6 @@ func getCatalog(s *server.Server, filter string) (*feed.Catalog, error) {
 	return catalog, nil
 }
 
-// GET /opds/v1.2/catalog
 func GetCatalog(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		catalog, err := getCatalog(s, c.Query("search"))

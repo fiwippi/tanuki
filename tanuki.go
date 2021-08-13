@@ -11,10 +11,10 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/fiwippi/tanuki/internal/task"
 	"github.com/fiwippi/tanuki/pkg/api"
 	"github.com/fiwippi/tanuki/pkg/auth"
 	"github.com/fiwippi/tanuki/pkg/config"
+	"github.com/fiwippi/tanuki/pkg/favicon"
 	"github.com/fiwippi/tanuki/pkg/frontend"
 	"github.com/fiwippi/tanuki/pkg/logging"
 	"github.com/fiwippi/tanuki/pkg/opds"
@@ -39,7 +39,6 @@ var opdsAuthor = &feed.Author{
 }
 
 func main() {
-	// TODO add --help to readme
 	cfPath := flag.String("config", ConfigPath, "path to the config file, if it does not exist then it will be created")
 	flag.Parse()
 
@@ -67,8 +66,8 @@ func main() {
 
 	// Setup cron jobs
 	genThumbs := func() error { return s.Store.GenerateThumbnails(true) }
-	task.NewJob(conf.ScanInterval).Run(s.ScanLibrary, "scan library", true)
-	task.NewJob(conf.ThumbGenerationInterval).Run(genThumbs, "generate thumbnails", true)
+	conf.ScanInterval.Run(s.ScanLibrary, "scan library", true)
+	conf.ThumbGenerationInterval.Run(genThumbs, "generate thumbnails", true)
 
 	// Serve static files
 	files := "files/minified"
@@ -85,6 +84,8 @@ func main() {
 	s.Router.HTMLRender = templates.CreateRenderer(s, efs, conf.DebugMode, templatesFp)
 	log.Info().Msg("templates loaded")
 
+	// Set the favicon
+
 	// Handle 404s
 	s.SetErr404(frontend.Err404(nil))
 
@@ -92,6 +93,7 @@ func main() {
 	api.NewService(s)
 	frontend.NewService(s)
 	opds.NewService(s)
+	favicon.NewService(s, efs, "files/minified/static/icon/favicon.ico")
 
 	log.Info().Str("host", conf.Host).Str("port", conf.Port).Str("log_level", conf.Logging.Level.String()).
 		Bool("file_log", conf.Logging.LogToFile).Bool("console_log", conf.Logging.LogToConsole).Str("db_path", conf.Paths.DB).

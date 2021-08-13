@@ -102,9 +102,10 @@ func (a *Archive) ThumbnailFile() ([]byte, error) {
 		return nil, err
 	}
 
-	return image.EncodeThumbnail(img)
+	return image.EncodeThumbnail(img, DefaultMaxWidth, DefaultMaxHeight)
 }
 
+// Filesize returns the archives filesize in MiB
 func (a *Archive) Filesize() float64 {
 	fi, err := os.Stat(a.Path)
 	if err != nil {

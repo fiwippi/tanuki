@@ -1,3 +1,4 @@
+// Package fuzzy implements fuzzy searching
 package fuzzy
 
 import (
@@ -13,6 +14,8 @@ func indexOf(search string, letter uint8, start int) int {
 	return -1
 }
 
+// Search attempts to fuzzy find a searchTerm within the given
+// piece of text. It returns true on success
 func Search(text, searchTerm string) bool {
 	searchTerm = strings.ToUpper(searchTerm)
 	text = strings.ToUpper(text)

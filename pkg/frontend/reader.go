@@ -6,7 +6,6 @@ import (
 	"github.com/fiwippi/tanuki/pkg/server"
 )
 
-// GET /reader/:sid/:eid
 func reader(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		sid := c.Param("sid")

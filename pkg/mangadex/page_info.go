@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+// PageInfo implements the os.FileInfo interface so that the chapters
+// pages downloaded from Mangadex can be written to archive.ZipFile
 type PageInfo struct {
 	name    string
 	size    int64

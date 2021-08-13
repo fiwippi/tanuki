@@ -6,9 +6,11 @@ import (
 	"github.com/fiwippi/tanuki/pkg/store/entities/api"
 )
 
+// DownloadList keeps track of the queued and active
+// downloads in the download manager
 type DownloadList struct {
-	l []*api.Download
-	m *sync.Mutex
+	l []*api.Download // Downloads list
+	m *sync.Mutex     // Mutex
 }
 
 func NewDownloadList() *DownloadList {
@@ -18,6 +20,7 @@ func NewDownloadList() *DownloadList {
 	}
 }
 
+// Add adds a download to the list
 func (dl *DownloadList) Add(d *api.Download) {
 	dl.m.Lock()
 	defer dl.m.Unlock()
@@ -25,6 +28,7 @@ func (dl *DownloadList) Add(d *api.Download) {
 	dl.l = append(dl.l, d)
 }
 
+// Remove removes a download from the list
 func (dl *DownloadList) Remove(d *api.Download) {
 	dl.m.Lock()
 	defer dl.m.Unlock()
@@ -40,6 +44,7 @@ func (dl *DownloadList) Remove(d *api.Download) {
 	dl.l = dl.l[:i]
 }
 
+// Has returns whether the list has a given download
 func (dl *DownloadList) Has(d *api.Download) bool {
 	dl.m.Lock()
 	defer dl.m.Unlock()
@@ -52,6 +57,7 @@ func (dl *DownloadList) Has(d *api.Download) bool {
 	return false
 }
 
+// List returns a slice copy of the list
 func (dl *DownloadList) List() []*api.Download {
 	dl.m.Lock()
 	defer dl.m.Unlock()
@@ -61,12 +67,14 @@ func (dl *DownloadList) List() []*api.Download {
 	return p
 }
 
+// Cancel cancels all currently running downloads
+// and removes them from the list
 func (dl *DownloadList) Cancel() {
 	dl.m.Lock()
 	defer dl.m.Unlock()
 
 	for i := range dl.l {
-		dl.l[i].Status = api.Cancelled
+		dl.l[i].Status = api.DownloadCancelled
 		dl.l[i] = nil
 	}
 	dl.l = dl.l[:0]

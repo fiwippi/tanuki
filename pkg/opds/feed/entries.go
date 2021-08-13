@@ -19,9 +19,8 @@ type ArchiveEntry struct {
 	ID      string        `xml:"id"`      // EntryProgress hash
 	Content string        `xml:"content"` // Empty but tag should still exist
 	Links   []interface{} `xml:"link"`
-	//PSE     *pseLink `xml:"link"`
 
-	//
+	// Variables used to populate the entry
 	CoverType, ThumbType, PageType image.Type     `xml:"-"`
 	Archive                        *manga.Archive `xml:"-"`
 	Pages                          int            `xml:"-"`

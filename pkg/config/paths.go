@@ -13,7 +13,6 @@ type Paths struct {
 	Library string // Where tanuki stores uploaded/downloaded manga
 }
 
-//
 func defaultPaths() *Paths {
 	return &Paths{
 		DB:      "./data/tanuki.db",

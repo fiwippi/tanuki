@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// Time marshals time into RFC3339 in the XML
 type Time struct {
 	time.Time
 }

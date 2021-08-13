@@ -39,7 +39,7 @@ func (c *Cover) ThumbnailFile() ([]byte, error) {
 		return nil, err
 	}
 
-	return image.EncodeThumbnail(img)
+	return image.EncodeThumbnail(img, DefaultMaxWidth, DefaultMaxHeight)
 }
 
 func UnmarshalCover(data []byte) *Cover {

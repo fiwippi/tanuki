@@ -23,7 +23,6 @@ type LibraryMissingEntriesReply struct {
 	Items   api.MissingItems `json:"items"`
 }
 
-// GET /api/admin/library/scan
 func ScanLibrary(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		now := time.Now()
@@ -39,7 +38,6 @@ func ScanLibrary(s *server.Server) gin.HandlerFunc {
 	}
 }
 
-// GET /api/admin/library/generate-thumbnails
 func GenerateThumbnails(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		now := time.Now()
@@ -54,14 +52,12 @@ func GenerateThumbnails(s *server.Server) gin.HandlerFunc {
 	}
 }
 
-// GET /api/admin/library/missing-items
 func GetMissingItems(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.JSON(200, LibraryMissingEntriesReply{Success: true, Items: s.Store.GetMissingItems()})
 	}
 }
 
-// DELETE /api/admin/library/missing-items
 func DeleteMissingItems(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		err := s.Store.DeleteMissingItems()

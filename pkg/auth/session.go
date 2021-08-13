@@ -16,7 +16,7 @@ var (
 	ErrNotInCache    = errors.New("item not found in cache")
 )
 
-// Session stores a value in a cookie and encrypts it using a SecureKey.
+// Session stores a value in a cookie and encrypts it using encryption.Key.
 // A Time To Live (TTL) is specified, this is the duration the client
 // should hold onto the cookie.
 type Session struct {

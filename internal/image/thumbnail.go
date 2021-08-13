@@ -1,3 +1,5 @@
+// Package image provides functionality to create thumbnails, decode
+// and recognise images
 package image
 
 import (
@@ -10,8 +12,10 @@ import (
 
 var jpegOption = &jpeg.Options{Quality: 70}
 
-func EncodeThumbnail(img image.Image) ([]byte, error) {
-	thumb := resize.Thumbnail(300, 300, img, resize.Bicubic)
+// EncodeThumbnail encodes a given image into a JPEG thumbnail given
+// maximum dimensions and then returns its byte contents
+func EncodeThumbnail(img image.Image, maxWidth, maxHeight uint) ([]byte, error) {
+	thumb := resize.Thumbnail(maxWidth, maxHeight, img, resize.Bicubic)
 	buf := bytes.NewBuffer(nil)
 	err := jpeg.Encode(buf, thumb, jpegOption)
 	if err != nil {

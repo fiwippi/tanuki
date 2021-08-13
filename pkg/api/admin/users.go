@@ -22,14 +22,12 @@ type UsersReply struct {
 	Message string       `json:"message,omitempty"`
 }
 
-// GET /api/admin/users
 func GetUsers(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.JSON(200, UsersReply{Success: true, Users: s.Store.GetUsers(true)})
 	}
 }
 
-// PUT /api/admin/users
 func PutUsers(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var data UsersPutRequest

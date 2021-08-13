@@ -1,3 +1,4 @@
+// Package archive implements functionality to walk through and create archives
 package archive
 
 import (
@@ -9,6 +10,7 @@ import (
 	"github.com/mholt/archiver/v3"
 )
 
+// Type defines what the archive format is
 type Type int
 
 const (
@@ -16,6 +18,8 @@ const (
 	Rar
 )
 
+// MimeType returns the archive's mimetype used for sending it
+// over protocols like HTTP
 func (at Type) MimeType() string {
 	return [...]string{"application/zip", "application/x-rar"}[at]
 }
@@ -24,6 +28,8 @@ func (at Type) String() string {
 	return [...]string{"zip", "rar"}[at]
 }
 
+// Walker returns a walker which is used to iterate
+// over each file within the archive
 func (at Type) Walker() archiver.Walker {
 	switch at {
 	case Zip:
@@ -41,6 +47,9 @@ func (at Type) Walker() archiver.Walker {
 	panic(fmt.Sprintf("invalid archive type: '%d'", at))
 }
 
+// InferType attempts to guess an archive's type from its
+// filepath, if it cannot guess confidently then an error
+// is returned
 func InferType(fp string) (Type, error) {
 	ext := filepath.Ext(fp)
 	ext = strings.TrimPrefix(ext, ".")

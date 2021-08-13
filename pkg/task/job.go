@@ -1,3 +1,4 @@
+// Package task implements jobs which can run at given intervals
 package task
 
 import (
@@ -6,28 +7,30 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// Job runs a given function using its duration as the interval
 type Job struct {
 	time.Duration
-
-	Ticker *time.Ticker
-	Stop   chan struct{}
 }
 
-func NewJob(m *Minutes) *Job {
-	if m == nil {
-		panic("no minutes specified for interval")
-	}
-
-	return &Job{Duration: m.Duration}
+// NewJob creates a new job using the given amount of Minutes as
+// the interval.
+func NewJob(m int) *Job {
+	return &Job{Duration: minutesDuration(m)}
 }
 
-func (i *Job) Run(f func() error, taskName string, runOnStart bool) {
-	if i.Duration <= 0 {
+func minutesDuration(m int) time.Duration {
+	return time.Minute * time.Duration(m)
+}
+
+// Run executes a f at intervals specified by Job's duration. runOnStart can
+// be specified to have f run when Run is called instead of only when the first
+// tick from the ticker.
+func (j *Job) Run(f func() error, taskName string, runOnStart bool) {
+	if j.Duration <= 0 {
 		return
 	}
 
-	i.Ticker = time.NewTicker(i.Duration)
-	i.Stop = make(chan struct{})
+	ticker := time.NewTicker(j.Duration)
 
 	go func() {
 		if runOnStart {
@@ -44,7 +47,7 @@ func (i *Job) Run(f func() error, taskName string, runOnStart bool) {
 
 		for {
 			select {
-			case <-i.Ticker.C:
+			case <-ticker.C:
 				start := time.Now()
 				err := f()
 				if err != nil {
@@ -53,9 +56,6 @@ func (i *Job) Run(f func() error, taskName string, runOnStart bool) {
 				}
 				timeTaken := time.Now().Sub(start).String()
 				log.Debug().Str("task_time", timeTaken).Str("task_name", taskName).Msg("ran interval task")
-			case <-i.Stop:
-				i.Ticker.Stop()
-				return
 			}
 		}
 	}()

@@ -1,3 +1,5 @@
+// Package encryption provides methods to encrypt and decrypt
+// strings using a securely generated secret key
 package encryption
 
 import (
@@ -9,9 +11,10 @@ import (
 	"io"
 )
 
-// Key is a []byte used to encrypt/decrypt strings
+// Key represents a secret key used to encrypt/decrypt strings
 type Key []byte
 
+// NewKey generates a new secret key with the given amount of bytes
 func NewKey(bytes int) *Key {
 	key := make(Key, bytes)
 
@@ -23,14 +26,15 @@ func NewKey(bytes int) *Key {
 	return &key
 }
 
-func (sk Key) Base64() string {
-	return base64.URLEncoding.EncodeToString(sk)
+func (k Key) Base64() string {
+	return base64.URLEncoding.EncodeToString(k)
 }
 
-func (sk Key) Encrypt(text string) string {
+// Encrypt encrypts a piece of text using the secret key
+func (k Key) Encrypt(text string) string {
 	plaintext := []byte(text)
 
-	block, err := aes.NewCipher(sk)
+	block, err := aes.NewCipher(k)
 	if err != nil {
 		panic(err)
 	}
@@ -46,14 +50,18 @@ func (sk Key) Encrypt(text string) string {
 	stream := cipher.NewCFBEncrypter(block, iv)
 	stream.XORKeyStream(ciphertext[aes.BlockSize:], plaintext)
 
-	// convert to base64
+	// Convert to base64
 	return base64.URLEncoding.EncodeToString(ciphertext)
 }
 
-func (sk Key) Decrypt(cryptoText string) string {
-	ciphertext, _ := base64.URLEncoding.DecodeString(cryptoText)
+// Decrypt decrypts a piece of text using the secret key
+func (k Key) Decrypt(cryptoText string) string {
+	ciphertext, err := base64.URLEncoding.DecodeString(cryptoText)
+	if err != nil {
+		panic(err)
+	}
 
-	block, err := aes.NewCipher(sk)
+	block, err := aes.NewCipher(k)
 	if err != nil {
 		panic(err)
 	}
@@ -74,11 +82,11 @@ func (sk Key) Decrypt(cryptoText string) string {
 	return fmt.Sprintf("%s", ciphertext)
 }
 
-func (sk *Key) MarshalYAML() (interface{}, error) {
-	return sk.Base64(), nil
+func (k *Key) MarshalYAML() (interface{}, error) {
+	return k.Base64(), nil
 }
 
-func (sk *Key) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (k *Key) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var key string
 	if err := unmarshal(&key); err != nil {
 		return err
@@ -88,7 +96,7 @@ func (sk *Key) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err != nil {
 		return err
 	}
-	*sk = make(Key, len(decoded))
-	copy(*sk, decoded)
+	*k = make(Key, len(decoded))
+	copy(*k, decoded)
 	return nil
 }

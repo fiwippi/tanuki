@@ -8,6 +8,8 @@ import (
 
 const poolStartCap = 20
 
+// Pool implements a sync.Pool to improve performance when
+// creating new []*api.Download for sending to each user
 type Pool struct {
 	pool *sync.Pool
 }

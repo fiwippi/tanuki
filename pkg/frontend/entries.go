@@ -6,7 +6,6 @@ import (
 	"github.com/fiwippi/tanuki/pkg/server"
 )
 
-// GET /entries/:sid
 func entries(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("sid")

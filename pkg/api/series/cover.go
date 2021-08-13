@@ -17,7 +17,6 @@ type PatchCoverReply struct {
 	Success bool `json:"success"`
 }
 
-// GET /api/series/:sid/cover?thumbnail={true,false}
 func GetSeriesCover(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("sid")
@@ -42,7 +41,6 @@ func GetSeriesCover(s *server.Server) gin.HandlerFunc {
 	}
 }
 
-// PATCH /api/series/:sid/cover
 func PatchSeriesCover(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("sid")
@@ -118,7 +116,6 @@ func PatchSeriesCover(s *server.Server) gin.HandlerFunc {
 	}
 }
 
-// DELETE /api/series/:sid/cover
 func DeleteSeriesCover(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("sid")
@@ -142,7 +139,6 @@ func DeleteSeriesCover(s *server.Server) gin.HandlerFunc {
 	}
 }
 
-// GET /api/series/:sid/entries/:eid/cover?thumbnail={true,false}
 func GetEntryCover(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		sid := c.Param("sid")
@@ -167,7 +163,6 @@ func GetEntryCover(s *server.Server) gin.HandlerFunc {
 	}
 }
 
-// PATCH /api/series/:sid/entries/:eid/cover
 func PatchEntryCover(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		sid := c.Param("sid")
@@ -241,7 +236,6 @@ func PatchEntryCover(s *server.Server) gin.HandlerFunc {
 	}
 }
 
-// DELETE /api/series/:sid/entries/:eid/cover
 func DeleteEntryCover(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		sid := c.Param("sid")

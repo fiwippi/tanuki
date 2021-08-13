@@ -14,7 +14,7 @@ import (
 )
 
 type Server struct {
-	//
+	// Public Variables
 	Store    *bolt.DB
 	Session  *auth.Session
 	Conf     *config.Config
@@ -22,7 +22,7 @@ type Server struct {
 	Router   *gin.Engine
 	Mangadex *mangadex.Client
 
-	//
+	// Private Variables
 	err404 gin.HandlerFunc
 }
 

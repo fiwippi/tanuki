@@ -2,6 +2,7 @@ version: "3"
 
 services:
   tanuki:
+    container_name: tanuki
     build: .
     restart: unless-stopped
     volumes:

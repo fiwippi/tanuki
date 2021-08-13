@@ -15,13 +15,14 @@ import (
 
 var downloadsPool = NewPool()
 
+// Manager which synchronises downloads from Mangadex
 type Manager struct {
-	root      string
-	downloads *DownloadList
-	queue     chan *api.Download
-	mangadex  *mangadex.Client
-	store     *bolt.DB
-	cont      *sync.Controller
+	root      string             // Root path to download to
+	downloads *DownloadList      // List of active downloads
+	queue     chan *api.Download // Channel which feeds downloads to the workers
+	mangadex  *mangadex.Client   // Mangadex client used to request chapters
+	store     *bolt.DB           // Store for keeping track of past downloads
+	cont      *sync.Controller   // Controller for workers so they can be stopped/paused/canceled
 }
 
 func NewManager(c *mangadex.Client, root string, store *bolt.DB, workers int) *Manager {
@@ -118,14 +119,14 @@ func (m *Manager) download(d *api.Download, fp string) error {
 	}
 
 	m.cont.WaitIfPaused()
-	if d.Status == api.Cancelled {
+	if d.Status == api.DownloadCancelled {
 		return api.ErrDownloadCancelled
 	}
 
 	// Get the archive file
 	forChapter := func(i int) error {
 		d.CurrentPage = i
-		if d.Status == api.Cancelled {
+		if d.Status == api.DownloadCancelled {
 			return api.ErrDownloadCancelled
 		}
 		return nil
