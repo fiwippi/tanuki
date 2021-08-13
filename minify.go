@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"io"
 	"io/fs"
 	"io/ioutil"
 	"os"
@@ -124,6 +125,11 @@ func main() {
 			}
 
 			switch filepath.Ext(path) {
+			case ".ico":
+				_, err := io.Copy(writer, reader)
+				if err != nil {
+					panic(err)
+				}
 			case ".css":
 				cssText, err := ioutil.ReadAll(reader)
 				if err != nil {

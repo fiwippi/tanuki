@@ -1,3 +1,4 @@
+// Package mangadex implements a client which can download chapters from Mangadex
 package mangadex
 
 import (
@@ -20,7 +21,7 @@ type Client struct {
 func NewClient() *Client {
 	return &Client{
 		client: &http.Client{Timeout: 60 * time.Second},
-		rl:     rate.NewLimiter(rate.Every(time.Second/5), 1),
+		rl:     rate.NewLimiter(rate.Every(time.Second/5), 1), // 5 requests per second
 	}
 }
 

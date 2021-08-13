@@ -17,7 +17,6 @@ type SeriesEntryReply struct {
 	Data    api.Entry `json:"data"`
 }
 
-// PATCH /api/series/:sid/entries/:eid
 func PatchEntry(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		sid := c.Param("sid")
@@ -48,7 +47,6 @@ func PatchEntry(s *server.Server) gin.HandlerFunc {
 	}
 }
 
-// GET /api/series/:sid/entries/:eid
 func GetEntry(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		sid := c.Param("sid")
@@ -62,7 +60,6 @@ func GetEntry(s *server.Server) gin.HandlerFunc {
 	}
 }
 
-// GET /api/series/:sid/entries/:eid/archive
 func GetEntryArchive(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		sid := c.Param("sid")
@@ -78,7 +75,6 @@ func GetEntryArchive(s *server.Server) gin.HandlerFunc {
 	}
 }
 
-// GET /api/series/:sid/entries/:eid/page/:num?zero_based={true|false}
 func GetEntryPage(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		sid := c.Param("sid")

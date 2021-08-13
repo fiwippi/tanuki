@@ -1,3 +1,5 @@
+// Package fse provides additional filesystem functions which extend
+// the capability of stdlib
 package fse
 
 import (

@@ -17,7 +17,6 @@ type TagsReply struct {
 	Success bool `json:"success"`
 }
 
-// PATCH /api/series/:sid/tags
 func PatchSeriesTags(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var data TagsRequest

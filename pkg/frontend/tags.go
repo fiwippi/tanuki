@@ -6,7 +6,6 @@ import (
 	"github.com/fiwippi/tanuki/pkg/server"
 )
 
-// GET /tags/:tag
 func specificTag(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tag := c.Param("tag")
@@ -20,7 +19,6 @@ func specificTag(s *server.Server) gin.HandlerFunc {
 	}
 }
 
-// GET /tags
 func tags(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.HTML(200, "tags.tmpl", c)

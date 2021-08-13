@@ -8,7 +8,7 @@ import (
 	"github.com/fiwippi/tanuki/pkg/server"
 )
 
-// We store the username hash in the session, it becomes more
+// We store the uid in the session, it becomes more
 // efficient to access the database and improve security
 
 // LoginRequest defines the request to /api/auth/login
@@ -23,7 +23,6 @@ type LoginReply struct {
 	Message string `json:"message"`
 }
 
-// POST /api/auth/login
 func Login(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Retrieve the request
@@ -42,8 +41,8 @@ func Login(s *server.Server) gin.HandlerFunc {
 		log.Debug().Str("username", data.Username).Msg("validated user")
 
 		// If valid then give user token they can identify themselves with
-		usernameHash := hash.SHA1(data.Username)
-		s.Session.Store(usernameHash, c)
+		uid := hash.SHA1(data.Username)
+		s.Session.Store(uid, c)
 		c.JSON(200, LoginReply{Success: true})
 	}
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/fiwippi/tanuki/pkg/server"
 )
 
-// GET /opds/v1.2/series/:sid
 func GetEntries(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("sid")

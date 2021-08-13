@@ -15,6 +15,7 @@ import (
 	"golang.org/x/image/webp"
 )
 
+// Type represents an image format
 type Type int
 
 const (
@@ -26,6 +27,7 @@ const (
 	BMP
 )
 
+// MimeType returns the image mimetype, used for sending the image over the web
 func (t Type) MimeType() string {
 	return [...]string{"image/png", "image/jpeg", "image/gif", "image/webp", "image/tiff", "image/bmp"}[t]
 }
@@ -34,6 +36,7 @@ func (t Type) String() string {
 	return [...]string{"png", "jpg", "gif", "webp", "tiff", "bmp"}[t]
 }
 
+// Decode decodes an image given its type
 func (t Type) Decode(r io.Reader) (image.Image, error) {
 	switch t {
 	case PNG:
@@ -53,6 +56,8 @@ func (t Type) Decode(r io.Reader) (image.Image, error) {
 	panic(fmt.Sprintf("invalid image type: '%d'", t))
 }
 
+// InferType attempts to guess a files image type based
+// on its filepath and fails if not possible
 func InferType(fp string) (Type, error) {
 	ext := filepath.Ext(fp)
 	ext = strings.TrimPrefix(ext, ".")

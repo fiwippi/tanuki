@@ -1,3 +1,4 @@
+// Package pretty formats types nicely
 package pretty
 
 import "time"
@@ -18,6 +19,7 @@ func roundDuration(d time.Duration, digits int) time.Duration {
 	return d
 }
 
+// Duration formats the duration as a string up to 2 decimal places
 func Duration(d time.Duration) string {
 	return roundDuration(d, 2).String()
 }

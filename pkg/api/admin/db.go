@@ -6,7 +6,6 @@ import (
 	"github.com/fiwippi/tanuki/pkg/server"
 )
 
-// GET /api/admin/db
 func GetDB(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Content-Disposition", "attachment; filename=\"db.txt\"")

@@ -31,7 +31,7 @@ func NewDownload(manga string, ch *mangadex.Chapter) *Download {
 	return &Download{
 		Manga:       manga,
 		Chapter:     ch,
-		Status:      Queued,
+		Status:      DownloadQueued,
 		CurrentPage: 0,
 		TotalPages:  len(ch.Attributes.Data),
 	}
@@ -46,29 +46,29 @@ func (d *Download) Time() {
 // Download state
 
 func (d *Download) Start() {
-	d.Status = Started
+	d.Status = DownloadStarted
 	d.TimeTaken = ""
 	d.StartTime = time.Now()
 }
 
 func (d *Download) Finish() {
-	d.Status = Finished
+	d.Status = DownloadFinished
 	d.Time()
 }
 
 func (d *Download) FinishExists() {
-	d.Status = Exists
+	d.Status = DownloadExists
 	d.CurrentPage = d.TotalPages
 	d.Time()
 }
 
 func (d *Download) FinishFailed() {
-	d.Status = Failed
+	d.Status = DownloadFailed
 	d.Time()
 }
 
 func (d *Download) FinishCancelled() {
-	d.Status = Cancelled
+	d.Status = DownloadCancelled
 	d.Time()
 }
 

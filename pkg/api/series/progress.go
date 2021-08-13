@@ -38,7 +38,6 @@ type EntriesProgressReply struct {
 	Progress *users.EntryProgress `json:"progress"`
 }
 
-// GET /api/series/:sid/progress
 func GetSeriesProgress(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		sid := c.Param("sid")
@@ -56,7 +55,6 @@ func GetSeriesProgress(s *server.Server) gin.HandlerFunc {
 	}
 }
 
-// GET /api/series/:sid/progress
 func PatchSeriesProgress(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		sid := c.Param("sid")
@@ -100,7 +98,6 @@ func PatchSeriesProgress(s *server.Server) gin.HandlerFunc {
 	}
 }
 
-// GET /api/series/:sid/entries/:eid/progress
 func GetEntryProgress(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		sid := c.Param("sid")
@@ -125,7 +122,6 @@ func GetEntryProgress(s *server.Server) gin.HandlerFunc {
 	}
 }
 
-// GET /api/series/:sid/progress
 func PatchEntryProgress(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		sid := c.Param("sid")

@@ -24,7 +24,6 @@ type UserReply struct {
 	User    users.User `json:"user,omitempty"`
 }
 
-// PATCH /api/admin/user/:id
 func PatchUser(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var data UserPatchRequest
@@ -70,8 +69,6 @@ func PatchUser(s *server.Server) gin.HandlerFunc {
 				c.AbortWithStatusJSON(500, UserReply{Success: false})
 				return
 			}
-			// We can ignore the delete error because that only occurs if the
-			// cookie is not found and we are setting a new cookie anyway
 			s.Session.Delete(c)
 			s.Session.Store(hash.SHA1(data.NewUsername), c)
 		}
@@ -80,11 +77,10 @@ func PatchUser(s *server.Server) gin.HandlerFunc {
 	}
 }
 
-// DELETE /api/admin/user/:id
 func DeleteUser(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
-		if c.GetString("uid") == id { // storde the id as uid not usernameHash
+		if c.GetString("uid") == id {
 			c.AbortWithStatusJSON(403, UserReply{Success: false, Message: "cannot delete yourself"})
 			return
 		}

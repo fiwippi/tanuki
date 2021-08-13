@@ -8,24 +8,22 @@ import (
 
 	"github.com/fiwippi/tanuki/internal/encryption"
 	"github.com/fiwippi/tanuki/internal/fse"
-	"github.com/fiwippi/tanuki/internal/task"
 	"github.com/fiwippi/tanuki/pkg/logging"
+	"github.com/fiwippi/tanuki/pkg/task"
 )
 
-//
 type Config struct {
 	Host                    string          `yaml:"host"`
 	Port                    string          `yaml:"port"`
 	Logging                 *logging.Config `yaml:"logging"`
 	Paths                   *Paths          `yaml:"paths"`
 	SessionSecret           *encryption.Key `yaml:"session_secret"`
-	ScanInterval            *task.Minutes   `yaml:"scan_interval_minutes"`
-	ThumbGenerationInterval *task.Minutes   `yaml:"thumbnail_generation_interval_minutes"`
+	ScanInterval            *task.Job       `yaml:"scan_interval_minutes"`
+	ThumbGenerationInterval *task.Job       `yaml:"thumbnail_generation_interval_minutes"`
 	MaxUploadedFileSizeMiB  int             `yaml:"max_uploaded_file_size_mib"`
 	DebugMode               bool            `yaml:"debug_mode"`
 }
 
-//
 func DefaultConfig() *Config {
 	return &Config{
 		Host:                    "0.0.0.0",
@@ -33,14 +31,15 @@ func DefaultConfig() *Config {
 		Logging:                 logging.DefaultConfig(),
 		Paths:                   defaultPaths(),
 		SessionSecret:           encryption.NewKey(32),
-		ScanInterval:            task.NewMinutes(5),
-		ThumbGenerationInterval: task.NewMinutes(60),
+		ScanInterval:            task.NewJob(5),
+		ThumbGenerationInterval: task.NewJob(60),
 		MaxUploadedFileSizeMiB:  10,
 		DebugMode:               false,
 	}
 }
 
-// Attempts to read Config but returns default Config if unsuccessful
+// LoadConfig attempts to read Config from a filepath
+// and returns the default Config if unsuccessful
 func LoadConfig(fp string) *Config {
 	c, err := readConfig(fp)
 	if err != nil {
@@ -78,7 +77,6 @@ func readConfig(fp string) (*Config, error) {
 	return c, nil
 }
 
-//
 func (c *Config) Save(fp string) error {
 	data, err := yaml.Marshal(c)
 	if err != nil {

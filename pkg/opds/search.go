@@ -7,7 +7,6 @@ import (
 	"github.com/fiwippi/tanuki/pkg/server"
 )
 
-// GET
 func GetSearch(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		s := feed.NewDefaultSearch()

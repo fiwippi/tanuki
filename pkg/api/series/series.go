@@ -15,7 +15,6 @@ type SeriesReply struct {
 	Data    api.Series `json:"data"`
 }
 
-// GET /api/series/:sid
 func GetSeries(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("sid")
@@ -28,7 +27,6 @@ func GetSeries(s *server.Server) gin.HandlerFunc {
 	}
 }
 
-// PATCH /api/series/:sid
 func PatchSeries(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		sid := c.Param("sid")

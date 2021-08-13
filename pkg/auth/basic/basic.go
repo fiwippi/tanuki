@@ -18,7 +18,6 @@ var (
 	ErrInvalidAuthFormat = errors.New("auth header formatted in incorrect way")
 )
 
-//
 func Auth(realm string, store *bolt.DB) gin.HandlerFunc {
 	if realm == "" {
 		realm = "Authorization Required"

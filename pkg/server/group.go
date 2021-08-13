@@ -28,6 +28,14 @@ func (rg *RouterGroup) GET(relativePath string, f HandlerFunc) {
 	rg.RouterGroup.GET(relativePath, f(rg.Server))
 }
 
+func (rg *RouterGroup) HEAD(relativePath string, f HandlerFunc) {
+	rg.RouterGroup.HEAD(relativePath, f(rg.Server))
+}
+
+func (rg *RouterGroup) OPTIONS(relativePath string, f HandlerFunc) {
+	rg.RouterGroup.OPTIONS(relativePath, f(rg.Server))
+}
+
 func (rg *RouterGroup) POST(relativePath string, f HandlerFunc) {
 	rg.RouterGroup.POST(relativePath, f(rg.Server))
 }

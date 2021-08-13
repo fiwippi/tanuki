@@ -12,7 +12,6 @@ type NameReply struct {
 	Name    string `json:"name"`
 }
 
-// GET /api/user/name
 func GetName(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		uid := c.GetString("uid")

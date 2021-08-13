@@ -12,7 +12,6 @@ type LogoutReply struct {
 	Success bool `json:"success"`
 }
 
-// GET /api/auth/logout
 func Logout(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		s.Session.Delete(c)

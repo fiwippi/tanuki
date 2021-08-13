@@ -13,7 +13,6 @@ type SeriesEntriesReply struct {
 	List    api.Entries `json:"list"`
 }
 
-// GET /api/series/:sid/entries
 func GetEntries(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		sid := c.Param("sid")

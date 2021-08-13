@@ -27,7 +27,7 @@ func (db *DB) GetFailedDownloads() []*api.Download {
 	err := db.Update(func(tx *bolt.Tx) error {
 		root := db.downloadsBucket(tx)
 		return root.ForEachDownload(func(k []byte, dl *api.Download) error {
-			if dl.Status == api.Failed {
+			if dl.Status == api.DownloadFailed {
 				dls = append(dls, dl)
 				return root.DeleteDownload(k)
 			}

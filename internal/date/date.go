@@ -1,3 +1,4 @@
+// Package date implements a custom date format with marshaling
 package date
 
 import (
@@ -6,6 +7,8 @@ import (
 	"time"
 )
 
+// Date acts like a normal time.Time which can marshal/unmarshal
+// to JSON and is of the format "2006-01-02"
 type Date struct {
 	time.Time
 }

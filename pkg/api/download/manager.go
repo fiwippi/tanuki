@@ -11,26 +11,36 @@ import (
 	"github.com/fiwippi/tanuki/pkg/store/entities/api"
 )
 
+// How often to update the user with the manager's status
+var updateInterval = 1 * time.Second
+
+// The global download manager
 var manager *downloading.Manager
 
+// ManagerStatusReply represents the current manager state
 type ManagerStatusReply struct {
 	Downloads []*api.Download `json:"downloads"`
 	Paused    bool            `json:"paused"`
 }
 
+// ManagerChangeReply for when the user tries to change
+// the manager state
 type ManagerChangeReply struct {
 	Success bool `json:"success"`
 }
 
 func ViewManager(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ticker := time.NewTicker(1 * time.Second)
+		ticker := time.NewTicker(updateInterval)
 		defer ticker.Stop()
 
 		c.Stream(func(w io.Writer) bool {
 			<-ticker.C
+
+			// The downloads slice comes from a sync.Pool, doneFunc() frees this memory
 			dls, doneFunc := manager.Downloads()
 			defer doneFunc()
+
 			c.SSEvent("message", ManagerStatusReply{Downloads: dls, Paused: manager.Paused()})
 			return true
 		})

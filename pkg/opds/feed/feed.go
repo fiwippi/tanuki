@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-const ns = "http://www.w3.org/2005/Atom" // The main xmlns
+const ns = "http://www.w3.org/2005/Atom" // The main xmlns name space
 
 type Feed struct {
 	XMLName xml.Name `xml:"feed"` // sets the name of the xml object

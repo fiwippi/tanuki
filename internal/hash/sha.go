@@ -1,3 +1,4 @@
+// Package hash implements string hashing using SHA
 package hash
 
 import (

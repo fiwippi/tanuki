@@ -13,7 +13,6 @@ type TypeReply struct {
 	Type    users.Type `json:"type"`
 }
 
-// GET /api/user/type
 func GetType(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		uid := c.GetString("uid")

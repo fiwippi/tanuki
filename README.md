@@ -1,3 +1,4 @@
+![tanuki](files/minified/static/icon/favicon.ico) 
 # Tanuki
 Self hosted manga server + reader
 
@@ -8,10 +9,12 @@ Self hosted manga server + reader
 - Nested folders in library
 - Track reading progress
 - Thumbnail generation
-- Single binary (19 MB)
+- Single binary (19.5 MB)
 - Dark/light mode
 - Metadata editor
 - Mangadex downloader
+- Responsive Desktop & Mobile UI
+- Webtoon support (no row gaps)
 
 ## Installation
 ### Build from Source
@@ -27,12 +30,45 @@ $ make build && make run
 ```
 
 ### Docker
-1. Configure the `docker-compose.yml` file to set Tanuki to use the correct ports and mounted folders
-2. Run `docker-compose up`
+1. Clone the repository
+2. Configure the `docker-compose.yml` file to set Tanuki to use the correct ports and mounted folders
+3. Run `docker-compose up`
+4. Open `localhost:8096` or another port if you specified one
+
+#### GitHub Container Registry
+An official container image exists at `ghcr.io/fiwippi/tanuki`
 
 ## Usage
-###
-Tanuki runs using a config which has a default relative path of `./config/config.yml`
+### CLI
+```console
+Usage of tanuki:
+  -config string
+        path to the config file, if it does not exist then it will be created (default "./config/config.yml")
+```
+
+### Config
+Tanuki runs using a config which has a default path of `./config/config.yml` The config options and default values are specified below
+```yaml
+---
+host: 0.0.0.0
+port: "8096"
+logging:
+  level: info
+  log_to_file: true
+  log_to_console: true
+paths:
+  db: ./data/tanuki.db
+  log: ./data/tanuki.log
+  library: ./library
+session_secret: tanuki-secret
+scan_interval_minutes: 5
+thumbnail_generation_interval_minutes: 60
+max_uploaded_file_size_mib: 10
+debug_mode: false
+```
+- To disable logging set `logging.log_to_file` and `logging.log_to_console` to `false`
+- `logging.level` can be `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `panic`
+- `scan_interval_minutes` and `thumbnail_generation_interval_minutes` can be any non-negative integer. Set them to zero to disable the periodic tasks.
 ### Initial Login
 On the first run Tanuki logs the default username and randomly generated password to STDOUT. It is advised to immediately change the password.
 
@@ -50,16 +86,17 @@ On the first run Tanuki logs the default username and randomly generated passwor
 - [x] Search
 - [x] Page streaming
 
-## Development Roadmap
-### Features
-- Favicon
-- Docker file on the Github Container Registry
-
-### Implementation Improvements
-- Full well formatted documentation for Go + Javascript
-- Progress bar when uploading covers
+## Screenshots
+##### Login
 
 ## Changelog
+### [0.9] - 2021-08-13
+- Added favicon
+- Added more documentation
+- Docker image supports HTTP requests
+- Docker image on the GitHub Container Registry
+- Ignored correct files in .gitignore
+
 ### [0.8] - 2021-08-12
 - Specifying a zero/negative interval disables periodic tasks
 - Ability to specify config path with param
