@@ -59,7 +59,7 @@ export default function (uid) {
                     let d = {
                         id: resp.data.id,
                         createdAt: Util.Fmt.RFCDate(resp.data.attributes.createdAt),
-                        title: Util.Ensure.String(resp.data.attributes.title.en),
+                        title: Util.Ensure.String(Object.values(resp.data.attributes.title)[0]),
                         description: Util.Ensure.String(resp.data.attributes.description.en),
                     }
                     for (let j = 0; j < resp.relationships.length; j++) {

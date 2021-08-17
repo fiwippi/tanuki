@@ -134,18 +134,16 @@ func (b *SeriesBucket) RegenerateEntriesMetadata() error {
 	for _, e := range oldM {
 		if e != nil {
 			eb := b.getEntry([]byte(e.Hash))
-			if eb == nil {
-				return ErrEntryNotExist.Fmt(e.Hash)
-			}
+			if eb != nil { // Ignore deleted entries
+				err := eb.SetOrder(o)
+				if err != nil {
+					return err
+				}
 
-			err := eb.SetOrder(o)
-			if err != nil {
-				return err
+				e.Order = o
+				newM = append(newM, e)
+				o++
 			}
-
-			e.Order = o
-			newM = append(newM, e)
-			o++
 		}
 	}
 

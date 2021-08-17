@@ -2,7 +2,6 @@ package series
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 
 	"github.com/fiwippi/tanuki/pkg/server"
 )
@@ -21,15 +20,13 @@ func PatchSeriesTags(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var data TagsRequest
 		if err := c.ShouldBindJSON(&data); err != nil {
-			log.Debug().Str("path", c.Request.URL.Path).Err(err).Msg("")
 			c.AbortWithStatusJSON(400, TagsReply{Success: false})
 			return
 		}
 
 		id := c.Param("sid")
 		if err := s.Store.SetSeriesTags(id, data.Tags); err != nil {
-			log.Debug().Err(err).Str("series", id).Msg("failed to set tags")
-			c.AbortWithStatusJSON(500, TagsReply{Success: false})
+			c.AbortWithError(500, err)
 			return
 		}
 

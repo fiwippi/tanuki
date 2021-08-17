@@ -2,7 +2,6 @@ package admin
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 
 	"github.com/fiwippi/tanuki/pkg/server"
 	"github.com/fiwippi/tanuki/pkg/store/entities/users"
@@ -32,7 +31,6 @@ func PutUsers(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var data UsersPutRequest
 		if err := c.ShouldBindJSON(&data); err != nil {
-			log.Debug().Str("path", c.Request.URL.Path).Err(err).Msg("")
 			c.AbortWithStatusJSON(400, UsersReply{Success: false})
 			return
 		}

@@ -29,7 +29,7 @@ export default function () {
                         let data = {
                             id: item.data.id,
                             createdAt: Util.Fmt.RFCDate(item.data.attributes.createdAt),
-                            title: item.data.attributes.title.en,
+                            title: Object.values(item.data.attributes.title)[0],
                             description: item.data.attributes.description.en,
                         }
                         for (let j = 0; j < item.relationships.length; j++) {

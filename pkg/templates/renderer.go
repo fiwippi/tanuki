@@ -91,6 +91,7 @@ func (r *Renderer) FuncMap() template.FuncMap {
 
 			p, err := series.GetEntryProgressInternal(uid, sid, eid, r.server)
 			if err != nil {
+				c.Error(err)
 				return nil
 			}
 			return p
@@ -101,6 +102,7 @@ func (r *Renderer) FuncMap() template.FuncMap {
 
 			p, _, err := series.GetSeriesProgressInternal(uid, sid, r.server)
 			if err != nil {
+				c.Error(err)
 				return nil
 			}
 			return p.Entries

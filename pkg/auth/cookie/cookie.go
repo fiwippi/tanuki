@@ -30,12 +30,13 @@ func Auth(s *server.Server) gin.HandlerFunc {
 		// Refresh cookie for the user, only refresh if the cookie is bout to expire
 		timeLeft, err := s.Session.TimeLeft(c)
 		if err != nil {
-			log.Debug().Err(err).Str("uid", uid).Msg("failed to get time left")
+			c.Error(err)
 		}
-		if err == nil && timeLeft < (time.Minute*3) {
+
+		if err == nil && timeLeft < (30*time.Minute) {
 			err = s.Session.Refresh(c)
 			if err != nil {
-				log.Debug().Err(err).Str("uid", uid).Msg("failed to refresh cookie")
+				c.Error(err)
 			}
 		}
 

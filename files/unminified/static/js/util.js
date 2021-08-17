@@ -17,13 +17,13 @@ export class Images {
         })
     }
 
-    static async LoadImages(images, total, urlFunc) {
+    static async LoadImages(images, total, urlFunc, replace) {
         let promises = []
         for (let i = 0; i < total; i++) {
             let img = new Image()
             promises.push(Images.WaitForLoad(img))
             img.src = urlFunc(i)
-            images.push(img)
+            replace ? images[i] = img : images.push(img)
         }
         return Promise.all(promises)
             .catch(error => { console.error("failed to load images:", error) }
@@ -31,7 +31,7 @@ export class Images {
     }
 
     static BlankImageArray(length) {
-        return Array.from({length:5}).map(x => {
+        return Array.from({length: length}).map(x => {
             let img = new Image();
             img.src = BlankImage
             return img
@@ -71,8 +71,8 @@ export class Compare {
 
 export class Fmt {
     static SeriesPercent(sp) {
-        if (sp === undefined) {
-            return "N/A"
+        if (sp === undefined || sp === null) {
+            return undefinedPercent
         }
 
         let current = 0
@@ -83,8 +83,10 @@ export class Fmt {
             // so this avoids that
             if (sp.tracker.hasOwnProperty(i)) {
                 let p = sp.tracker[i]
-                current += p.current
-                total += p.total
+                if (p !== null) {
+                    current += p.current
+                    total += p.total
+                }
             }
         }
 
@@ -92,9 +94,17 @@ export class Fmt {
     }
 
     // Percent is supposed to be in the range [0, 1]
+    static EntryPercent(p) {
+        if (p === undefined || p === null) {
+            return undefinedPercent
+        }
+        return Fmt.Percent(p.current / p.total)
+    }
+
+    // Percent is supposed to be in the range [0, 1]
     static Percent(p) {
-        if (p === undefined) {
-            return "N/A"
+        if (p === undefined || p === null) {
+            return undefinedPercent
         }
         return (p * 100).toFixed(2) + "%"
     }
@@ -114,6 +124,8 @@ export class Fmt {
         return [year, month, day].join('-');
     }
 }
+
+const undefinedPercent = Fmt.Percent(0)
 
 export class Ensure {
     static Array(i) {

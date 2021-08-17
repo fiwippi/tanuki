@@ -84,6 +84,15 @@ On the first run Tanuki logs the default username and randomly generated passwor
 - [x] Page streaming
 
 ## Changelog
+### [0.10] - 2021-08-17
+- Non-english titles displayed for Mangadex entries if english ones don't exist
+- Mangadex archive pages zero padded in the archive
+- Archives walked in proper lexical order (but lowercase first)
+- Entry progress only created when reading the entry instead of when accessing the series
+- Default entry progress is displayed as 0.00% instead of N/A
+- Not all thumbnails have to be loaded to display them client side
+- Series in the catalog and entries in each series are ordered naturally
+
 ### [0.9.3] - 2021-08-13
 - Stops CORS policy error when searching for Mangadex entries
 

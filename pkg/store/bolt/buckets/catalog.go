@@ -1,7 +1,6 @@
 package buckets
 
 import (
-	"sort"
 	"time"
 
 	bolt "go.etcd.io/bbolt"
@@ -107,7 +106,7 @@ func (b *CatalogBucket) AddSeries(s *manga.ParsedSeries) error {
 
 		// If the archive file has changed then delete the currently stored entry
 		if e := seriesBucket.getEntry([]byte(eid)); e != nil {
-			if e.Archive().ModTime != m.Archive.ModTime {
+			if !e.Archive().ModTime.Equal(m.Archive.ModTime) {
 				err := seriesBucket.DeleteEntry(eid)
 				if err != nil {
 					return err
@@ -176,9 +175,6 @@ func (b *CatalogBucket) AddSeries(s *manga.ParsedSeries) error {
 		return err
 	}
 
-	sort.SliceStable(seriesData, func(i, j int) bool {
-		return seriesData[i].Order < seriesData[j].Order
-	})
 	if err := seriesBucket.SetEntriesMetadata(seriesData); err != nil {
 		return err
 	}

@@ -48,7 +48,7 @@ func PatchSeries(s *server.Server) gin.HandlerFunc {
 
 		err := s.Store.SetSeriesMetadata(sid, &metadata)
 		if err != nil {
-			c.AbortWithStatusJSON(500, SeriesReply{Success: false})
+			c.AbortWithError(500, err)
 			return
 		}
 

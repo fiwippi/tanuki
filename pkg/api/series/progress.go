@@ -1,15 +1,17 @@
 package series
 
 import (
-	"errors"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 
+	"github.com/fiwippi/tanuki/internal/errors"
 	"github.com/fiwippi/tanuki/pkg/server"
 	"github.com/fiwippi/tanuki/pkg/store/entities/users"
 )
+
+var ErrNoEntryProgress = errors.New("entry progress does not exist")
 
 // Progress can be defined as 100%, 0% or an int
 // representing the page number the user is on,
@@ -45,8 +47,7 @@ func GetSeriesProgress(s *server.Server) gin.HandlerFunc {
 
 		p, _, err := GetSeriesProgressInternal(uid, sid, s)
 		if err != nil {
-			log.Debug().Err(err).Str("uid", uid).Str("sid", sid).Msg("could not get progress")
-			c.AbortWithStatusJSON(500, SeriesProgressReply{Success: false})
+			c.AbortWithError(500, err)
 			return
 		}
 
@@ -62,7 +63,6 @@ func PatchSeriesProgress(s *server.Server) gin.HandlerFunc {
 
 		var data SeriesProgressRequest
 		if err := c.ShouldBindJSON(&data); err != nil {
-			log.Debug().Str("path", c.Request.URL.Path).Err(err).Msg("could not bind json")
 			c.AbortWithStatusJSON(400, SeriesProgressReply{Success: false})
 			return
 		}
@@ -74,8 +74,7 @@ func PatchSeriesProgress(s *server.Server) gin.HandlerFunc {
 
 		sp, cp, err := GetSeriesProgressInternal(uid, sid, s)
 		if err != nil {
-			log.Debug().Err(err).Str("uid", uid).Str("sid", sid).Msg("could not get progress")
-			c.AbortWithStatusJSON(500, SeriesProgressReply{Success: false})
+			c.AbortWithError(500, err)
 			return
 		}
 
@@ -89,7 +88,7 @@ func PatchSeriesProgress(s *server.Server) gin.HandlerFunc {
 		// Save the series progress
 		err = s.Store.ChangeProgress(uid, cp)
 		if err != nil {
-			c.AbortWithStatusJSON(500, SeriesProgressReply{Success: false})
+			c.AbortWithError(500, err)
 			return
 		}
 
@@ -106,15 +105,13 @@ func GetEntryProgress(s *server.Server) gin.HandlerFunc {
 
 		p, _, err := GetSeriesProgressInternal(uid, sid, s)
 		if err != nil {
-			log.Debug().Err(err).Str("uid", uid).Str("sid", sid).Msg("could not get progress")
-			c.AbortWithStatusJSON(500, EntriesProgressReply{Success: false})
+			c.AbortWithError(500, err)
 			return
 		}
 
 		o, err := s.Store.GetEntryOrder(sid, eid)
 		if err != nil {
-			log.Debug().Err(err).Str("sid", sid).Str("eid", eid).Msg("could not get entry order")
-			c.AbortWithStatusJSON(500, EntriesProgressReply{Success: false})
+			c.AbortWithError(500, err)
 			return
 		}
 
@@ -143,15 +140,13 @@ func PatchEntryProgress(s *server.Server) gin.HandlerFunc {
 
 		sp, cp, err := GetSeriesProgressInternal(uid, sid, s)
 		if err != nil {
-			log.Debug().Err(err).Str("uid", uid).Str("sid", sid).Msg("could not get progress")
-			c.AbortWithStatusJSON(500, EntriesProgressReply{Success: false})
+			c.AbortWithError(500, err)
 			return
 		}
 
 		o, err := s.Store.GetEntryOrder(sid, eid)
 		if err != nil {
-			log.Debug().Err(err).Str("sid", sid).Str("eid", eid).Msg("could not get entry order")
-			c.AbortWithStatusJSON(500, EntriesProgressReply{Success: false})
+			c.AbortWithError(500, err)
 			return
 		}
 
@@ -167,7 +162,7 @@ func PatchEntryProgress(s *server.Server) gin.HandlerFunc {
 		// Save the entry progress
 		err = s.Store.ChangeProgress(uid, cp)
 		if err != nil {
-			c.AbortWithStatusJSON(500, EntriesProgressReply{Success: false})
+			c.AbortWithError(500, err)
 			return
 		}
 
@@ -177,19 +172,46 @@ func PatchEntryProgress(s *server.Server) gin.HandlerFunc {
 }
 
 func GetEntryProgressInternal(uid, sid, eid string, s *server.Server) (*users.EntryProgress, error) {
-	p, _, err := GetSeriesProgressInternal(uid, sid, s)
+	sp, _, err := GetSeriesProgressInternal(uid, sid, s)
 	if err != nil {
-		log.Debug().Err(err).Str("uid", uid).Str("sid", sid).Msg("could not get progress")
 		return nil, err
 	}
 
-	o, err := s.Store.GetEntryOrder(sid, eid)
+	e, err := s.Store.GetEntry(sid, eid)
 	if err != nil {
-		log.Debug().Err(err).Str("sid", sid).Str("eid", eid).Msg("could not get entry order")
 		return nil, err
 	}
 
-	return p.GetEntryProgress(o - 1), nil
+	// Entry must be within the size of the series progress
+	index := e.Order - 1
+	if index >= len(sp.Entries) || index < 0 {
+		return nil, ErrNoEntryProgress
+	}
+
+	// Get the entry progress
+	ep := sp.GetEntryProgress(e.Order - 1)
+	if ep == nil {
+		// If it doesn't exist then create it
+		ep = users.NewEntryProgress(e.Pages)
+		err := sp.SetEntryProgress(e.Order-1, ep)
+		if err != nil {
+			return nil, err
+		}
+
+		// Save the progress to the db
+		cp, err := s.Store.GetUserProgress(uid)
+		if err != nil {
+			return nil, err
+		}
+		cp.SetSeries(sid, sp)
+		err = s.Store.ChangeProgress(uid, cp)
+		if err != nil {
+			return nil, err
+		}
+
+	}
+
+	return ep, nil
 }
 
 func GetSeriesProgressInternal(uid, sid string, s *server.Server) (*users.SeriesProgress, *users.CatalogProgress, error) {
@@ -207,15 +229,23 @@ func GetSeriesProgressInternal(uid, sid string, s *server.Server) (*users.Series
 
 	// Get the series progress
 	seriesProgress := progress.GetSeries(sid)
-	if seriesProgress == nil {
+	if seriesProgress == nil || len(seriesProgress.Entries) != len(entries) {
 		// If the series exists but the progress for it doesnt
-		// exist then create the new progress for the user
+		// exist then create the new progress for the user, or
+		// if the number of entries has changed
+		oldProgress := seriesProgress
+
+		// Create the new series progress
 		progress.AddSeries(sid, len(entries))
 		seriesProgress = progress.GetSeries(sid)
-		for i, e := range entries {
-			err := seriesProgress.SetEntryProgress(i, users.NewEntryProgress(e.Pages))
-			if err != nil {
-				return nil, nil, err
+
+		// Copy over the old progress
+		if oldProgress != nil && len(oldProgress.Entries) > 0 {
+			for i, e := range oldProgress.Entries {
+				err := seriesProgress.SetEntryProgress(i, e)
+				if err != nil {
+					return nil, nil, err
+				}
 			}
 		}
 

@@ -3,10 +3,12 @@ package mangadex
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/fiwippi/tanuki/internal/archive"
 	"github.com/fiwippi/tanuki/internal/image"
+	"github.com/fiwippi/tanuki/internal/pretty"
 	"github.com/fiwippi/tanuki/internal/sync"
 )
 
@@ -37,6 +39,8 @@ func (c *Client) CreateChapterArchive(ch *Chapter, homeUrl string, forChapter fu
 	if err != nil {
 		return nil, err
 	}
+
+	padding := len(strconv.Itoa(len(ch.Attributes.Data)))
 
 	for i, p := range ch.Attributes.Data {
 		cont.WaitIfPaused()
@@ -69,7 +73,7 @@ func (c *Client) CreateChapterArchive(ch *Chapter, homeUrl string, forChapter fu
 		if err != nil {
 			return nil, err
 		}
-		fileName := fmt.Sprintf("%d.%s", i+1, imgType)
+		fileName := fmt.Sprintf("%s.%s", pretty.Padded(i+1, padding), imgType)
 
 		fi := NewPageInfo(fileName, resp.ContentLength, lastModified)
 

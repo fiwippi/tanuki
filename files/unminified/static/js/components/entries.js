@@ -9,6 +9,7 @@ export default function (entries, progress, urlFunc, extra) {
         entries: Util.Ensure.Array(entries),
         progress: Util.Ensure.Object(progress),
         smallMedia: false,
+        blankImage: Util.BlankImage,
 
         get filteredEntries() {
             return this.entries.filter(
@@ -21,7 +22,16 @@ export default function (entries, progress, urlFunc, extra) {
             return (window.innerWidth * 0.8) / 2
         },
 
+        getThumbnail(e) {
+            if (e === undefined || this.images[e.order - 1] === undefined) {
+                return this.blankImage
+            }
+            return this.images[e.order - 1].src
+        },
+
         async init() {
+            console.debug(this.entries)
+
             if (this.preInit !== undefined) {
                 await this.preInit()
             }
@@ -31,9 +41,7 @@ export default function (entries, progress, urlFunc, extra) {
                 this.smallMedia = true
             }
 
-            let images = []
-            await Util.Images.LoadImages(images, this.entries.length, urlFunc)
-            this.images = images
+            await Util.Images.LoadImages(this.images, this.entries.length, urlFunc, true)
 
             if (this.postInit !== undefined) {
                 await this.postInit()

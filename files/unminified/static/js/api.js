@@ -4,6 +4,8 @@ const API_URL = "/api/"
 
 Object.prototype.ensureSuccess = function() {
     return new Promise((resolve, reject) => {
+        console.log(this.success)
+
         if (!this.success) {
             if (this.message.length > 0) {
                 console.error(this.message)

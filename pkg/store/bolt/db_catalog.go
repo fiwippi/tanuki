@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 	"sort"
-	"strings"
 	"time"
 
+	"github.com/fvbommel/sortorder"
 	bolt "go.etcd.io/bbolt"
 
 	"github.com/fiwippi/tanuki/internal/errors"
@@ -102,9 +102,9 @@ func (db *DB) PopulateCatalog(series []*manga.ParsedSeries) error {
 		}
 	}
 
-	// Sort catalog in lowercase lexical order
+	// Sort catalog in natural order
 	sort.SliceStable(newCatalog, func(i, j int) bool {
-		return strings.ToLower(newCatalog[i].Title) < strings.ToLower(newCatalog[j].Title)
+		return sortorder.NaturalLess(newCatalog[i].Title, newCatalog[j].Title)
 	})
 	err := db.Update(func(tx *bolt.Tx) error {
 		root := db.catalogBucket(tx)

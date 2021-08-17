@@ -39,7 +39,7 @@ func PatchEntry(s *server.Server) gin.HandlerFunc {
 
 		err := s.Store.SetEntryMetadata(sid, eid, &metadata)
 		if err != nil {
-			c.AbortWithStatusJSON(500, SeriesEntryReply{Success: false})
+			c.AbortWithError(500, err)
 			return
 		}
 
@@ -83,7 +83,7 @@ func GetEntryPage(s *server.Server) gin.HandlerFunc {
 
 		num, err := strconv.Atoi(numStr)
 		if err != nil {
-			c.AbortWithStatus(400)
+			c.AbortWithError(400, err)
 			return
 		}
 
@@ -91,7 +91,7 @@ func GetEntryPage(s *server.Server) gin.HandlerFunc {
 		if len(zbQuery) > 0 {
 			zb, err := strconv.ParseBool(zbQuery)
 			if err != nil {
-				c.AbortWithStatus(400)
+				c.AbortWithError(400, err)
 				return
 			}
 			if zb {
@@ -101,17 +101,17 @@ func GetEntryPage(s *server.Server) gin.HandlerFunc {
 
 		a, err := s.Store.GetEntryArchive(sid, eid)
 		if err != nil {
-			c.AbortWithStatus(500)
+			c.AbortWithError(500, err)
 			return
 		}
 		p, err := s.Store.GetEntryPage(sid, eid, num)
 		if err != nil {
-			c.AbortWithStatus(500)
+			c.AbortWithError(500, err)
 			return
 		}
 		r, size, err := a.ReaderForFile(p.Path)
 		if err != nil {
-			c.AbortWithStatus(500)
+			c.AbortWithError(500, err)
 			return
 		}
 

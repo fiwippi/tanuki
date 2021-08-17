@@ -28,7 +28,7 @@
         <template x-for="(e, index) in filteredEntries">
             <a class="no-bottom" :href="`/entries/${e.hash}`">
                 <div class="entry" :style="`flex: 0 1 auto; max-width: ${imageWidth()}px`">
-                    <img class="entry__img" :src="images[index].src">
+                    <img class="entry__img" :src="getThumbnail(e)">
                     <div class="entry__info" >
                         <h4 class="entry__title" x-text="e.title"></h4>
                         <span x-text="`Entries: ${e.entries}`"></span><br>

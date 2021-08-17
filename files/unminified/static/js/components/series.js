@@ -38,7 +38,7 @@ export default function (series, entries, progress, seriesDataModal, entryViewMo
 
         // Progress related
         fmtEntryProgress(p) {
-            return Util.Fmt.Percent(p.current / p.total)
+            return Util.Fmt.EntryPercent(p)
         },
 
         fmtEntryProgressLabel(p) {

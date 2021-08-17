@@ -51,6 +51,7 @@ func DeleteFinishedTasks(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		err := manager.DeleteFinishedTasks()
 		if err != nil {
+			c.Error(err)
 			c.AbortWithStatusJSON(500, ManagerChangeReply{Success: false})
 			return
 		}

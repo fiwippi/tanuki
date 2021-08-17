@@ -3,7 +3,11 @@ package manga
 import (
 	"io/fs"
 	"path/filepath"
+	"sort"
 	"sync"
+
+	"github.com/fvbommel/sortorder"
+	"github.com/rs/zerolog/log"
 
 	"github.com/fiwippi/tanuki/internal/archive"
 	"github.com/fiwippi/tanuki/internal/errors"
@@ -33,6 +37,7 @@ func ParseSeriesFolder(dir string) (*ParsedSeries, error) {
 	go func() {
 		for e := range errorQueue {
 			errs = errors.Wrap(errs, e)
+			wg.Done()
 		}
 	}()
 
@@ -46,26 +51,36 @@ func ParseSeriesFolder(dir string) (*ParsedSeries, error) {
 	filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if !d.IsDir() {
 			// We want to avoid parsing non-archive files like cover images
-			if _, err := archive.InferType(path); err == nil {
-				wg.Add(1)
-				go func(o int, p string) {
-					m, err := ParseArchive(p)
-					if err != nil {
-						errorQueue <- err
-						return
-					}
-					m.Order = o
-					entriesQueue <- m
-				}(order, path)
-				order += 1
+			_, err = archive.InferType(path)
+			if err != nil {
+				log.Debug().Err(errs).Str("fp", path).Msg("file is not archive")
+				return nil
 			}
+
+			// Parse the archive
+			wg.Add(1)
+			go func(o int, p string) {
+				m, err := ParseArchive(p)
+				if err != nil {
+					errorQueue <- err
+					return
+				}
+				m.Order = o
+				entriesQueue <- m
+			}(order, path)
+			order += 1
 		}
+
 		return nil
 	})
 
 	wg.Wait()
 	close(errorQueue)
 	close(entriesQueue)
+
+	sort.SliceStable(entries, func(i, j int) bool {
+		return sortorder.NaturalLess(entries[i].Archive.Title, entries[j].Archive.Title)
+	})
 	series.Entries = entries
 
 	return series, errs

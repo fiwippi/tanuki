@@ -24,6 +24,10 @@ func (p *CatalogProgress) GetSeries(sid string) *SeriesProgress {
 	return p.Data[sid]
 }
 
+func (p *CatalogProgress) SetSeries(sid string, sp *SeriesProgress) {
+	p.Data[sid] = sp
+}
+
 func UnmarshalCatalogProgress(data []byte) *CatalogProgress {
 	var s CatalogProgress
 	err := json.Unmarshal(data, &s)

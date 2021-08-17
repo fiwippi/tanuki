@@ -3,6 +3,7 @@ module github.com/fiwippi/tanuki
 go 1.16
 
 require (
+	github.com/fvbommel/sortorder v1.0.2
 	github.com/gin-gonic/gin v1.7.2
 	github.com/go-playground/validator/v10 v10.6.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect

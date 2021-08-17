@@ -18,7 +18,7 @@ func GetEntries(s *server.Server) gin.HandlerFunc {
 		sid := c.Param("sid")
 		entries, err := s.Store.GetEntries(sid)
 		if err != nil {
-			c.AbortWithStatusJSON(500, SeriesEntriesReply{Success: false})
+			c.AbortWithError(500, err)
 			return
 		}
 		c.JSON(200, SeriesEntriesReply{Success: true, List: entries})
