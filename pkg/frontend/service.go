@@ -13,7 +13,7 @@ func NewService(s *server.Server) {
 
 	// Must be authorised to access these routes
 	authorised := s.Group("/")
-	authorised.Use(cookie.Auth(s))
+	authorised.Use(cookie.Auth(s, cookie.Redirect))
 	authorised.GET("/", home)
 	authorised.GET("/tags", tags)
 	authorised.GET("/tags/:tag", specificTag)

@@ -83,18 +83,17 @@ func (r *Renderer) FuncMap() template.FuncMap {
 			}
 			return e
 		},
-		//
 		"entryProgress": func(c *gin.Context) *users.EntryProgress {
 			sid := c.Param("sid")
 			eid := c.Param("eid")
 			uid := c.GetString("uid")
 
-			p, err := series.GetEntryProgressInternal(uid, sid, eid, r.server)
+			ep, _, _, err := series.GetEntryProgressInternal(uid, sid, eid, r.server)
 			if err != nil {
 				c.Error(err)
 				return nil
 			}
-			return p
+			return ep
 		},
 		"seriesProgress": func(c *gin.Context) []*users.EntryProgress {
 			sid := c.Param("sid")

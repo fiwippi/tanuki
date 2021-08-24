@@ -8,7 +8,7 @@ import (
 func NewService(api *server.RouterGroup) {
 	// Setup routes
 	g := api.Group("/proxy")
-	g.Use(cookie.Auth(api.Server))
+	g.Use(cookie.Auth(api.Server, cookie.Abort))
 
 	g.POST("/mangadex", mangadex)
 }

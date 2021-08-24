@@ -31,7 +31,6 @@ func ParseSeriesFolder(dir string) (*ParsedSeries, error) {
 	series.Title = fse.Filename(dir)
 
 	// Set the entries
-	order := 1
 	wg := sync.WaitGroup{}
 
 	go func() {
@@ -53,22 +52,20 @@ func ParseSeriesFolder(dir string) (*ParsedSeries, error) {
 			// We want to avoid parsing non-archive files like cover images
 			_, err = archive.InferType(path)
 			if err != nil {
-				log.Debug().Err(errs).Str("fp", path).Msg("file is not archive")
+				log.Trace().Err(errs).Str("fp", path).Msg("file is not archive")
 				return nil
 			}
 
 			// Parse the archive
 			wg.Add(1)
-			go func(o int, p string) {
+			go func(p string) {
 				m, err := ParseArchive(p)
 				if err != nil {
 					errorQueue <- err
 					return
 				}
-				m.Order = o
 				entriesQueue <- m
-			}(order, path)
-			order += 1
+			}(path)
 		}
 
 		return nil
@@ -78,9 +75,13 @@ func ParseSeriesFolder(dir string) (*ParsedSeries, error) {
 	close(errorQueue)
 	close(entriesQueue)
 
+	// Sort the entries list and add the correct order for each one
 	sort.SliceStable(entries, func(i, j int) bool {
 		return sortorder.NaturalLess(entries[i].Archive.Title, entries[j].Archive.Title)
 	})
+	for i := range entries {
+		entries[i].Order = i + 1
+	}
 	series.Entries = entries
 
 	return series, errs

@@ -11,6 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/fiwippi/tanuki/internal/pretty"
 	"github.com/fiwippi/tanuki/pkg/api"
 	"github.com/fiwippi/tanuki/pkg/auth"
 	"github.com/fiwippi/tanuki/pkg/config"
@@ -30,7 +31,7 @@ var g errgroup.Group
 var efs embed.FS
 
 const ConfigPath = "./config/config.yml"
-const SessionTTL = time.Hour * 3   // How long should a session last for
+const SessionTTL = time.Hour * 6   // How long should a session last for
 const SessionCookieName = "tanuki" // Name of the cookie stored on the client
 
 var opdsAuthor = &feed.Author{
@@ -65,9 +66,12 @@ func main() {
 	s := server.New(db, session, conf, opdsAuthor)
 
 	// Setup cron jobs
-	genThumbs := func() error { return s.Store.GenerateThumbnails(true) }
 	conf.ScanInterval.Run(s.ScanLibrary, "scan library", true)
-	conf.ThumbGenerationInterval.Run(genThumbs, "generate thumbnails", true)
+	go func() {
+		thumbStart := time.Now()
+		err = s.Store.GenerateThumbnails(false)
+		log.Debug().Err(err).Str("time_taken", pretty.Duration(time.Now().Sub(thumbStart))).Msg("thumbnail generation finished")
+	}()
 
 	// Serve static files
 	files := "files/minified"

@@ -12,7 +12,7 @@ func NewService(api *server.RouterGroup) {
 
 	// Setup routes
 	g := api.Group("/download")
-	g.Use(cookie.Auth(api.Server))
+	g.Use(cookie.Auth(api.Server, cookie.Abort))
 
 	g.POST("/chapters", GetChapters)
 	g.GET("/manager", ViewManager)

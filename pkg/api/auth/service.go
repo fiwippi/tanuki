@@ -12,6 +12,6 @@ func NewService(g *server.RouterGroup) {
 	authGroup.POST("/login", Login)
 
 	// Must be authorised to logout
-	authorised := authGroup.Use(cookie.Auth(g.Server))
+	authorised := authGroup.Use(cookie.Auth(g.Server, cookie.Abort))
 	authorised.GET("/logout", Logout)
 }

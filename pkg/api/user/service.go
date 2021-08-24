@@ -13,7 +13,7 @@ import (
 
 func NewService(api *server.RouterGroup) {
 	g := api.Group("/user")
-	g.Use(cookie.Auth(api.Server))
+	g.Use(cookie.Auth(api.Server, cookie.Abort))
 
 	g.GET("/type", GetType)
 	g.GET("/name", GetName)

@@ -78,6 +78,25 @@ func PatchSeriesProgress(s *server.Server) gin.HandlerFunc {
 			return
 		}
 
+		// Ensure series is filled out with a non-nil entries
+		entries, err := s.Store.GetEntries(sid)
+		if err != nil {
+			c.AbortWithError(500, err)
+			return
+		}
+		for _, e := range entries {
+			ep := sp.GetEntryProgress(e.Order - 1)
+			if ep == nil {
+				ep = users.NewEntryProgress(e.Pages)
+				err := sp.SetEntryProgress(e.Order-1, ep)
+				if err != nil {
+					c.AbortWithError(500, err)
+					return
+				}
+			}
+
+		}
+
 		switch data.Progress {
 		case "100%":
 			sp.SetAllRead()
@@ -86,6 +105,7 @@ func PatchSeriesProgress(s *server.Server) gin.HandlerFunc {
 		}
 
 		// Save the series progress
+		cp.SetSeries(sid, sp)
 		err = s.Store.ChangeProgress(uid, cp)
 		if err != nil {
 			c.AbortWithError(500, err)
@@ -103,19 +123,13 @@ func GetEntryProgress(s *server.Server) gin.HandlerFunc {
 		eid := c.Param("eid")
 		uid := c.GetString("uid")
 
-		p, _, err := GetSeriesProgressInternal(uid, sid, s)
+		p, _, _, err := GetEntryProgressInternal(uid, sid, eid, s)
 		if err != nil {
 			c.AbortWithError(500, err)
 			return
 		}
 
-		o, err := s.Store.GetEntryOrder(sid, eid)
-		if err != nil {
-			c.AbortWithError(500, err)
-			return
-		}
-
-		c.JSON(200, EntriesProgressReply{Success: true, Progress: p.GetEntryProgress(o - 1)})
+		c.JSON(200, EntriesProgressReply{Success: true, Progress: p})
 	}
 }
 
@@ -138,19 +152,12 @@ func PatchEntryProgress(s *server.Server) gin.HandlerFunc {
 			return
 		}
 
-		sp, cp, err := GetSeriesProgressInternal(uid, sid, s)
+		ep, sp, cp, err := GetEntryProgressInternal(uid, sid, eid, s)
 		if err != nil {
 			c.AbortWithError(500, err)
 			return
 		}
 
-		o, err := s.Store.GetEntryOrder(sid, eid)
-		if err != nil {
-			c.AbortWithError(500, err)
-			return
-		}
-
-		ep := sp.GetEntryProgress(o - 1)
 		if data.Progress == "100%" {
 			ep.SetRead()
 		} else if data.Progress == "0%" {
@@ -160,6 +167,7 @@ func PatchEntryProgress(s *server.Server) gin.HandlerFunc {
 		}
 
 		// Save the entry progress
+		cp.SetSeries(sid, sp)
 		err = s.Store.ChangeProgress(uid, cp)
 		if err != nil {
 			c.AbortWithError(500, err)
@@ -171,21 +179,21 @@ func PatchEntryProgress(s *server.Server) gin.HandlerFunc {
 	}
 }
 
-func GetEntryProgressInternal(uid, sid, eid string, s *server.Server) (*users.EntryProgress, error) {
-	sp, _, err := GetSeriesProgressInternal(uid, sid, s)
+func GetEntryProgressInternal(uid, sid, eid string, s *server.Server) (*users.EntryProgress, *users.SeriesProgress, *users.CatalogProgress, error) {
+	sp, cp, err := GetSeriesProgressInternal(uid, sid, s)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
 	e, err := s.Store.GetEntry(sid, eid)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
 	// Entry must be within the size of the series progress
 	index := e.Order - 1
 	if index >= len(sp.Entries) || index < 0 {
-		return nil, ErrNoEntryProgress
+		return nil, nil, nil, ErrNoEntryProgress
 	}
 
 	// Get the entry progress
@@ -195,23 +203,19 @@ func GetEntryProgressInternal(uid, sid, eid string, s *server.Server) (*users.En
 		ep = users.NewEntryProgress(e.Pages)
 		err := sp.SetEntryProgress(e.Order-1, ep)
 		if err != nil {
-			return nil, err
+			return nil, nil, nil, err
 		}
 
 		// Save the progress to the db
-		cp, err := s.Store.GetUserProgress(uid)
-		if err != nil {
-			return nil, err
-		}
 		cp.SetSeries(sid, sp)
 		err = s.Store.ChangeProgress(uid, cp)
 		if err != nil {
-			return nil, err
+			return nil, nil, nil, err
 		}
 
 	}
 
-	return ep, nil
+	return ep, sp, cp, nil
 }
 
 func GetSeriesProgressInternal(uid, sid string, s *server.Server) (*users.SeriesProgress, *users.CatalogProgress, error) {
@@ -220,25 +224,22 @@ func GetSeriesProgressInternal(uid, sid string, s *server.Server) (*users.Series
 	if err != nil {
 		return nil, nil, err
 	}
-
 	// Get the user progress
 	progress, err := s.Store.GetUserProgress(uid)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	// Get the series progress
 	seriesProgress := progress.GetSeries(sid)
+	// If the series exists but the progress for it doesnt
+	// exist then create the new progress for the user, or
+	// if the number of entries has changed
 	if seriesProgress == nil || len(seriesProgress.Entries) != len(entries) {
-		// If the series exists but the progress for it doesnt
-		// exist then create the new progress for the user, or
-		// if the number of entries has changed
+		// Keep track of the old progress
 		oldProgress := seriesProgress
-
 		// Create the new series progress
 		progress.AddSeries(sid, len(entries))
 		seriesProgress = progress.GetSeries(sid)
-
 		// Copy over the old progress
 		if oldProgress != nil && len(oldProgress.Entries) > 0 {
 			for i, e := range oldProgress.Entries {
@@ -248,7 +249,6 @@ func GetSeriesProgressInternal(uid, sid string, s *server.Server) (*users.Series
 				}
 			}
 		}
-
 		// Save the newly created progress
 		err := s.Store.ChangeProgress(uid, progress)
 		if err != nil {

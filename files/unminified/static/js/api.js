@@ -2,10 +2,18 @@ export const name = 'api';
 
 const API_URL = "/api/"
 
+Object.prototype.ensureAuthed = function() {
+    return new Promise((resolve, reject) => {
+        if (this.status === 401 && !this.url.endsWith("/login")) {
+            window.location.replace('/')
+            reject()
+        }
+        resolve(this)
+    })
+}
+
 Object.prototype.ensureSuccess = function() {
     return new Promise((resolve, reject) => {
-        console.log(this.success)
-
         if (!this.success) {
             if (this.message.length > 0) {
                 console.error(this.message)
@@ -46,6 +54,10 @@ async function fetchResource(route, userOptions = {}, form) {
     };
 
     return fetch(API_URL + route, options)
+        // .then(data => {
+        //     console.log("WOOOO", data.status)
+        // })
+        .then(response => response.ensureAuthed())
         .then(response => response.json())
         .catch(error => {throw error})
 }

@@ -4,21 +4,23 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 
 	"github.com/fiwippi/tanuki/pkg/auth"
 	"github.com/fiwippi/tanuki/pkg/server"
 )
 
 // Auth middleware which ensures the user is authorised
-func Auth(s *server.Server) gin.HandlerFunc {
+func Auth(s *server.Server, action Action) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		uid, err := s.Session.Get(c)
 		if err != nil {
 			// Invalid cookie
-			log.Debug().Err(err).Msg("failed to auth request")
-			c.Redirect(302, "/login")
-			c.Abort()
+			switch action {
+			case Redirect:
+				c.Redirect(302, "/login")
+			case Abort:
+				c.AbortWithError(401, err)
+			}
 			return
 		}
 

@@ -83,13 +83,17 @@ export class Fmt {
             // so this avoids that
             if (sp.tracker.hasOwnProperty(i)) {
                 let p = sp.tracker[i]
-                if (p !== null) {
+                if (p !== null && p !== undefined) {
                     current += p.current
                     total += p.total
                 }
             }
         }
 
+        let percent = current / total
+        if (Number.isNaN(percent)) {
+            return undefinedPercent
+        }
         return Fmt.Percent(current / total)
     }
 
@@ -98,7 +102,11 @@ export class Fmt {
         if (p === undefined || p === null) {
             return undefinedPercent
         }
-        return Fmt.Percent(p.current / p.total)
+        let percent = p.current / p.total
+        if (Number.isNaN(percent)) {
+            return undefinedPercent
+        }
+        return Fmt.Percent(percent)
     }
 
     // Percent is supposed to be in the range [0, 1]

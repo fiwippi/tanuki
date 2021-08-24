@@ -46,7 +46,10 @@ func (p *SeriesProgress) SetAllRead() {
 	defer p.M.RUnlock()
 
 	for _, e := range p.Entries {
-		e.SetRead()
+		if e != nil {
+			e.SetRead()
+		}
+
 	}
 }
 
@@ -55,7 +58,9 @@ func (p *SeriesProgress) SetAllUnread() {
 	defer p.M.RUnlock()
 
 	for _, e := range p.Entries {
-		e.SetUnread()
+		if e != nil {
+			e.SetUnread()
+		}
 	}
 }
 

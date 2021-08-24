@@ -452,6 +452,27 @@ button:disabled {
     flex-direction: row;
 }
 
+/* Animations -------------------------------------------------*/
+.loader {
+  border: 2px solid {{ .Light.Color }};
+  border-top: 2px solid {{ .Light.Highlight }};
+  border-radius: 50%;
+  width: 10px;
+  height: 10px;
+  animation: spin 2s linear infinite;
+}
+
+.dark .loader {
+    border: 3px solid {{ .Dark.Color }};
+    border-top: 3px solid {{ .Dark.Highlight }};
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+
 /* Mobile styles -------------------------------------------------*/
 @media only screen
   and (max-device-width: 820px) {

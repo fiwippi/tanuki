@@ -7,7 +7,7 @@ import (
 
 func NewService(g *server.RouterGroup) {
 	series := g.Group("/series")
-	series.Use(cookie.Auth(g.Server))
+	series.Use(cookie.Auth(g.Server, cookie.Abort))
 
 	series.GET("/:sid", GetSeries)
 	series.PATCH("/:sid", PatchSeries)

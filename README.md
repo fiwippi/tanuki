@@ -61,16 +61,17 @@ paths:
   log: ./data/tanuki.log
   library: ./library
 session_secret: tanuki-secret
-scan_interval_minutes: 5
-thumbnail_generation_interval_minutes: 60
+scan_interval_minutes: 10 // Every 10 minutes
 max_uploaded_file_size_mib: 10
 debug_mode: false
 ```
 - To disable logging set `logging.log_to_file` and `logging.log_to_console` to `false`
 - `logging.level` can be `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `panic`
-- `scan_interval_minutes` and `thumbnail_generation_interval_minutes` can be any non-negative integer. Set them to zero to disable the periodic tasks.
+- `scan_interval_minutes`  can be any non-negative integer. Set them to zero to disable the periodic tasks.
 ### Initial Login
 On the first run Tanuki logs the default username and randomly generated password to STDOUT. It is advised to immediately change the password.
+### Rar Archives
+If you supply tanuki with Rar archives (`.rar`, `.cbr`), their unarchive time to retrieve a single page is about 2 seconds compared to only milliseconds for a Zip archives (`.zip`, `.cbz`) due to library constraints. For this reason consider converting all your files into Zip archives
 
 ## OPDS
 - The route for the OPDS catalog is `/opds/v1.2/catalog`
@@ -84,6 +85,15 @@ On the first run Tanuki logs the default username and randomly generated passwor
 - [x] Page streaming
 
 ## Changelog
+### [0.11] - 2021-08-24
+- Thumbnail generation generated lazily instead of with a recurring job, this stops the throttling of the db whenever the job was running and speeds up page loading
+- Mangas with pages specified only by numbers (with no text) no longer sorted in inverse order
+- Stopped invalid progress displaying as NaN client-side
+- Natural ordering improved so entries in a series now assigned correct order (until I manage to break it again)
+- Invalid API requests automatically redirect the user to the login page as opposed to only when accessing the frontend routes
+- When setting progress for a whole series, entry progress is created if it is previously nil
+- Loading animation when scanning in the db or manually generating thumbnails
+
 ### [0.10] - 2021-08-17
 - Non-english titles displayed for Mangadex entries if english ones don't exist
 - Mangadex archive pages zero padded in the archive

@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	ScanInterval      = 5
-	ThumbnailInterval = 60
+	ScanInterval      = 10      // Every 10 minutes
+	ThumbnailInterval = 60 * 12 // Every 12 hours
 )
 
 type Config struct {

@@ -7,7 +7,7 @@ import (
 
 func NewService(g *server.RouterGroup) {
 	a := g.Group("/admin")
-	a.Use(cookie.Auth(g.Server))
+	a.Use(cookie.Auth(g.Server, cookie.Abort))
 	a.Use(cookie.Admin("/"))
 
 	a.GET("/library/scan", ScanLibrary)

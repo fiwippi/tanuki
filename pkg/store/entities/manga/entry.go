@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/mholt/archiver/v3"
@@ -14,6 +15,11 @@ import (
 	"github.com/fiwippi/tanuki/internal/fse"
 	"github.com/fiwippi/tanuki/internal/image"
 )
+
+func isDigit(s string) bool {
+	_, err := strconv.Atoi(s)
+	return err == nil
+}
 
 var ErrNoPages = errors.New("archive contains no pages")
 
@@ -100,13 +106,13 @@ func ParseArchive(fp string) (*ParsedEntry, error) {
 	// Walker does not walk the archive in archived order so we need to sort the pages
 	sort.SliceStable(e.Pages, func(i, j int) bool {
 		// Lowercase should be uppercase
-		a := fse.Filename(e.Pages[i].Path)
-		b := fse.Filename(e.Pages[j].Path)
+		a := strings.TrimSuffix(e.Pages[i].Path, filepath.Ext(e.Pages[i].Path))
+		b := strings.TrimSuffix(e.Pages[j].Path, filepath.Ext(e.Pages[j].Path))
 
-		if len(a) > 0 && len(b) > 0 {
-			aFirst := string(a[0])
-			bFirst := string(b[0])
+		aFirst := string(a[0])
+		bFirst := string(b[0])
 
+		if !(isDigit(aFirst) && isDigit(bFirst)) {
 			aLowercase := aFirst == strings.ToLower(aFirst)
 			bUppercase := bFirst == strings.ToUpper(bFirst)
 
@@ -116,6 +122,7 @@ func ParseArchive(fp string) (*ParsedEntry, error) {
 				return false
 			}
 		}
+
 		return a < b
 	})
 
