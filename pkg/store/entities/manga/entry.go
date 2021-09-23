@@ -105,6 +105,7 @@ func ParseArchive(fp string) (*ParsedEntry, error) {
 		aFirst := string(a[0])
 		bFirst := string(b[0])
 
+		// First case if both aren't digits
 		if !(isDigit(aFirst) && isDigit(bFirst)) {
 			aLowercase := aFirst == strings.ToLower(aFirst)
 			bUppercase := bFirst == strings.ToUpper(bFirst)
@@ -116,6 +117,22 @@ func ParseArchive(fp string) (*ParsedEntry, error) {
 			}
 		}
 
+		// Second case if both are digits
+		aBase := filepath.Base(a)
+		bBase := filepath.Base(b)
+		if isDigit(aBase) && isDigit(bBase) {
+			aNum, err := strconv.Atoi(aBase)
+			if err != nil {
+				panic(err)
+			}
+			bNum, err := strconv.Atoi(bBase)
+			if err != nil {
+				panic(err)
+			}
+			return aNum < bNum
+		}
+
+		// Third case is all others
 		return a < b
 	})
 
