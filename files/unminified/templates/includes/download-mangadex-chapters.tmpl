@@ -13,7 +13,10 @@
 {{ define "content" }}
 <div x-data="mangadex">
     <h2>Mangadex</h2>
-    <h3>Download</h3>
+    <div class="flex--row">
+        <h3>Download</h3>
+        <div id="spinner" class="flex__key--centered"></div>
+    </div>
 
     <template x-if="data !== {}">
         <div class="flex--row" style="margin-bottom: 30px">

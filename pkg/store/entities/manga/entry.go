@@ -1,7 +1,6 @@
 package manga
 
 import (
-	"archive/zip"
 	"os"
 	"path/filepath"
 	"sort"
@@ -75,15 +74,9 @@ func ParseArchive(fp string) (*ParsedEntry, error) {
 			}
 
 			// Parse the page
-			page := &Page{ImageType: t}
-
-			// If zip we need the file header to get the absolute filepath
-			// but with rar calling f.Name() already gives it to us
-			switch a.Type {
-			case archive.Zip:
-				page.Path = f.Header.(zip.FileHeader).Name
-			case archive.Rar:
-				page.Path = f.Name()
+			page := &Page{
+				ImageType: t,
+				Path:      a.GetPath(f),
 			}
 
 			// Finally add the page

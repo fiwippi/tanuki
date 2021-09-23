@@ -1,9 +1,9 @@
 package manga
 
 import (
+	"archive/zip"
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -14,6 +14,7 @@ import (
 	"github.com/mholt/archiver/v3"
 
 	"github.com/fiwippi/tanuki/internal/archive"
+	"github.com/fiwippi/tanuki/internal/errors"
 	"github.com/fiwippi/tanuki/internal/fse"
 	"github.com/fiwippi/tanuki/internal/image"
 )
@@ -43,12 +44,25 @@ func (a *Archive) Walk(f func(f archiver.File) error) error {
 	return a.Type.Walker().Walk(a.Path, f)
 }
 
+func (a *Archive) GetPath(f archiver.File) string {
+	// If zip we need the file header to get the absolute filepath
+	// but with rar calling f.Name() already gives it to us
+	switch a.Type {
+	case archive.Zip:
+		return f.Header.(zip.FileHeader).Name
+	case archive.Rar:
+		return f.Name()
+	}
+
+	panic("invalid archive type")
+}
+
 func (a *Archive) ReaderForFile(fp string) (io.Reader, int64, error) {
 	// Attempt to find the file
 	var r io.Reader
 	var size int64
 	err := a.Type.Walker().Walk(a.Path, func(f archiver.File) error {
-		if strings.HasSuffix(fp, f.Name()) {
+		if strings.ToLower(fp) == strings.ToLower(a.GetPath(f)) {
 			data, err := ioutil.ReadAll(f)
 			if err != nil {
 				return err
@@ -64,7 +78,7 @@ func (a *Archive) ReaderForFile(fp string) (io.Reader, int64, error) {
 	if err != nil {
 		return nil, 0, err
 	} else if size == 0 {
-		return nil, 0, ErrArchiveFileNotFound
+		return nil, 0, ErrArchiveFileNotFound.Fmt(fp, size)
 	}
 	return r, size, nil
 }

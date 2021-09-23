@@ -85,6 +85,13 @@ If you supply tanuki with Rar archives (`.rar`, `.cbr`), their unarchive time to
 - [x] Page streaming
 
 ## Changelog
+### [0.12] - 2021-09-23
+- Better support for unicode characters
+- Correct page displayed instead of page with similar name
+- Loading animation for viewing the DB + searching and downloading from Mangadex
+- Updated Mangadex functionality broken by Mangadex API change
+- Series progress calculation takes into account all entries instead of only ones which have been accessed
+
 ### [0.11] - 2021-08-24
 - Thumbnail generation generated lazily instead of with a recurring job, this stops the throttling of the db whenever the job was running and speeds up page loading
 - Mangas with pages specified only by numbers (with no text) no longer sorted in inverse order

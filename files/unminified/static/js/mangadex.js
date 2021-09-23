@@ -49,7 +49,7 @@ export class Manga {
         while (moreLeft) {
             await this.Feed(id, limit, offset)
                 .then(resp => {
-                    feed.push(...resp.results)
+                    feed.push(...resp.data)
                     offset += limit
                     if (feed.length >= resp.total) {
                         moreLeft = false

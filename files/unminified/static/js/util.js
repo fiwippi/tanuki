@@ -70,13 +70,12 @@ export class Compare {
 }
 
 export class Fmt {
-    static SeriesPercent(sp) {
+    static SeriesPercent(sp, total_pages) {
         if (sp === undefined || sp === null) {
             return undefinedPercent
         }
 
         let current = 0
-        let total = 0
         for (let i in sp.tracker) {
             // .ensureSuccess function gets registered to
             // all objects and appears if we loop over an
@@ -85,16 +84,15 @@ export class Fmt {
                 let p = sp.tracker[i]
                 if (p !== null && p !== undefined) {
                     current += p.current
-                    total += p.total
                 }
             }
         }
 
-        let percent = current / total
+        let percent = current / total_pages
         if (Number.isNaN(percent)) {
             return undefinedPercent
         }
-        return Fmt.Percent(current / total)
+        return Fmt.Percent(percent)
     }
 
     // Percent is supposed to be in the range [0, 1]

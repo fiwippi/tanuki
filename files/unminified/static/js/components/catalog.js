@@ -8,8 +8,10 @@ export default function (entries, progress) {
         return `/api/series/${entries[i].hash}/cover?thumbnail=true`
     }
     let extra = {
-        fmtProgress(p) {
-            return `Progress: ${Util.Fmt.SeriesPercent(p)}`
+        fmtProgress(e) {
+            let prog = this.progress[e.hash]
+            let pages = e.total_pages
+            return `Progress: ${Util.Fmt.SeriesPercent(prog, pages)}`
         }
     }
 

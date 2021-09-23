@@ -12,7 +12,10 @@
 {{ define "content" }}
 <div x-data="mangadex">
     <h2>Mangadex</h2>
-    <h3>Search</h3>
+    <div class="flex--row">
+        <h3>Search</h3>
+        <div id="spinner" class="flex__key--centered"></div>
+    </div>
     <div class="search">
         <input x-model.debounce.400ms="search" @input="handleSearchChange" class="search__bar" placeholder="Search..." type="text">
     </div>

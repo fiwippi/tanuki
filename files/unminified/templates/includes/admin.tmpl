@@ -35,6 +35,13 @@
                     })
                 document.getElementById("scan").classList.remove("loader")
                 this.showScanResult = true
+            },
+
+            async db() {
+                document.getElementById("db").classList.add("loader")
+                await API.Admin.ViewDB()
+                document.getElementById("db").classList.remove("loader")
+                this.showScanResult = true
             }
         }))
     })
@@ -48,7 +55,8 @@
         <span class="flex__key--centered flex__key--list">⦿ <a href="/admin/users">User Management</a></span>
     </div>
     <div class="flex--row">
-        <span class="flex__key--centered flex__key--list">⦿ <a href="/api/admin/db">View Database</a></span>
+        <span>⦿ <a class="flex__key--list" href="javascript:void(0)" @click="await db()">View Database</a></span>
+        <div id="db" class="flex__key--centered"></div>
     </div>
     <div class="flex--row">
         <span class="flex__key--centered flex__key--list">⦿ <a href="/admin/missing-items">Missing Items</a></span>

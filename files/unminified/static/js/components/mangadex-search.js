@@ -3,10 +3,6 @@ export const name = 'mangadex-search';
 import * as MAPI from "/static/js/mangadex.js"
 import * as Util from "/static/js/util.js"
 
-function resultOk(resp) {
-    return resp.result === "ok"
-}
-
 export default function () {
     return {
         search: "",
@@ -17,31 +13,35 @@ export default function () {
                 return []
             }
 
+            document.getElementById("spinner").classList.add("loader")
+
             await MAPI.Search.Manga(this.search, 8, true)
                 .then(resp => {
-                    for (let i = 0; i < resp.results.length; i++) {
-                        let item = resp.results[i]
-                        if (!resultOk(item)) {
-                            console.error("result not ok:", item)
-                            continue
-                        }
+                    if (resp.data === undefined) {
+                        console.debug(resp)
+                        return
+                    }
+                    for (let i = 0; i < resp.data.length; i++) {
+                        let item = resp.data[i]
 
                         let data = {
-                            id: item.data.id,
-                            createdAt: Util.Fmt.RFCDate(item.data.attributes.createdAt),
-                            title: Object.values(item.data.attributes.title)[0],
-                            description: item.data.attributes.description.en,
+                            id: item.id,
+                            createdAt: Util.Fmt.RFCDate(item.attributes.createdAt),
+                            title: Object.values(item.attributes.title)[0],
+                            description: item.attributes.description.en,
                         }
                         for (let j = 0; j < item.relationships.length; j++) {
                             let r = item.relationships[j]
                             if (r.type === "cover_art") {
-                                data.src = `https://uploads.mangadex.org/covers/${item.data.id}/${r.attributes.fileName}.256.jpg`
+                                data.src = `https://uploads.mangadex.org/covers/${item.id}/${r.attributes.fileName}.256.jpg`
                             }
                         }
 
                         this.searchData.push(data)
                     }
                 })
+
+            document.getElementById("spinner").classList.remove("loader")
 
             return this.searchData
         },

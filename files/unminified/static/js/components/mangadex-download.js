@@ -4,10 +4,6 @@ import * as API from "/static/js/api.js"
 import * as MAPI from "/static/js/mangadex.js"
 import * as Util from "/static/js/util.js"
 
-function resultOk(resp) {
-    return resp.result === "ok"
-}
-
 export default function (uid) {
     return {
         search: "",
@@ -49,21 +45,19 @@ export default function (uid) {
         },
 
         async init() {
+            document.getElementById("spinner").classList.add("loader")
+
             await MAPI.Manga.View(this.uid, true)
                 .then(resp => {
-                    if (!resultOk(resp)) {
-                        console.error("result not ok:", resp)
-                        return
-                    }
-
                     let d = {
-                        id: resp.data.id,
+                        id: resp.id,
                         createdAt: Util.Fmt.RFCDate(resp.data.attributes.createdAt),
                         title: Util.Ensure.String(Object.values(resp.data.attributes.title)[0]),
                         description: Util.Ensure.String(resp.data.attributes.description.en),
                     }
-                    for (let j = 0; j < resp.relationships.length; j++) {
-                        let r = resp.relationships[j]
+
+                    for (let j = 0; j < resp.data.relationships.length; j++) {
+                        let r = resp.data.relationships[j]
                         if (r.type === "cover_art") {
                             d.src = `https://uploads.mangadex.org/covers/${resp.data.id}/${r.attributes.fileName}.256.jpg`
                         }
@@ -75,13 +69,13 @@ export default function (uid) {
                 .then(resp => {
                     for (const r of resp) {
                         let d = {
-                            id: r.data.id,
-                            title: Util.Ensure.String(r.data.attributes.title),
-                            volume: Util.Ensure.String(r.data.attributes.volume),
-                            chapter: Util.Ensure.String(r.data.attributes.chapter),
-                            updatedAt: Util.Fmt.RFCDate(r.data.attributes.updatedAt),
+                            id: r.id,
+                            title: Util.Ensure.String(r.attributes.title),
+                            volume: Util.Ensure.String(r.attributes.volume),
+                            chapter: Util.Ensure.String(r.attributes.chapter),
+                            updatedAt: Util.Fmt.RFCDate(r.attributes.updatedAt),
                             scanlation_group: r.relationships.find(o => { return o.type === "scanlation_group"}).attributes.name,
-                            raw: r.data,
+                            raw: r,
                         }
 
                         this.chapters.push(d)
@@ -89,6 +83,8 @@ export default function (uid) {
                 })
 
             this.checkboxes = new Array(this.chapters.length).fill(false)
+
+            document.getElementById("spinner").classList.remove("loader")
 
             this.$watch('checkboxes', value => {
                 let disabled = value.filter((i) => { return i === true }).length === 0

@@ -11,6 +11,7 @@ type Series struct {
 	Hash         string     `json:"hash"`
 	Title        string     `json:"title"`
 	Entries      int        `json:"entries"`
+	TotalPages   int        `json:"total_pages"`
 	Tags         []string   `json:"tags"`
 	Author       string     `json:"author"`
 	DateReleased *date.Date `json:"date_released"`

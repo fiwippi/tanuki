@@ -60,11 +60,18 @@ func (db *DB) PopulateCatalog(series []*manga.ParsedSeries) error {
 				cModTime = mt
 			}
 
+			// How many pages the series has (used to calculate progress)
+			pages := 0
+			for _, e := range s.Entries {
+				pages += len(e.Pages)
+			}
+
 			// Create tentative metadata
 			d := &api.Series{
 				Hash:         sid,
 				Title:        sb.Title(),
 				Entries:      len(sb.EntriesMetadata()),
+				TotalPages:   pages,
 				Tags:         sb.Tags().List(),
 				Author:       manga.AuthorZeroValue,
 				DateReleased: nil,
