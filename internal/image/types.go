@@ -39,18 +39,32 @@ func (t Type) String() string {
 // Decode decodes an image given its type
 func (t Type) Decode(r io.Reader) (image.Image, error) {
 	switch t {
-	case PNG:
-		return png.Decode(r)
-	case JPEG:
-		return jpeg.Decode(r)
-	case GIF:
-		return gif.Decode(r)
-	case WEBP:
-		return webp.Decode(r)
-	case TIFF:
-		return tiff.Decode(r)
-	case BMP:
-		return bmp.Decode(r)
+	case PNG, JPEG, GIF, WEBP, TIFF, BMP:
+		// Try generic decoding first because even if the
+		// file extension is .png for example, the actual
+		// image might not be
+		img, _, err := image.Decode(r)
+		if err == nil {
+			return img, err
+		}
+
+		// Generic decoding doesn't always work so if the
+		// image format is unrecognised we know we try again
+		// with specific encoding
+		switch t {
+		case PNG:
+			return png.Decode(r)
+		case JPEG:
+			return jpeg.Decode(r)
+		case GIF:
+			return gif.Decode(r)
+		case WEBP:
+			return webp.Decode(r)
+		case TIFF:
+			return tiff.Decode(r)
+		case BMP:
+			return bmp.Decode(r)
+		}
 	}
 
 	panic(fmt.Sprintf("invalid image type: '%d'", t))

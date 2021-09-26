@@ -85,6 +85,9 @@ If you supply tanuki with Rar archives (`.rar`, `.cbr`), their unarchive time to
 - [x] Page streaming
 
 ## Changelog
+### [0.12.1] - 2021-09-26
+- More edge cases handled when decoding images
+
 ### [0.12] - 2021-09-23
 - Better support for unicode characters
 - Correct page displayed instead of page with similar name
