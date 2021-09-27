@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/mholt/archiver/v3"
+	"github.com/nwaples/rardecode"
 
 	"github.com/fiwippi/tanuki/internal/archive"
 	"github.com/fiwippi/tanuki/internal/errors"
@@ -51,7 +52,7 @@ func (a *Archive) GetPath(f archiver.File) string {
 	case archive.Zip:
 		return f.Header.(zip.FileHeader).Name
 	case archive.Rar:
-		return f.Name()
+		return f.Header.(*rardecode.FileHeader).Name
 	}
 
 	panic("invalid archive type")

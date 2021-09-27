@@ -12,6 +12,7 @@ require (
 	github.com/mattn/go-isatty v0.0.13 // indirect
 	github.com/mholt/archiver/v3 v3.5.0
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
+	github.com/nwaples/rardecode v1.1.0
 	github.com/rs/zerolog v1.23.0
 	github.com/shaj13/libcache v1.0.0
 	github.com/tdewolff/minify/v2 v2.9.20

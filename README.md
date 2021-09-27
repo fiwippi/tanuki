@@ -61,7 +61,7 @@ paths:
   log: ./data/tanuki.log
   library: ./library
 session_secret: tanuki-secret
-scan_interval_minutes: 10 // Every 10 minutes
+scan_interval_minutes: 10
 max_uploaded_file_size_mib: 10
 debug_mode: false
 ```
@@ -85,6 +85,9 @@ If you supply tanuki with Rar archives (`.rar`, `.cbr`), their unarchive time to
 - [x] Page streaming
 
 ## Changelog
+### [0.12.3] - 2021-09-27
+- Fixed page ordering bug introduced in 0.12.1
+
 ### [0.12.2] - 2021-09-26
 - More edge cases handled when decoding images
 
