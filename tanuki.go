@@ -89,6 +89,7 @@ func main() {
 	log.Info().Msg("templates loaded")
 
 	// Set the favicon
+	favicon.NewService(s, efs, "files/minified/static/icon/favicon.ico")
 
 	// Handle 404s
 	s.SetErr404(frontend.Err404(nil))
@@ -97,7 +98,6 @@ func main() {
 	api.NewService(s)
 	frontend.NewService(s)
 	opds.NewService(s)
-	favicon.NewService(s, efs, "files/minified/static/icon/favicon.ico")
 
 	log.Info().Str("host", conf.Host).Str("port", conf.Port).Str("log_level", conf.Logging.Level.String()).
 		Bool("file_log", conf.Logging.LogToFile).Bool("console_log", conf.Logging.LogToConsole).Str("db_path", conf.Paths.DB).
