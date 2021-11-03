@@ -17,7 +17,7 @@
         <div id="spinner" class="flex__key--centered"></div>
     </div>
     <div class="search">
-        <input x-model.debounce.400ms="search" @input="handleSearchChange" class="search__bar" placeholder="Search..." type="text">
+        <input x-model.debounce.400ms="search" @input="handleSearchChange" class="search__bar" placeholder="Search..." type="text" autofocus>
     </div>
 
     <template x-for="e in searchEntries">
