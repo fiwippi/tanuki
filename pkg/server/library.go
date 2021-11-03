@@ -3,7 +3,6 @@ package server
 import (
 	"os"
 	"path/filepath"
-	"sync"
 
 	"github.com/rs/zerolog/log"
 
@@ -12,17 +11,7 @@ import (
 )
 
 func (s *Server) ScanLibrary() error {
-	wg := sync.WaitGroup{}
-
 	series := make([]*manga.ParsedSeries, 0)
-	seriesQueue := make(chan *manga.ParsedSeries, 1)
-
-	go func() {
-		for s := range seriesQueue {
-			series = append(series, s)
-			wg.Done()
-		}
-	}()
 
 	items, err := os.ReadDir(s.Conf.Paths.Library)
 	if err != nil {
@@ -31,34 +20,27 @@ func (s *Server) ScanLibrary() error {
 
 	for _, item := range items {
 		if item.IsDir() {
-			name := item.Name()
-			wg.Add(1)
-			go func() {
-				fp := filepath.Join(s.Conf.Paths.Library, name)
+			fp := filepath.Join(s.Conf.Paths.Library, item.Name())
 
-				// Check for .tanuki folder and delete it if empty
-				tanukiFp := fp + "/.tanuki"
-				if fse.Exists(tanukiFp) {
-					err := fse.DeleteDirIfEmpty(tanukiFp)
-					if err != nil {
-						log.Debug().Err(err).Str("fp", tanukiFp).Msg("failed to delete dir")
-						wg.Done()
-						return
-					}
-				}
-
-				// Parse the series
-				s, err := manga.ParseSeriesFolder(fp)
+			// Check for .tanuki folder and delete it if empty
+			tanukiFp := fp + "/.tanuki"
+			if fse.Exists(tanukiFp) {
+				err := fse.DeleteDirIfEmpty(tanukiFp)
 				if err != nil {
-					log.Error().Err(err).Str("fp", fp).Msg("failed to parse series folder")
-					wg.Done()
-					return
+					log.Debug().Err(err).Str("fp", tanukiFp).Msg("failed to delete dir")
+					continue
 				}
-				seriesQueue <- s
-			}()
+			}
+
+			// Parse the series
+			s, err := manga.ParseSeriesFolder(fp)
+			if err != nil {
+				log.Error().Err(err).Str("fp", fp).Msg("failed to parse series folder")
+				continue
+			}
+			series = append(series, s)
 		}
 	}
-	wg.Wait()
 
 	err = s.Store.PopulateCatalog(series)
 	if err != nil {
