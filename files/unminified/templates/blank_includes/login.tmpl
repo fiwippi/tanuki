@@ -58,11 +58,11 @@
         <h1 class="flex__key--less-padding">Tanuki</h1>
         <div class="flex--row" style="justify-content: center">
             <h3 class="flex__key--centered flex__key--less-padding">Username:</h3>
-            <label class="flex__key--centered flex__key--less-padding"><input type="text" placeholder="Username" x-model="username" autofocus></label>
+            <label class="flex__key--centered flex__key--less-padding"><input type="text" placeholder="Username" x-model="username" autocorrect="off" autocapitalize="none" autofocus></label>
         </div>
         <div class="flex--row" style="justify-content: center">
             <h3 class="flex__key--centered">Password:</h3>
-            <label class="flex__key--centered"><input type="password" placeholder="Password" x-model="password" x-bind='password_field'></label>
+            <label class="flex__key--centered"><input type="password" placeholder="Password" x-model="password" x-bind='password_field' autocorrect="off" autocapitalize="none"></label>
         </div>
         <div class="flex--row" style="justify-content: center">
             <button x-bind="login_btn">Login</button>
