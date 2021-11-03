@@ -67,7 +67,7 @@ debug_mode: false
 ```
 - To disable logging set `logging.log_to_file` and `logging.log_to_console` to `false`
 - `logging.level` can be `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `panic`
-- `scan_interval_minutes`  can be any non-negative integer. Set them to zero to disable the periodic tasks.
+- `scan_interval_minutes`  can be any non-negative integer. To disable interval scanning set the value to `0`;
 ### Initial Login
 On the first run Tanuki logs the default username and randomly generated password to STDOUT. It is advised to immediately change the password.
 ### Rar Archives
