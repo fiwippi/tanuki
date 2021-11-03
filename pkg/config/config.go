@@ -13,33 +13,30 @@ import (
 )
 
 const (
-	ScanInterval      = 10      // Every 10 minutes
-	ThumbnailInterval = 60 * 12 // Every 12 hours
+	ScanInterval = 180 // Every 3 hours
 )
 
 type Config struct {
-	Host                    string          `yaml:"host"`
-	Port                    string          `yaml:"port"`
-	Logging                 *logging.Config `yaml:"logging"`
-	Paths                   *Paths          `yaml:"paths"`
-	SessionSecret           *encryption.Key `yaml:"session_secret"`
-	ScanInterval            *task.Job       `yaml:"scan_interval_minutes"`
-	ThumbGenerationInterval *task.Job       `yaml:"thumbnail_generation_interval_minutes"`
-	MaxUploadedFileSizeMiB  int             `yaml:"max_uploaded_file_size_mib"`
-	DebugMode               bool            `yaml:"debug_mode"`
+	Host                   string          `yaml:"host"`
+	Port                   string          `yaml:"port"`
+	Logging                *logging.Config `yaml:"logging"`
+	Paths                  *Paths          `yaml:"paths"`
+	SessionSecret          *encryption.Key `yaml:"session_secret"`
+	ScanInterval           *task.Job       `yaml:"scan_interval_minutes"`
+	MaxUploadedFileSizeMiB int             `yaml:"max_uploaded_file_size_mib"`
+	DebugMode              bool            `yaml:"debug_mode"`
 }
 
 func DefaultConfig() *Config {
 	return &Config{
-		Host:                    "0.0.0.0",
-		Port:                    "8096",
-		Logging:                 logging.DefaultConfig(),
-		Paths:                   defaultPaths(),
-		SessionSecret:           encryption.NewKey(32),
-		ScanInterval:            task.NewJob(ScanInterval),
-		ThumbGenerationInterval: task.NewJob(ThumbnailInterval),
-		MaxUploadedFileSizeMiB:  10,
-		DebugMode:               false,
+		Host:                   "0.0.0.0",
+		Port:                   "8096",
+		Logging:                logging.DefaultConfig(),
+		Paths:                  defaultPaths(),
+		SessionSecret:          encryption.NewKey(32),
+		ScanInterval:           task.NewJob(ScanInterval),
+		MaxUploadedFileSizeMiB: 10,
+		DebugMode:              false,
 	}
 }
 
@@ -64,9 +61,6 @@ func LoadConfig(fp string) *Config {
 	}
 
 	// Ensure Job intervals can't be nil
-	if c.ThumbGenerationInterval == nil {
-		c.ThumbGenerationInterval = task.NewJob(ThumbnailInterval)
-	}
 	if c.ScanInterval == nil {
 		c.ScanInterval = task.NewJob(ScanInterval)
 	}

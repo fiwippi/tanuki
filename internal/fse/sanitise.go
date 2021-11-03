@@ -17,5 +17,6 @@ func Sanitise(input string) string {
 		}
 		sb.WriteRune(r)
 	}
-	return sb.String()
+
+	return strings.TrimRight(sb.String(), ".")
 }

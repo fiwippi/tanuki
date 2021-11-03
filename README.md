@@ -61,7 +61,7 @@ paths:
   log: ./data/tanuki.log
   library: ./library
 session_secret: tanuki-secret
-scan_interval_minutes: 10
+scan_interval_minutes: 180
 max_uploaded_file_size_mib: 10
 debug_mode: false
 ```
@@ -85,6 +85,10 @@ If you supply tanuki with Rar archives (`.rar`, `.cbr`), their unarchive time to
 - [x] Page streaming
 
 ## Changelog
+### [0.13.1] - 2021-11-03
+- Removed trailing dots from names of downloaded manga
+- Default scan interval changed to 3 hours
+
 ### [0.13] - 2021-11-03
 - Stopped program consuming exhaustive amount of file descriptors
 - Filepath sanitiser does not remove apostrophes and exclamation marks from downloaded Mangadex titles
