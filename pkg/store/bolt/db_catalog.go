@@ -30,8 +30,6 @@ func (db *DB) catalogBucket(tx *bolt.Tx) *buckets.CatalogBucket {
 
 // Catalog
 
-// TODO profile how much memory it takes to parse a series
-
 func (db *DB) PopulateCatalog(series []*manga.ParsedSeries) error {
 	db.cont.Pause()
 	defer db.cont.Resume()

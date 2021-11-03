@@ -85,6 +85,13 @@ If you supply tanuki with Rar archives (`.rar`, `.cbr`), their unarchive time to
 - [x] Page streaming
 
 ## Changelog
+### [0.13] - 2021-11-03
+- Stopped program consuming exhaustive amount of file descriptors
+- Filepath sanitiser does not remove apostrophes and exclamation marks from downloaded Mangadex titles
+- Autofocus for searchbar for Mangadex
+- No autocorrect and autocapitalisation for the login screen
+- Minor documentation changes
+
 ### [0.12.3] - 2021-09-27
 - Fixed page ordering bug introduced in 0.12.1
 
