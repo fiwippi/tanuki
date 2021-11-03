@@ -30,6 +30,8 @@ func (db *DB) catalogBucket(tx *bolt.Tx) *buckets.CatalogBucket {
 
 // Catalog
 
+// TODO profile how much memory it takes to parse a series
+
 func (db *DB) PopulateCatalog(series []*manga.ParsedSeries) error {
 	db.cont.Pause()
 	defer db.cont.Resume()
@@ -414,7 +416,7 @@ func (db *DB) GetSeriesCoverFile(sid string) ([]byte, string, error) {
 
 		// Get the custom series cover if exists
 		// 1. ensure series exists
-		// 2. get the series' has *core.Cover
+		// 2. get the series' *manga.Cover
 		// 3. if a cover exists then ensure the file exists on the filesystem
 		// 4. if a file exists then attempt to load it
 		//
