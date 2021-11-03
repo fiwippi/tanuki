@@ -1,22 +1,21 @@
 package fse
 
-import (
-	"regexp"
-	"strings"
-)
+import "strings"
 
-var sanitise *regexp.Regexp
-
-func init() {
-	sanitise = regexp.MustCompile("[^\\w\\-. ]+")
-}
+var illegalChars = []rune{'<', '>', ':', '"', '\\', '/', '|', '?', '*'}
 
 // Sanitise cleans up an input filename to ensure it's
 // save for saving to the filesystem
 func Sanitise(input string) string {
 	var sb strings.Builder
 	for _, r := range input {
-		sb.WriteString(sanitise.ReplaceAllString(string(r), "_"))
+		for _, c := range illegalChars {
+			if r == c {
+				sb.WriteRune('_')
+				continue
+			}
+		}
+		sb.WriteRune(r)
 	}
 	return sb.String()
 }
