@@ -54,9 +54,6 @@ async function fetchResource(route, userOptions = {}, form) {
     };
 
     return fetch(API_URL + route, options)
-        // .then(data => {
-        //     console.log("WOOOO", data.status)
-        // })
         .then(response => response.ensureAuthed())
         .then(response => response.json())
         .catch(error => {throw error})
