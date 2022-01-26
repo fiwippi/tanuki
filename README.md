@@ -1,6 +1,6 @@
 ![tanuki](files/unminified/static/icon/favicon.ico) 
 # Tanuki
-Self hosted manga server + reader
+Self-hosted manga server + reader
 
 ## Features
 - OPDS Support
