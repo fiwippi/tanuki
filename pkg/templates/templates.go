@@ -11,7 +11,7 @@ import (
 	"github.com/fiwippi/tanuki/pkg/server"
 )
 
-// Renderer renders the templates from the fs
+// CreateRenderer creates a Renderer which  renders the templates from the fs
 func CreateRenderer(s *server.Server, efs fs.FS, debug bool, prefix string) multitemplate.Renderer {
 	var temp multitemplate.Renderer
 	if os.Getenv("DOCKER") == "true" {
