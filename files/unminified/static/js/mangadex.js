@@ -59,8 +59,4 @@ export class Manga {
 
         return feed
     }
-
-    static async Chapters(id) {
-        return fetchResource(`manga/${id}/aggregate`)
-    }
 }

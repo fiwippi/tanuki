@@ -47,7 +47,7 @@ func ParseSeriesFolder(dir string) (*ParsedSeries, error) {
 		}
 	}()
 
-	filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if !d.IsDir() {
 			// We want to avoid parsing non-archive files like cover images
 			_, err = archive.InferType(path)
@@ -70,6 +70,9 @@ func ParseSeriesFolder(dir string) (*ParsedSeries, error) {
 
 		return nil
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	wg.Wait()
 	close(errorQueue)

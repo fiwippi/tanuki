@@ -8,7 +8,7 @@ import (
 
 func NewService(api *server.RouterGroup) {
 	// Setup the download manager
-	manager = downloading.NewManager(api.Server.Mangadex, api.Server.Conf.Paths.Library, api.Server.Store, 3)
+	manager = downloading.NewManager(api.Server.Mangadex, api.Server.Conf.Paths.Library, api.Server.Store, 5)
 
 	// Setup routes
 	g := api.Group("/download")

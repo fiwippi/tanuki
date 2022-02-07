@@ -113,9 +113,17 @@ func (m *Manager) worker(id int) {
 
 func (m *Manager) download(d *api.Download, fp string) error {
 	// Get the home url
-	url, err := m.mangadex.GetHomeUrl(d.Chapter.ID)
+	chData, err := m.mangadex.GetHomeUrl(d.Chapter.ID)
 	if err != nil {
 		return fmt.Errorf("could not get mangadex home url: %w", err)
+	}
+
+	// Ensure valid data
+	if len(chData.Chapter.Data) == 0 {
+		return fmt.Errorf("no pages exist for chapter: %s", d.Chapter.Attributes.Title)
+	}
+	if chData.Chapter.Hash == "" {
+		return fmt.Errorf("no hash exists for chapter: %s", d.Chapter.Attributes.Title)
 	}
 
 	m.cont.WaitIfPaused()
@@ -131,7 +139,7 @@ func (m *Manager) download(d *api.Download, fp string) error {
 		}
 		return nil
 	}
-	archive, err := m.mangadex.CreateChapterArchive(d.Chapter, url, forChapter, m.cont)
+	archive, err := m.mangadex.CreateChapterArchive(d.Chapter, chData, forChapter, m.cont)
 	if err != nil {
 		return fmt.Errorf("could not get create the archive file: %w", err)
 	}

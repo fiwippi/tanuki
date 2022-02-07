@@ -6,6 +6,7 @@ import * as Util from "/static/js/util.js"
 
 export default function (uid) {
     return {
+        resp: "",
         search: "",
         uid: uid,
         data: {},
@@ -41,7 +42,14 @@ export default function (uid) {
                 title: this.data.title,
                 chapters: chapters,
             }
+            console.log(chapters)
             await API.Download.Chapters(data)
+                .then(() => {
+                    this.resp = "Queued chapters"
+                })
+                .catch(() => {
+                    this.resp = "Failed to queue chapters"
+                })
         },
 
         async init() {

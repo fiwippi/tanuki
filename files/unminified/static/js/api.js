@@ -15,8 +15,10 @@ Object.prototype.ensureAuthed = function() {
 Object.prototype.ensureSuccess = function() {
     return new Promise((resolve, reject) => {
         if (!this.success) {
-            if (this.message.length > 0) {
+            if (this.message && this.message.length > 0) {
                 console.error(this.message)
+            } else {
+                console.error("failed:", this)
             }
             reject()
             return

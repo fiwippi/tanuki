@@ -18,17 +18,16 @@ type Chapter struct {
 }
 
 type ChapterAttributes struct {
-	Chapter     string   `json:"chapter"`
-	Hash        string   `json:"hash"`
-	Data        []string `json:"data"`
-	Title       string   `json:"title"`
-	Volume      string   `json:"volume"`
-	PublishedAt string   `json:"publishAt"`
+	Chapter     string `json:"chapter"`
+	Pages       int    `json:"pages"`
+	Title       string `json:"title"`
+	Volume      string `json:"volume"`
+	PublishedAt string `json:"publishAt"`
 }
 
 type Chapters []*Chapter
 
-func (c *Client) CreateChapterArchive(ch *Chapter, homeUrl string, forChapter func(i int) error, cont *sync.Controller) (*archive.ZipFile, error) {
+func (c *Client) CreateChapterArchive(ch *Chapter, data *HomeURLData, forChapter func(i int) error, cont *sync.Controller) (*archive.ZipFile, error) {
 	z, err := archive.NewZipFile()
 	if err != nil {
 		return nil, err
@@ -40,9 +39,9 @@ func (c *Client) CreateChapterArchive(ch *Chapter, homeUrl string, forChapter fu
 		return nil, err
 	}
 
-	padding := len(strconv.Itoa(len(ch.Attributes.Data)))
+	padding := len(strconv.Itoa(len(data.Chapter.Data)))
 
-	for i, p := range ch.Attributes.Data {
+	for i, p := range data.Chapter.Data {
 		cont.WaitIfPaused()
 		err := forChapter(i + 1)
 		if err != nil {
@@ -50,7 +49,7 @@ func (c *Client) CreateChapterArchive(ch *Chapter, homeUrl string, forChapter fu
 		}
 
 		// Format the Mangadex@Home url
-		url := fmt.Sprintf("%s/data/%s/%s", homeUrl, ch.Attributes.Hash, p)
+		url := fmt.Sprintf("%s/data/%s/%s", data.BaseUrl, data.Chapter.Hash, p)
 
 		// Create the API request
 		r, err := http.NewRequest("GET", url, nil)
@@ -64,6 +63,9 @@ func (c *Client) CreateChapterArchive(ch *Chapter, homeUrl string, forChapter fu
 			return nil, err
 		}
 		defer resp.Body.Close()
+		if resp.StatusCode >= 400 && resp.StatusCode <= 500 {
+			return nil, fmt.Errorf("error retrieving page from chapter: %d", resp.StatusCode)
+		}
 
 		// Save the image to the archive
 		// 1. Create the filename

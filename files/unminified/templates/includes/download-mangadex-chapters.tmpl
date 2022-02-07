@@ -28,7 +28,10 @@
         </div>
     </template>
 
-    <button id="downloadButton" @click="downloadChapters" style="margin-bottom: 25px" disabled>Download Selected Chapters</button>
+    <div class="flex--row" style="margin-bottom: 25px">
+        <button id="downloadButton" @click="downloadChapters" disabled>Download Selected Chapters</button>
+        <p class="flex__key--no-padding flex__key--centered" x-text="resp"></p>
+    </div>
 
     <template x-if="chapters.length > 0">
         <div class="search" style="margin-bottom: 0">

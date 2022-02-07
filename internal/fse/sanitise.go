@@ -9,13 +9,17 @@ var illegalChars = []rune{'<', '>', ':', '"', '\\', '/', '|', '?', '*'}
 func Sanitise(input string) string {
 	var sb strings.Builder
 	for _, r := range input {
+		invalid := false
 		for _, c := range illegalChars {
 			if r == c {
+				invalid = true
 				sb.WriteRune('_')
-				continue
+				break
 			}
 		}
-		sb.WriteRune(r)
+		if !invalid {
+			sb.WriteRune(r)
+		}
 	}
 
 	return strings.TrimRight(sb.String(), ".")

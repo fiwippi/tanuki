@@ -26,6 +26,12 @@ func GetChapters(s *server.Server) gin.HandlerFunc {
 			c.AbortWithStatusJSON(400, ChaptersReply{Success: false})
 			return
 		}
+
+		// Ensure we have at least 1 chapter to download
+		if len(data.Chapters) == 0 {
+			c.AbortWithStatusJSON(400, ChaptersReply{Success: false})
+			return
+		}
 		c.JSON(200, ChaptersReply{Success: true})
 
 		// Start downloading the chapters
