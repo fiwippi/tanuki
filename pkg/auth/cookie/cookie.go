@@ -1,6 +1,7 @@
 package cookie
 
 import (
+	"net/url"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -8,6 +9,8 @@ import (
 	"github.com/fiwippi/tanuki/pkg/auth"
 	"github.com/fiwippi/tanuki/pkg/server"
 )
+
+var RedirectCookie = "tanuki-redirect"
 
 // Auth middleware which ensures the user is authorised
 func Auth(s *server.Server, action Action) gin.HandlerFunc {
@@ -17,6 +20,7 @@ func Auth(s *server.Server, action Action) gin.HandlerFunc {
 			// Invalid cookie
 			switch action {
 			case Redirect:
+				createRedirectCookie(c)
 				c.Redirect(302, "/login")
 			case Abort:
 				c.AbortWithError(401, err)
@@ -34,7 +38,6 @@ func Auth(s *server.Server, action Action) gin.HandlerFunc {
 		if err != nil {
 			c.Error(err)
 		}
-
 		if err == nil && timeLeft < (30*time.Minute) {
 			err = s.Session.Refresh(c)
 			if err != nil {
@@ -43,7 +46,22 @@ func Auth(s *server.Server, action Action) gin.HandlerFunc {
 		}
 
 		// Cookie valid
-		c.Next()
+		uRaw, err := c.Cookie(RedirectCookie)
+		if err != nil || uRaw == "" {
+			c.Next()
+		} else {
+			// If we are accessing a reader route we remove the
+			// ?page= query since that will reset the progress
+			// the user is on
+			u, err := url.Parse(uRaw)
+			if err != nil {
+				c.Next()
+				return
+			}
+			u.RawQuery = ""
+			deleteRedirectCookie(c)
+			c.Redirect(302, u.String())
+		}
 	}
 }
 
@@ -53,6 +71,7 @@ func SkipIfAuthed(session *auth.Session, home string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		_, err := session.Get(c)
 		if err == nil {
+			createRedirectCookie(c)
 			c.Redirect(302, home)
 			c.Abort()
 			return
@@ -64,7 +83,7 @@ func SkipIfAuthed(session *auth.Session, home string) gin.HandlerFunc {
 
 // Admin Middleware which ensures the user accessing the route
 // must be an admin, should be called after CookieEnsureAuthed
-func Admin(home string) gin.HandlerFunc { // ||
+func Admin(home string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		admin := c.GetBool("admin")
 		if !admin {
@@ -75,4 +94,12 @@ func Admin(home string) gin.HandlerFunc { // ||
 
 		c.Next()
 	}
+}
+
+func createRedirectCookie(c *gin.Context) {
+	c.SetCookie(RedirectCookie, c.Request.URL.String(), 5*60*60, "/", "", false, true)
+}
+
+func deleteRedirectCookie(c *gin.Context) {
+	c.SetCookie(RedirectCookie, "", 0, "/", "", false, true)
 }
