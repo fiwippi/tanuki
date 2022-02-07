@@ -154,6 +154,13 @@ export class Ensure {
         }
         return i
     }
+
+    static ScanlationGroup(r) {
+        let g = r.relationships.find(o => { return o.type === "scanlation_group"})
+        if (g === undefined)
+            return ""
+        return g.attributes.name
+    }
 }
 
 export class Search {

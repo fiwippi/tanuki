@@ -74,7 +74,7 @@ export default function (uid) {
                             volume: Util.Ensure.String(r.attributes.volume),
                             chapter: Util.Ensure.String(r.attributes.chapter),
                             updatedAt: Util.Fmt.RFCDate(r.attributes.updatedAt),
-                            scanlation_group: r.relationships.find(o => { return o.type === "scanlation_group"}).attributes.name,
+                            scanlation_group: Util.Ensure.ScanlationGroup(r),
                             raw: r,
                         }
 
