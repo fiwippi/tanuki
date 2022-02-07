@@ -31,8 +31,8 @@ var g errgroup.Group
 var efs embed.FS
 
 const ConfigPath = "./config/config.yml"
-const SessionTTL = time.Hour * 6   // How long should a session last for
-const SessionCookieName = "tanuki" // Name of the cookie stored on the client
+const SessionTTL = time.Hour * 24 * 3 // How long should a session last for
+const SessionCookieName = "tanuki"    // Name of the cookie stored on the client
 
 var opdsAuthor = &feed.Author{
 	Name: "fiwippi",
