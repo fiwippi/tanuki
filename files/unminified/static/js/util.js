@@ -112,6 +112,8 @@ export class Fmt {
         if (p === undefined || p === null) {
             return undefinedPercent
         }
+        if (Number.isNaN(p))
+            return "-NA-"
         return (p * 100).toFixed(2) + "%"
     }
 
