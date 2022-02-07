@@ -193,4 +193,4 @@ If you supply tanuki with Rar archives (`.rar`, `.cbr`), their unarchive time to
 - Initial commit
 
 ## License
-`MIT`
+`BSD-3-Clause`
