@@ -9,5 +9,5 @@ func Wrap(old, new error) error {
 	if old == nil {
 		return new
 	}
-	return fmt.Errorf("%w --> %s", old, new)
+	return fmt.Errorf("%w, %s", old, new)
 }
