@@ -85,6 +85,15 @@ If you supply tanuki with Rar archives (`.rar`, `.cbr`), their unarchive time to
 - [x] Page streaming
 
 ## Changelog
+### [0.14] - 2022-02-07
+- More responsive UI
+- Removed unused internal packages
+- License changed to `BSD-3-Clause`
+- Default session cookie life changed to 3 days
+- Updated to new Mangadex API change for downloading chapters
+- Archive page sorting interprets underscores before other characters
+- Remembers last page user tried to access if they're not authed anymore and redirects there after subsequent login
+
 ### [0.13.1] - 2021-11-03
 - Removed trailing dots from names of downloaded manga
 - Default scan interval changed to 3 hours
