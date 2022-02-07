@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/mholt/archiver/v3"
 
@@ -102,18 +103,22 @@ func ParseArchive(fp string) (*ParsedEntry, error) {
 		a := strings.TrimSuffix(e.Pages[i].Path, filepath.Ext(e.Pages[i].Path))
 		b := strings.TrimSuffix(e.Pages[j].Path, filepath.Ext(e.Pages[j].Path))
 
-		aFirst := string(a[0])
-		bFirst := string(b[0])
+		aFirst := rune(a[0])
+		bFirst := rune(b[0])
 
 		// First case if both aren't digits
-		if !(isDigit(aFirst) && isDigit(bFirst)) {
-			aLowercase := aFirst == strings.ToLower(aFirst)
-			bUppercase := bFirst == strings.ToUpper(bFirst)
+		if !(isDigit(string(aFirst)) && isDigit(string(bFirst))) {
+			// Only sorts them if one is lowercase and one is uppercase
+			// and they're alphanumeric, i.e. not '_' or '.' etc.
+			if unicode.IsLetter(aFirst) && unicode.IsLetter(bFirst) {
+				aLowercase := string(aFirst) == strings.ToLower(string(aFirst))
+				bUppercase := string(bFirst) == strings.ToUpper(string(bFirst))
 
-			if aLowercase && bUppercase {
-				return true
-			} else if !aLowercase && !bUppercase {
-				return false
+				if aLowercase && bUppercase {
+					return true
+				} else if !aLowercase && !bUppercase {
+					return false
+				}
 			}
 		} else {
 			// Second case if both are digits
@@ -132,7 +137,20 @@ func ParseArchive(fp string) (*ParsedEntry, error) {
 			}
 		}
 
-		// Third case is all others
+		// Third case is an underscore and a letter/digit
+		if (aFirst == '_' || bFirst == '_') && (aFirst != bFirst) {
+			return aFirst == '_' && bFirst != '_'
+		}
+
+		// Fourth case is if they're all the same up to the
+		// base then we sort them based on the base value
+		if filepath.Dir(a) == filepath.Dir(b) {
+			aBase := filepath.Base(a)
+			bBase := filepath.Base(b)
+			return aBase < bBase
+		}
+
+		// Fifth case is general
 		return a < b
 	})
 
