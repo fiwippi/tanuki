@@ -2,7 +2,6 @@ package cookie
 
 import (
 	"net/url"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -33,16 +32,10 @@ func Auth(s *server.Server, action Action) gin.HandlerFunc {
 		c.Set("admin", valid)
 		c.Set("uid", uid)
 
-		// Refresh cookie for the user, only refresh if the cookie is bout to expire
-		timeLeft, err := s.Session.TimeLeft(c)
+		// Refresh cookie for the user
+		err = s.Session.Refresh(c)
 		if err != nil {
 			c.Error(err)
-		}
-		if err == nil && timeLeft < (30*time.Minute) {
-			err = s.Session.Refresh(c)
-			if err != nil {
-				c.Error(err)
-			}
 		}
 
 		// Cookie valid
