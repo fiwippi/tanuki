@@ -114,7 +114,7 @@ func (a *Archive) ThumbnailFile() ([]byte, error) {
 
 	img, err := a.Cover.ImageType.Decode(r)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not decode image '%s' for file '%s': %w", a.Cover.Fp, a.Path, err)
 	}
 
 	return image.EncodeThumbnail(img, DefaultMaxWidth, DefaultMaxHeight)

@@ -2,6 +2,7 @@ package manga
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/fiwippi/tanuki/internal/fse"
@@ -36,7 +37,7 @@ func (c *Cover) ThumbnailFile() ([]byte, error) {
 
 	img, err := c.ImageType.Decode(f)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not decode image '%s': %w", c.Fp, err)
 	}
 
 	return image.EncodeThumbnail(img, DefaultMaxWidth, DefaultMaxHeight)
