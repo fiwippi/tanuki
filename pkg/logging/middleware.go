@@ -1,6 +1,7 @@
 package logging
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -29,7 +30,7 @@ func Middleware() gin.HandlerFunc {
 		if raw != "" {
 			path = path + "?" + raw
 		}
-		errorMsg := strings.Join(strings.Split(c.Errors.ByType(gin.ErrorTypePrivate).String(), "\n"), ",")
+		errorMsg := fmt.Errorf("%s", strings.Join(strings.Split(c.Errors.ByType(gin.ErrorTypePrivate).String(), "\n"), ","))
 
 		// User data
 		sid := c.Param("sid")
@@ -40,22 +41,22 @@ func Middleware() gin.HandlerFunc {
 		// Log the data after parsing it
 		switch {
 		case statusCode >= 400 && statusCode < 500:
-			log.Warn().Str("method", method).Str("path", path).Str("resp_time", latency).
+			log.Warn().Err(errorMsg).Str("method", method).Str("path", path).Str("resp_time", latency).
 				Int("status", statusCode).Str("client_ip", clientIP).Str("sid", sid).
-				Str("eid", eid).Str("uid", uid).Bool("admin", admin).Msg(errorMsg)
+				Str("eid", eid).Str("uid", uid).Bool("admin", admin).Send()
 		case statusCode >= 500:
-			log.Error().Str("method", method).Str("path", path).Str("resp_time", latency).
+			log.Error().Err(errorMsg).Str("method", method).Str("path", path).Str("resp_time", latency).
 				Int("status", statusCode).Str("client_ip", clientIP).Str("sid", sid).
-				Str("eid", eid).Str("uid", uid).Bool("admin", admin).Msg(errorMsg)
+				Str("eid", eid).Str("uid", uid).Bool("admin", admin).Send()
 		default:
 			if strings.HasPrefix(path, "/static") {
-				log.Trace().Str("method", method).Str("path", path).Str("resp_time", latency).
+				log.Trace().Err(errorMsg).Str("method", method).Str("path", path).Str("resp_time", latency).
 					Int("status", statusCode).Str("client_ip", clientIP).Str("sid", sid).
-					Str("eid", eid).Str("uid", uid).Bool("admin", admin).Msg(errorMsg)
+					Str("eid", eid).Str("uid", uid).Bool("admin", admin).Send()
 			} else {
-				log.Info().Str("method", method).Str("path", path).Str("resp_time", latency).
+				log.Info().Err(errorMsg).Str("method", method).Str("path", path).Str("resp_time", latency).
 					Int("status", statusCode).Str("client_ip", clientIP).Str("sid", sid).
-					Str("eid", eid).Str("uid", uid).Bool("admin", admin).Msg(errorMsg)
+					Str("eid", eid).Str("uid", uid).Bool("admin", admin).Send()
 			}
 		}
 	}
