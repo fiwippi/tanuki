@@ -9,7 +9,7 @@ Self-hosted manga server + reader
 - Nested folders in library
 - Track reading progress
 - Thumbnail generation
-- Single binary (~19.6 MB)
+- Single binary (~19.1 MB)
 - Dark/light mode
 - Metadata editor
 - Mangadex downloader
@@ -85,6 +85,9 @@ If you supply tanuki with Rar archives (`.rar`, `.cbr`), their unarchive time to
 - [x] Page streaming
 
 ## Changelog
+### [0.16] - 2022-02-15
+- Tanuki automatically scans for new downloads once all downloads are done
+
 ### [0.15] - 2022-02-15
 ⚠️ - Breaking changes are made to the database so you should recreate yours!
 - Fixed bugs when tracking user progress

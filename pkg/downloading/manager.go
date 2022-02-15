@@ -17,15 +17,17 @@ var downloadsPool = NewPool()
 
 // Manager which synchronises downloads from Mangadex
 type Manager struct {
-	root      string             // Root path to download to
-	downloads *DownloadList      // List of active downloads
-	queue     chan *api.Download // Channel which feeds downloads to the workers
-	mangadex  *mangadex.Client   // Mangadex client used to request chapters
-	store     *bolt.DB           // Store for keeping track of past downloads
-	cont      *sync.Controller   // Controller for workers so they can be stopped/paused/canceled
+	root          string             // Root path to download to
+	downloads     *DownloadList      // List of active downloads
+	queue         chan *api.Download // Channel which feeds downloads to the workers
+	mangadex      *mangadex.Client   // Mangadex client used to request chapters
+	store         *bolt.DB           // Store for keeping track of past downloads
+	cont          *sync.Controller   // Controller for workers so they can be stopped/paused/canceled
+	doneFunc      func() error       // Function called once all downloads are finished
+	waitingOnDone bool               // Whether we're waiting for the done function to finish
 }
 
-func NewManager(c *mangadex.Client, root string, store *bolt.DB, workers int) *Manager {
+func NewManager(c *mangadex.Client, root string, store *bolt.DB, doneFunc func() error, workers int) *Manager {
 	m := &Manager{
 		root:      root,
 		queue:     make(chan *api.Download, 10),
@@ -33,6 +35,7 @@ func NewManager(c *mangadex.Client, root string, store *bolt.DB, workers int) *M
 		mangadex:  c,
 		store:     store,
 		cont:      sync.NewController(),
+		doneFunc:  doneFunc,
 	}
 
 	for id := 0; id < workers; id++ {
@@ -40,6 +43,10 @@ func NewManager(c *mangadex.Client, root string, store *bolt.DB, workers int) *M
 	}
 
 	return m
+}
+
+func (m *Manager) Waiting() bool {
+	return m.waitingOnDone
 }
 
 func (m *Manager) Paused() bool {
@@ -107,6 +114,19 @@ func (m *Manager) worker(id int) {
 		err := m.store.AddDownload(d)
 		if err != nil {
 			log.Debug().Err(err).Int("wid", id).Str("key", d.Key()).Msg("could not save dl to db")
+		}
+
+		// If no more downloads left then call the doneFunc
+		if len(m.downloads.l) == 0 {
+			m.Pause()
+			m.waitingOnDone = true
+			log.Debug().Err(err).Int("wid", id).Msg("running doneFunc since list is empty")
+			err := m.doneFunc()
+			if err != nil {
+				log.Error().Err(err).Int("wid", id).Msg("error when running doneFunc")
+			}
+			m.waitingOnDone = false
+			m.Resume()
 		}
 	}
 }

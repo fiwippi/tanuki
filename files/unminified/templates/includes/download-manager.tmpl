@@ -33,6 +33,10 @@
                 <button @click="cancelDl">Cancel Downloads</button>
             </div>
 
+            <template x-if="waiting">
+                <p x-text="waitingText" style="justify-content: center; text-align: center"></p>
+            </template>
+
             <table>
                 <thead>
                 <tr>

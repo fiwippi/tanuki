@@ -8,7 +8,10 @@ export default function () {
         source: {},
         downloads: [],
         paused: false,
+        waiting: false,
+        waitingText: "Processing finished downloads (pauses until done)",
         loaded: false,
+        loadingText: "Connecting to Server",
 
         fmtPercent(p) {
             return Util.Fmt.Percent(p)
@@ -35,13 +38,17 @@ export default function () {
         },
 
         async init() {
+            Util.Animate.DotDotDot("Processing finished downloads (pauses until done)", (str) => this.waitingText = str)
+            let cancel = Util.Animate.DotDotDot("Connecting to Server", (str) => this.loadingText = str)
             this.source = API.Download.Manager()
+            cancel()
 
             this.source.addEventListener('message', (e) => {
                 this.loaded = true
                 let data = JSON.parse(e.data)
                 this.downloads = data.downloads
                 this.paused = data.paused
+                this.waiting = data.waiting
             });
         }
     }

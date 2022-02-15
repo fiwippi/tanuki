@@ -21,6 +21,7 @@ var manager *downloading.Manager
 type ManagerStatusReply struct {
 	Downloads []*api.Download `json:"downloads"`
 	Paused    bool            `json:"paused"`
+	Waiting   bool            `json:"waiting"`
 }
 
 // ManagerChangeReply for when the user tries to change
@@ -41,7 +42,11 @@ func ViewManager(s *server.Server) gin.HandlerFunc {
 			dls, doneFunc := manager.Downloads()
 			defer doneFunc()
 
-			c.SSEvent("message", ManagerStatusReply{Downloads: dls, Paused: manager.Paused()})
+			c.SSEvent("message", ManagerStatusReply{
+				Downloads: dls,
+				Paused:    manager.Paused(),
+				Waiting:   manager.Waiting(),
+			})
 			return true
 		})
 	}
