@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
@@ -39,25 +40,33 @@ func Middleware() gin.HandlerFunc {
 		admin := c.GetBool("admin")
 
 		// Log the data after parsing it
+		var event *zerolog.Event
 		switch {
 		case statusCode >= 400 && statusCode < 500:
-			log.Warn().Err(errorMsg).Str("method", method).Str("path", path).Str("resp_time", latency).
+			event = log.Warn().Str("method", method).Str("path", path).Str("resp_time", latency).
 				Int("status", statusCode).Str("client_ip", clientIP).Str("sid", sid).
-				Str("eid", eid).Str("uid", uid).Bool("admin", admin).Send()
+				Str("eid", eid).Str("uid", uid).Bool("admin", admin)
 		case statusCode >= 500:
-			log.Error().Err(errorMsg).Str("method", method).Str("path", path).Str("resp_time", latency).
+			event = log.Error().Str("method", method).Str("path", path).Str("resp_time", latency).
 				Int("status", statusCode).Str("client_ip", clientIP).Str("sid", sid).
-				Str("eid", eid).Str("uid", uid).Bool("admin", admin).Send()
+				Str("eid", eid).Str("uid", uid).Bool("admin", admin)
 		default:
 			if strings.HasPrefix(path, "/static") {
-				log.Trace().Err(errorMsg).Str("method", method).Str("path", path).Str("resp_time", latency).
+				event = log.Trace().Str("method", method).Str("path", path).Str("resp_time", latency).
 					Int("status", statusCode).Str("client_ip", clientIP).Str("sid", sid).
-					Str("eid", eid).Str("uid", uid).Bool("admin", admin).Send()
+					Str("eid", eid).Str("uid", uid).Bool("admin", admin)
 			} else {
-				log.Info().Err(errorMsg).Str("method", method).Str("path", path).Str("resp_time", latency).
+				event = log.Info().Str("method", method).Str("path", path).Str("resp_time", latency).
 					Int("status", statusCode).Str("client_ip", clientIP).Str("sid", sid).
-					Str("eid", eid).Str("uid", uid).Bool("admin", admin).Send()
+					Str("eid", eid).Str("uid", uid).Bool("admin", admin)
 			}
+		}
+
+		if event != nil {
+			if len(errorMsg.Error()) > 0 {
+				event.Err(errorMsg)
+			}
+			event.Send()
 		}
 	}
 }

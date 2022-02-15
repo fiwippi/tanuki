@@ -25,8 +25,8 @@ type SeriesProgressRequest struct {
 
 // SeriesProgressReply for /api/series/:sid/progress
 type SeriesProgressReply struct {
-	Success  bool                   `json:"success"`
-	Progress []*users.EntryProgress `json:"progress"`
+	Success  bool                           `json:"success"`
+	Progress map[string]users.EntryProgress `json:"progress"`
 }
 
 // EntryProgressRequest for /api/series/:sid/entries/:eid/progress
@@ -36,9 +36,11 @@ type EntryProgressRequest struct {
 
 // EntriesProgressReply for /api/series/:sid/entries/:eid/progress
 type EntriesProgressReply struct {
-	Success  bool                 `json:"success"`
-	Progress *users.EntryProgress `json:"progress"`
+	Success  bool                `json:"success"`
+	Progress users.EntryProgress `json:"progress"`
 }
+
+// API functions
 
 func GetSeriesProgress(s *server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -61,6 +63,7 @@ func PatchSeriesProgress(s *server.Server) gin.HandlerFunc {
 		sid := c.Param("sid")
 		uid := c.GetString("uid")
 
+		// Parse and validate the patch request
 		var data SeriesProgressRequest
 		if err := c.ShouldBindJSON(&data); err != nil {
 			c.AbortWithStatusJSON(400, SeriesProgressReply{Success: false})
@@ -72,6 +75,7 @@ func PatchSeriesProgress(s *server.Server) gin.HandlerFunc {
 			return
 		}
 
+		// Get the series progress
 		sp, cp, err := GetSeriesProgressInternal(uid, sid, s)
 		if err != nil {
 			c.AbortWithError(500, err)
@@ -85,16 +89,10 @@ func PatchSeriesProgress(s *server.Server) gin.HandlerFunc {
 			return
 		}
 		for _, e := range entries {
-			ep := sp.GetEntryProgress(e.Order - 1)
-			if ep == nil {
-				ep = users.NewEntryProgress(e.Pages)
-				err := sp.SetEntryProgress(e.Order-1, ep)
-				if err != nil {
-					c.AbortWithError(500, err)
-					return
-				}
+			entryExists := sp.HasEntry(e.Hash)
+			if !entryExists {
+				sp.SetEntry(e.Hash, users.NewEntryProgress(e.Pages, e.Title))
 			}
-
 		}
 
 		switch data.Progress {
@@ -123,13 +121,13 @@ func GetEntryProgress(s *server.Server) gin.HandlerFunc {
 		eid := c.Param("eid")
 		uid := c.GetString("uid")
 
-		p, _, _, err := GetEntryProgressInternal(uid, sid, eid, s)
+		ep, _, _, err := GetEntryProgressInternal(uid, sid, eid, s)
 		if err != nil {
 			c.AbortWithError(500, err)
 			return
 		}
 
-		c.JSON(200, EntriesProgressReply{Success: true, Progress: p})
+		c.JSON(200, EntriesProgressReply{Success: true, Progress: ep})
 	}
 }
 
@@ -167,6 +165,7 @@ func PatchEntryProgress(s *server.Server) gin.HandlerFunc {
 		}
 
 		// Save the entry progress
+		sp.SetEntry(eid, ep)
 		cp.SetSeries(sid, sp)
 		err = s.Store.ChangeProgress(uid, cp)
 		if err != nil {
@@ -179,82 +178,101 @@ func PatchEntryProgress(s *server.Server) gin.HandlerFunc {
 	}
 }
 
-func GetEntryProgressInternal(uid, sid, eid string, s *server.Server) (*users.EntryProgress, *users.SeriesProgress, *users.CatalogProgress, error) {
+// Internal functions
+
+func GetEntryProgressInternal(uid, sid, eid string, s *server.Server) (users.EntryProgress, users.SeriesProgress, users.CatalogProgress, error) {
+	// Ensure series exists
 	sp, cp, err := GetSeriesProgressInternal(uid, sid, s)
 	if err != nil {
-		return nil, nil, nil, err
+		return users.EntryProgress{}, users.SeriesProgress{}, users.CatalogProgress{}, err
 	}
 
+	// Ensure entry exists
 	e, err := s.Store.GetEntry(sid, eid)
 	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	// Entry must be within the size of the series progress
-	index := e.Order - 1
-	if index >= len(sp.Entries) || index < 0 {
-		return nil, nil, nil, ErrNoEntryProgress
+		return users.EntryProgress{}, users.SeriesProgress{}, users.CatalogProgress{}, err
 	}
 
 	// Get the entry progress
-	ep := sp.GetEntryProgress(e.Order - 1)
-	if ep == nil {
-		// If it doesn't exist then create it
-		ep = users.NewEntryProgress(e.Pages)
-		err := sp.SetEntryProgress(e.Order-1, ep)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		// Save the progress to the db
+	ep, err := sp.GetEntry(e.Hash)
+	if err != nil || ep.Total != e.Pages {
+		// If the entry doesn't exist or if the number
+		// of pages has changed then recreate it
+		ep = users.NewEntryProgress(e.Pages, e.Title)
+		// Update the entry progress in the database
+		sp.SetEntry(e.Hash, ep)
 		cp.SetSeries(sid, sp)
 		err = s.Store.ChangeProgress(uid, cp)
 		if err != nil {
-			return nil, nil, nil, err
+			return users.EntryProgress{}, users.SeriesProgress{}, users.CatalogProgress{}, err
 		}
-
 	}
 
 	return ep, sp, cp, nil
 }
 
-func GetSeriesProgressInternal(uid, sid string, s *server.Server) (*users.SeriesProgress, *users.CatalogProgress, error) {
+func GetSeriesProgressInternal(uid, sid string, s *server.Server) (users.SeriesProgress, users.CatalogProgress, error) {
 	// Ensure the series and its entries exist
+	series, err := s.Store.GetSeries(sid)
+	if err != nil {
+		return users.SeriesProgress{}, users.CatalogProgress{}, err
+	}
 	entries, err := s.Store.GetEntries(sid)
 	if err != nil {
-		return nil, nil, err
+		return users.SeriesProgress{}, users.CatalogProgress{}, err
 	}
+
 	// Get the user progress
 	progress, err := s.Store.GetUserProgress(uid)
 	if err != nil {
-		return nil, nil, err
+		return users.SeriesProgress{}, users.CatalogProgress{}, err
 	}
+
 	// Get the series progress
 	seriesProgress := progress.GetSeries(sid)
-	// If the series exists but the progress for it doesnt
-	// exist then create the new progress for the user, or
-	// if the number of entries has changed
-	if seriesProgress == nil || len(seriesProgress.Entries) != len(entries) {
-		// Keep track of the old progress
-		oldProgress := seriesProgress
-		// Create the new series progress
-		progress.AddSeries(sid, len(entries))
-		seriesProgress = progress.GetSeries(sid)
-		// Copy over the old progress
-		if oldProgress != nil && len(oldProgress.Entries) > 0 {
-			for i, e := range oldProgress.Entries {
-				err := seriesProgress.SetEntryProgress(i, e)
-				if err != nil {
-					return nil, nil, err
-				}
+
+	// If the series is empty or if it's changed we need
+	// to recreate the progress
+	a := seriesProgress.Empty()
+	b := len(seriesProgress.Entries) != len(entries)
+	c := false
+	if !seriesProgress.Empty() {
+		for _, entry := range entries {
+			// If the series progress does not contain an
+			// entry we have in the current database we flag
+			// that we should recreate
+			if !seriesProgress.HasEntry(entry.Hash) {
+				c = true
 			}
-		}
-		// Save the newly created progress
-		err := s.Store.ChangeProgress(uid, progress)
-		if err != nil {
-			return nil, nil, err
 		}
 	}
 
-	return seriesProgress, progress, err
+	if a || b || c {
+		// Keep a record of the old progress
+		// so we can copy over old records
+		oldP := seriesProgress
+		// Create the new progress
+		seriesProgress = users.NewSeriesProgress(len(entries), series.Title)
+		// Copy over the old progress
+		if len(oldP.Entries) > 0 {
+			for eid, ep := range oldP.Entries {
+				// If the current series has this entry
+				// then copy its progress over
+				for _, entry := range entries {
+					if eid == entry.Hash {
+						seriesProgress.SetEntry(eid, ep)
+					}
+				}
+			}
+		}
+		// Add the new series progress to the catalog
+		progress.AddSeries(sid, seriesProgress)
+		// Save the newly created progress
+		err := s.Store.ChangeProgress(uid, progress)
+		if err != nil {
+			return users.SeriesProgress{}, users.CatalogProgress{}, err
+		}
+	}
+
+	return seriesProgress, progress, nil
 }

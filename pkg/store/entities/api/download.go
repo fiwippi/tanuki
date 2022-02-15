@@ -84,7 +84,6 @@ func (d *Download) Key() string {
 
 func (d *Download) Filepath() string {
 	title := fse.Sanitise(d.Manga)
-	fmt.Println(d.Manga, title)
 	vol := fse.Sanitise(d.volumeNum())
 	chapter := fse.Sanitise(d.chapterNum())
 

@@ -1,86 +1,58 @@
 package users
 
 import (
-	"sync"
-
 	"github.com/fiwippi/tanuki/internal/errors"
 )
 
 var ErrProgressEntryNotExist = errors.New("entry does not exist")
 
 type SeriesProgress struct {
-	Entries []*EntryProgress `json:"tracker"`
-	M       sync.RWMutex     `json:"mutex"`
+	Title   string
+	Entries map[string]EntryProgress `json:"tracker"`
 }
 
-func NewSeriesProgress(entries int) *SeriesProgress {
-	return &SeriesProgress{
-		Entries: make([]*EntryProgress, entries),
-		M:       sync.RWMutex{},
+func NewSeriesProgress(entries int, title string) SeriesProgress {
+	return SeriesProgress{
+		Title:   title,
+		Entries: make(map[string]EntryProgress, entries),
 	}
 }
 
-func (p *SeriesProgress) GetEntryProgress(i int) *EntryProgress {
-	p.M.RLock()
-	defer p.M.RUnlock()
-
-	if i >= 0 && i < len(p.Entries) {
-		return p.Entries[i]
-	}
-	return nil
+func (p *SeriesProgress) HasEntry(eid string) bool {
+	_, ok := p.Entries[eid]
+	return ok
 }
 
-func (p *SeriesProgress) SetEntryProgress(i int, e *EntryProgress) error {
-	p.M.RLock()
-	defer p.M.RUnlock()
-
-	if i >= 0 && i < len(p.Entries) {
-		p.Entries[i] = e
-		return nil
+func (p *SeriesProgress) GetEntry(eid string) (EntryProgress, error) {
+	e, ok := p.Entries[eid]
+	if !ok {
+		return EntryProgress{}, ErrProgressEntryNotExist.Fmt(eid)
 	}
-	return ErrProgressEntryNotExist.Fmt(i)
+	return e, nil
+}
+
+func (p *SeriesProgress) SetEntry(eid string, e EntryProgress) {
+	p.Entries[eid] = e
 }
 
 func (p *SeriesProgress) SetAllRead() {
-	p.M.RLock()
-	defer p.M.RUnlock()
-
-	for _, e := range p.Entries {
-		if e != nil {
-			e.SetRead()
-		}
-
+	for eid, e := range p.Entries {
+		e.SetRead()
+		p.Entries[eid] = e
 	}
 }
 
 func (p *SeriesProgress) SetAllUnread() {
-	p.M.RLock()
-	defer p.M.RUnlock()
-
-	for _, e := range p.Entries {
-		if e != nil {
-			e.SetUnread()
-		}
+	for eid, e := range p.Entries {
+		e.SetUnread()
+		p.Entries[eid] = e
 	}
 }
 
-func (p *SeriesProgress) DeleteEntry(i int) {
-	p.M.RLock()
-	defer p.M.RUnlock()
-
-	if i >= 0 && i < len(p.Entries) {
-		p.Entries[i] = nil
-	}
-
-	p.filter()
+func (p *SeriesProgress) DeleteEntry(eid string) {
+	delete(p.Entries, eid)
 }
 
-func (p *SeriesProgress) filter() {
-	filtered := p.Entries[:0]
-	for _, rp := range p.Entries {
-		if rp != nil {
-			filtered = append(filtered, rp)
-		}
-	}
-	p.Entries = filtered
+func (p *SeriesProgress) Empty() bool {
+	return p.Entries == nil
 }

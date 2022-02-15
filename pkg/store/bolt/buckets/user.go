@@ -37,7 +37,7 @@ func (u *UserBucket) Type() users.Type {
 	return users.UnmarshalType(u.Get(keys.Type))
 }
 
-func (u *UserBucket) Progress() *users.CatalogProgress {
+func (u *UserBucket) Progress() users.CatalogProgress {
 	cp := u.Get(keys.Progress)
 	if cp == nil {
 		return users.NewCatalogProgress()
@@ -68,6 +68,6 @@ func (u *UserBucket) ChangeType(userType users.Type) error {
 	return u.Put(keys.Type, json.Marshal(userType))
 }
 
-func (u *UserBucket) ChangeProgress(p *users.CatalogProgress) error {
+func (u *UserBucket) ChangeProgress(p users.CatalogProgress) error {
 	return u.Put(keys.Progress, json.Marshal(p))
 }

@@ -1,43 +1,27 @@
 package users
 
-import (
-	"fmt"
-)
+import "fmt"
 
 type EntryProgress struct {
+	Title   string
 	Current int `json:"current"`
 	Total   int `json:"total"`
 }
 
-func NewEntryProgress(total int) *EntryProgress {
-	return &EntryProgress{Current: 0, Total: total}
+func NewEntryProgress(total int, title string) EntryProgress {
+	return EntryProgress{Current: 0, Total: total, Title: title}
 }
 
-func (rp *EntryProgress) String() string {
-	return fmt.Sprintf("%.2f%%", rp.Percent())
+func (ep EntryProgress) String() string {
+	return fmt.Sprintf("%.2f%%", ep.Percent())
 }
 
-func (rp *EntryProgress) Set(n int) {
-	if n > rp.Total {
-		n = rp.Total
-	}
-	rp.Current = n
-}
-
-func (rp *EntryProgress) SetRead() {
-	rp.Current = rp.Total
-}
-
-func (rp *EntryProgress) SetUnread() {
-	rp.Current = 0
-}
-
-func (rp *EntryProgress) Percent() float64 {
-	if rp.Current == 0 && rp.Total == 0 {
+func (ep EntryProgress) Percent() float64 {
+	if ep.Current == 0 && ep.Total == 0 {
 		return 0
 	}
 
-	percent := (float64(rp.Current) / float64(rp.Total)) * 100
+	percent := (float64(ep.Current) / float64(ep.Total)) * 100
 	if percent < 0 {
 		percent = 0
 	} else if percent > 100 {
@@ -45,4 +29,19 @@ func (rp *EntryProgress) Percent() float64 {
 	}
 
 	return percent
+}
+
+func (ep *EntryProgress) Set(n int) {
+	if n > ep.Total {
+		n = ep.Total
+	}
+	ep.Current = n
+}
+
+func (ep *EntryProgress) SetRead() {
+	ep.Current = ep.Total
+}
+
+func (ep *EntryProgress) SetUnread() {
+	ep.Current = 0
 }

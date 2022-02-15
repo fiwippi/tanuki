@@ -843,11 +843,15 @@ func (db *DB) GetSeriesWithTag(tag string) api.Catalog {
 
 // Missing items
 
-func (db *DB) GetMissingItems() api.MissingItems {
+func (db *DB) missingItems(delete bool) (api.MissingItems, error) {
 	items := make(api.MissingItems, 0)
+	fn := db.View
+	if delete {
+		fn = db.Update
+	}
 
 	// Checks for invalid archive and cover
-	db.View(func(tx *bolt.Tx) error {
+	err := fn(func(tx *bolt.Tx) error {
 		root := db.catalogBucket(tx)
 		cat := root.Catalog()
 
@@ -855,147 +859,34 @@ func (db *DB) GetMissingItems() api.MissingItems {
 			// Check if the series exists
 			i := sb.Order() - 1
 			if i < 0 || i >= len(cat) || cat[i].Hash != sid {
-				e := &api.MissingItem{
-					Type:  "Series",
-					Title: sb.Title(),
-					Path:  "",
+				if delete {
+					return root.DeleteSeries(sid)
+				} else {
+					e := &api.MissingItem{
+						Type:  "Series",
+						Title: sb.Title(),
+						Path:  "",
+					}
+					items = append(items, e)
+					return nil
 				}
-				items = append(items, e)
-				return nil
 			}
 
 			// Check if series cover exists
 			c := sb.Cover()
 			if c.Fp != "" && !c.ExistsOnFS() {
-				e := &api.MissingItem{
-					Type:  "Cover",
-					Title: fse.FilenameWithExt(c.Fp),
-					Path:  c.Fp,
-				}
-				items = append(items, e)
-			}
-
-			em := sb.EntriesMetadata()
-
-			return sb.ForEachEntry(func(eid string, eb *buckets.EntryBucket) error {
-				// Check if the entry exists
-				i := eb.Order() - 1
-				if i < 0 || i >= len(em) || em[i].Hash != eid {
-					a := eb.Archive()
-					e := &api.MissingItem{
-						Type:  "Entry",
-						Title: a.Title,
-						Path:  a.Path,
+				if delete {
+					c.Fp = ""
+					if err := sb.SetCover(c); err != nil {
+						return err
 					}
-					items = append(items, e)
-					return nil
-				}
-
-				// Check if archive for the entry exists
-				if !eb.Archive().Exists() {
-					a := eb.Archive()
-					e := &api.MissingItem{
-						Type:  "Archive",
-						Title: a.Title,
-						Path:  a.Path,
-					}
-					items = append(items, e)
-				}
-
-				// Check if custom archive cover exists
-				c := eb.Cover()
-				if c.Fp != "" && !c.ExistsOnFS() {
+				} else {
 					e := &api.MissingItem{
 						Type:  "Cover",
 						Title: fse.FilenameWithExt(c.Fp),
 						Path:  c.Fp,
 					}
 					items = append(items, e)
-				}
-
-				return nil
-			})
-		})
-	})
-
-	// Checks for invalid progress
-	db.View(func(tx *bolt.Tx) error {
-		userRoot := db.usersBucket(tx)
-		seriesRoot := db.catalogBucket(tx)
-
-		return userRoot.ForEachUser(func(u *buckets.UserBucket) error {
-			// Get catalog progress
-			cp := u.Progress()
-			if cp == nil {
-				return nil
-			}
-
-			// For each series for each entry
-			for sid, sp := range cp.Data {
-				// Get entry metadata so we can get the index for the progress entry
-				sb, err := seriesRoot.Series(sid)
-				if err != nil {
-					e := &api.MissingItem{
-						Type:  "Progress",
-						Title: u.Name(),
-						Path:  fmt.Sprintf("Series: %s", sid),
-					}
-					items = append(items, e)
-					continue
-				}
-				entries := sb.EntriesMetadata()
-
-				for i := range sp.Entries {
-					if i >= len(entries) {
-						e := &api.MissingItem{
-							Type:  "Progress",
-							Title: u.Name(),
-							Path:  fmt.Sprintf("Series: %s, Entry: %s", sid, "N/A"),
-						}
-						items = append(items, e)
-						continue
-					}
-
-					eid := entries[i].Hash
-					entry, err := seriesRoot.Entry(sid, eid)
-					if err == nil && !entry.Archive().Exists() {
-						e := &api.MissingItem{
-							Type:  "Progress",
-							Title: u.Name(),
-							Path:  fmt.Sprintf("Series: %s, Entry: %s", sid, eid),
-						}
-						items = append(items, e)
-					}
-				}
-			}
-
-			return nil
-		})
-	})
-
-	return items
-}
-
-func (db *DB) DeleteMissingItems() error {
-	// Checks for invalid archive and cover
-	err := db.Update(func(tx *bolt.Tx) error {
-		root := db.catalogBucket(tx)
-
-		cat := root.Catalog()
-		return root.ForEachSeries(func(sid string, sb *buckets.SeriesBucket) error {
-			// Check if the series exists
-			i := sb.Order() - 1
-			if i < 0 || i >= len(cat) || cat[i].Hash != sid {
-				return root.DeleteSeries(sid)
-			}
-
-			// Check if series cover exists
-			c := sb.Cover()
-			if c.Fp != "" && !c.ExistsOnFS() {
-				// If it doesn't exist then reset the cover
-				c.Fp = ""
-				if err := sb.SetCover(c); err != nil {
-					return err
 				}
 			}
 
@@ -1004,24 +895,54 @@ func (db *DB) DeleteMissingItems() error {
 				// Check if the entry exists
 				i := eb.Order() - 1
 				if i < 0 || i >= len(em) || em[i].Hash != eid {
-					return sb.DeleteEntry(eid)
+					if delete {
+						return sb.DeleteEntry(eid)
+					} else {
+						a := eb.Archive()
+						e := &api.MissingItem{
+							Type:  "Entry",
+							Title: a.Title,
+							Path:  a.Path,
+						}
+						items = append(items, e)
+						return nil
+					}
 				}
 
 				// Check if archive for the entry exists
 				if !eb.Archive().Exists() {
-					if err := sb.DeleteEntry(eid); err != nil {
-						return err
+					if delete {
+						if err := sb.DeleteEntry(eid); err != nil {
+							return err
+						}
+						// If the entry is deleted we can't retrieve the cover
+						return nil
+					} else {
+						a := eb.Archive()
+						e := &api.MissingItem{
+							Type:  "Archive",
+							Title: a.Title,
+							Path:  a.Path,
+						}
+						items = append(items, e)
 					}
-					// If the entry is deleted we can't retrieve the cover
-					return nil
 				}
 
-				// Check if custom cover exists
+				// Check if custom archive cover exists
 				c := eb.Cover()
 				if c.Fp != "" && !c.ExistsOnFS() {
-					c.Fp = ""
-					if err := eb.SetCover(c); err != nil {
-						return err
+					if delete {
+						c.Fp = ""
+						if err := eb.SetCover(c); err != nil {
+							return err
+						}
+					} else {
+						e := &api.MissingItem{
+							Type:  "Cover",
+							Title: fse.FilenameWithExt(c.Fp),
+							Path:  c.Fp,
+						}
+						items = append(items, e)
 					}
 				}
 
@@ -1031,69 +952,110 @@ func (db *DB) DeleteMissingItems() error {
 				return err
 			}
 
-			if len(sb.EntriesMetadata()) == 0 {
-				err := root.DeleteSeries(sid)
-				if err != nil {
-					return err
+			if delete {
+				if len(sb.EntriesMetadata()) == 0 {
+					err := root.DeleteSeries(sid)
+					if err != nil {
+						return err
+					}
 				}
+				return root.RegenerateCatalog()
 			}
-
-			return root.RegenerateCatalog()
+			return nil
 		})
 	})
-	if err != nil {
-		return err
+	if delete && err != nil {
+		return nil, err
 	}
 
 	// Checks for invalid progress
-	err = db.Update(func(tx *bolt.Tx) error {
+	err = fn(func(tx *bolt.Tx) error {
 		userRoot := db.usersBucket(tx)
 		seriesRoot := db.catalogBucket(tx)
 
 		return userRoot.ForEachUser(func(u *buckets.UserBucket) error {
 			// Get catalog progress
 			cp := u.Progress()
-			if cp == nil {
-				return nil
-			}
 
-			// For each series for each entry
-
+			// For each series
 			for sid, sp := range cp.Data {
-				// Get entry metadata so we can get the index for the progress entry
-				sb, err := seriesRoot.Series(sid)
+				// Get the series metadata
+				_, err := seriesRoot.Series(sid)
+				// If the series metadata does not exist then
+				// we have a progress item which is missing
 				if err != nil {
-					delete(cp.Data, sid)
-					continue
-				}
-				entries := sb.EntriesMetadata()
+					if delete {
 
-				for i := range sp.Entries {
-					if i >= len(entries) {
-						sp.DeleteEntry(i)
+						cp.DeleteSeries(sid)
+					} else {
+						e := &api.MissingItem{
+							Type:  "Progress",
+							Title: u.Name(),
+							Path:  fmt.Sprintf("Series: %s (%s)", sp.Title, sid),
+						}
+						items = append(items, e)
 						continue
 					}
+				}
 
-					eid := entries[i].Hash
+				// For every entry in the series
+				for eid, ep := range sp.Entries {
+					// Get the entry metadata
 					entry, err := seriesRoot.Entry(sid, eid)
+					// If the entry doesn't exist we
+					// have a progress item which is missing,
+					// this also applies if the entry's archive
+					// does not exist
 					if err == nil && !entry.Archive().Exists() {
-						sp.DeleteEntry(i)
+						if delete {
+							sp.DeleteEntry(eid)
+						} else {
+							e := &api.MissingItem{
+								Type:  "Progress",
+								Title: u.Name(),
+								Path:  fmt.Sprintf("Series: %s (%s), Entry: %s (%s)", sp.Title, sid, ep.Title, eid),
+							}
+							items = append(items, e)
+						}
 					}
 				}
 
-				if len(sp.Entries) == 0 {
-					cp.DeleteSeries(sid)
+				if delete {
+					// If the series hasn't been deleted
+					// then update it with the edited value
+					// of its entries
+					if cp.HasSeries(sid) {
+						cp.SetSeries(sid, sp)
+					}
+					// If the series has no more entries
+					// then delete it
+					if len(sp.Entries) == 0 {
+						cp.DeleteSeries(sid)
+					}
 				}
 			}
 
-			return u.ChangeProgress(cp)
+			if delete {
+				return u.ChangeProgress(cp)
+			}
+			return nil
 		})
 	})
-	if err != nil {
-		return err
+	if delete && err != nil {
+		return nil, err
 	}
 
-	return nil
+	return items, nil
+}
+
+func (db *DB) GetMissingItems() api.MissingItems {
+	items, _ := db.missingItems(false)
+	return items
+}
+
+func (db *DB) DeleteMissingItems() error {
+	_, err := db.missingItems(true)
+	return err
 }
 
 // Metadata

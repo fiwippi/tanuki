@@ -85,6 +85,12 @@ If you supply tanuki with Rar archives (`.rar`, `.cbr`), their unarchive time to
 - [x] Page streaming
 
 ## Changelog
+### [0.15] - 2022-02-15
+⚠️ - Breaking changes are made to the database so you should recreate yours!
+- Fixed bugs when tracking user progress
+- Session token refreshed regardless of time left
+- More informative errors and info added to the backend
+
 ### [0.14] - 2022-02-07
 - More responsive UI
 - Removed unused internal packages

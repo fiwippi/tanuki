@@ -77,7 +77,7 @@ func (db *DB) ChangeUserType(uid string, uType users.Type) error {
 	})
 }
 
-func (db *DB) ChangeProgress(uid string, p *users.CatalogProgress) error {
+func (db *DB) ChangeProgress(uid string, p users.CatalogProgress) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		// Get the users bucket
 		user, err := db.usersBucket(tx).GetUser(uid)
@@ -157,8 +157,8 @@ func (db *DB) AdminCount() int {
 	return count
 }
 
-func (db *DB) GetUserProgress(uid string) (*users.CatalogProgress, error) {
-	var p *users.CatalogProgress
+func (db *DB) GetUserProgress(uid string) (users.CatalogProgress, error) {
+	var p users.CatalogProgress
 	err := db.View(func(tx *bolt.Tx) error {
 		root := db.usersBucket(tx)
 
@@ -166,17 +166,12 @@ func (db *DB) GetUserProgress(uid string) (*users.CatalogProgress, error) {
 		if err != nil {
 			return err
 		}
-
-		progress := user.Progress()
-		if progress == nil {
-			return ErrProgressNotExist.Fmt(uid)
-		}
-		p = progress
+		p = user.Progress()
 
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return users.CatalogProgress{}, err
 	}
 	return p, nil
 }

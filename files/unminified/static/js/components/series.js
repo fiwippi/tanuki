@@ -5,6 +5,8 @@ import * as Util from "/static/js/util.js"
 import createEntries from "/static/js/components/entries.js"
 
 export default function (series, entries, progress, seriesDataModal, entryViewModal, entryDataModal) {
+    console.debug("series progress:", progress)
+
     let urlFunc = (i) => {
         return `/api/series/${series.hash}/entries/${entries[i].hash}/cover?thumbnail=true`
     }

@@ -4,7 +4,7 @@ import * as Util from "/static/js/util.js"
 import createEntries from "/static/js/components/entries.js"
 
 export default function (entries, progress) {
-    console.debug(progress)
+    console.debug("catalog progress:", progress)
 
     let urlFunc = (i) => {
         return `/api/series/${entries[i].hash}/cover?thumbnail=true`

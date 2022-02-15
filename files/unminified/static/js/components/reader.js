@@ -20,6 +20,8 @@ function isEventInElement(event, element)   {
 }
 
 export default function (sid, eid, entry, initialProgress, entries, modal) {
+    console.debug("entry progress:", initialProgress)
+
     return {
         // Reader data
         sid: sid,

@@ -39,6 +39,22 @@ export class Images {
     }
 }
 
+export class Animate {
+    static DotDotDot(text, func) {
+        func(`${text}...`)
+
+        let count = 0;
+        let interval = setInterval(() => {
+            count === 4 ? count = 1 : count++
+            func(`${text}${new Array(count).join('.')}`)
+        }, 600);
+
+        return () => {
+            clearInterval(interval)
+        }
+    }
+}
+
 export class Compare {
     static EntryTitle(a, b) {
         return Compare.Strings(a.title, b.title)

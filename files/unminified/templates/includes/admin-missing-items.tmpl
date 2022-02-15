@@ -3,12 +3,21 @@
 {{ define "scripts" }}
 <script type="module">
     import * as API from {{ versioning "/static/js/api.js" }}
+    import * as Util from {{ versioning "/static/js/util.js" }}
 
     document.addEventListener('alpine:init', () => {
         Alpine.data('missing_items', () => ({
-            items: {{ missingItems }},
+            items: [],
             showModal: false,
             modalText: "",
+            loaded: false,
+            response: "Loading",
+
+            async init() {
+                let cancel = Util.Animate.DotDotDot("Loading", (str) => this.response = str)
+                await this.refreshItems()
+                cancel()
+            },
 
             async refreshItems() {
                 await API.Admin.GetMissingItems()
@@ -19,6 +28,7 @@
                         this.modalText = 'FAILED TO GET ITEMS'
                         this.showModal = true
                     })
+                this.loaded = true
             },
 
             async deleteItems() {
@@ -41,9 +51,8 @@
 {{ define "content" }}
 <div x-data="missing_items">
     <h2>Missing Items</h2>
-    <template x-if="items.length === 0">
-        <h3>No Missing Items!</h3>
-    </template>
+    <p x-text="response" style="font-weight: bold" x-show="!loaded"></p>
+    <h3 x-show="loaded && items.length === 0">No Missing Items!</h3>
 
     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; row-gap: 0.8em;">
         <!-- Table Headings -->

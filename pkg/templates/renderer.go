@@ -40,7 +40,7 @@ func (r *Renderer) FuncMap() template.FuncMap {
 			return r.server.Store.GetCatalog()
 		},
 		// Returns the progress for the user
-		"catalogProgress": func(c *gin.Context) map[string]*users.SeriesProgress {
+		"catalogProgress": func(c *gin.Context) map[string]users.SeriesProgress {
 			uid := c.GetString("uid")
 			user, err := r.server.Store.GetUser(uid)
 			if err != nil {
@@ -83,7 +83,7 @@ func (r *Renderer) FuncMap() template.FuncMap {
 			}
 			return e
 		},
-		"entryProgress": func(c *gin.Context) *users.EntryProgress {
+		"entryProgress": func(c *gin.Context) users.EntryProgress {
 			sid := c.Param("sid")
 			eid := c.Param("eid")
 			uid := c.GetString("uid")
@@ -91,11 +91,11 @@ func (r *Renderer) FuncMap() template.FuncMap {
 			ep, _, _, err := series.GetEntryProgressInternal(uid, sid, eid, r.server)
 			if err != nil {
 				c.Error(err)
-				return nil
+				return users.EntryProgress{}
 			}
 			return ep
 		},
-		"seriesProgress": func(c *gin.Context) []*users.EntryProgress {
+		"seriesProgress": func(c *gin.Context) map[string]users.EntryProgress {
 			sid := c.Param("sid")
 			uid := c.GetString("uid")
 
@@ -113,9 +113,6 @@ func (r *Renderer) FuncMap() template.FuncMap {
 				return api.Series{}
 			}
 			return *s
-		},
-		"missingItems": func() api.MissingItems {
-			return r.server.Store.GetMissingItems()
 		},
 		"username": func(c *gin.Context) string {
 			uid := c.GetString("uid")
