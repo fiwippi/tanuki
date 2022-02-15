@@ -69,7 +69,9 @@ debug_mode: false
 - `logging.level` can be `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `panic`
 - `scan_interval_minutes`  can be any non-negative integer. To disable interval scanning set the value to `0`;
 ### Initial Login
-On the first run Tanuki logs the default username and randomly generated password to STDOUT. It is advised to immediately change the password.
+On the first run Tanuki logs the default username and randomly generated password to `STDOUT`. It is advised to immediately change the password
+
+⚠️ - Tanuki generates all the thumbnails on startup which will cause a slight initial delay using it until thumbnail generation is done
 ### Rar Archives
 If you supply tanuki with Rar archives (`.rar`, `.cbr`), their unarchive time to retrieve a single page is about 2 seconds compared to only milliseconds for a Zip archives (`.zip`, `.cbz`) due to library constraints. For this reason consider converting all your files into Zip archives
 
