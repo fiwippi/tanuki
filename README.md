@@ -87,6 +87,9 @@ If you supply tanuki with Rar archives (`.rar`, `.cbr`), their unarchive time to
 - [x] Page streaming
 
 ## Changelog
+### [0.16.1] - 2022-02-17
+- Fixed bugs
+
 ### [0.16] - 2022-02-15
 - Tanuki automatically scans for new downloads once all downloads are done
 

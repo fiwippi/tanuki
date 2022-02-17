@@ -165,7 +165,7 @@ export default function (series, entries, progress, seriesDataModal, entryViewMo
             if (entry === undefined) {
                 return 0
             }
-            let p = this.progress[entry.order - 1]
+            let p = this.progress[entry.hash]
             if (p === undefined) {
                 return 0
             }

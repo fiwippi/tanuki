@@ -126,7 +126,7 @@
                 <a :href="`/reader/${series.hash}/${entry.hash}?page=1`"><button>From Beginning</button></a>
                 <template x-if="entryPageProgress() > 0">
                     <a :href="`/reader/${series.hash}/${entry.hash}?page=${entryPageProgress()}`">
-                        <button x-text="`From ${fmtEntryProgress(progress[entry.order - 1])}`"></button>
+                        <button x-text="`From ${fmtEntryProgress(progress[entry.hash])}`"></button>
                     </a>
                 </template>
 
