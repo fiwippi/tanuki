@@ -79,7 +79,7 @@ func (d *Download) IsFinished() bool {
 // String processing
 
 func (d *Download) Key() string {
-	return fmt.Sprintf("%s-%s-%s", d.Manga, d.chapterNum(), d.volumeNum())
+	return fmt.Sprintf("%s-%s-%s-%s", d.Manga, d.chapterNum(), d.volumeNum(), d.title())
 }
 
 func (d *Download) Filepath() string {
@@ -90,8 +90,10 @@ func (d *Download) Filepath() string {
 	var fp string
 	if len(vol) > 0 {
 		fp = fmt.Sprintf("%s/Vol. %s/Ch. %s.cbz", title, vol, chapter)
-	} else {
+	} else if len(chapter) > 0 {
 		fp = fmt.Sprintf("%s/Ch. %s.cbz", title, chapter)
+	} else {
+		fp = fmt.Sprintf("%s/%s.cbz", title, fse.Sanitise(d.title()))
 	}
 
 	return fp
@@ -103,6 +105,10 @@ func (d *Download) chapterNum() string {
 
 func (d *Download) volumeNum() string {
 	return d.Chapter.Attributes.Volume
+}
+
+func (d *Download) title() string {
+	return d.Chapter.Attributes.Title
 }
 
 // JSON
