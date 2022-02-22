@@ -87,6 +87,11 @@ If you supply tanuki with Rar archives (`.rar`, `.cbr`), their unarchive time to
 - [x] Page streaming
 
 ## Changelog
+### [0.16.3] - 2022-02-22
+- Entry progressed refreshed client side when edited
+- Cleaned up licenses to be in line with project standards
+
+
 ### [0.16.2] - 2022-02-18
 - Support Mangadex download with no chapter and volume
 
