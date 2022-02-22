@@ -193,11 +193,7 @@ export default function (series, entries, progress, seriesDataModal, entryViewMo
             // Refresh it's new value
             await API.Catalog.EntryProgress(this.series.hash, this.entry.hash)
                 .then(p => {
-                    for (let i in this.entries) {
-                        if (this.entries[i].hash === this.entry.hash) {
-                            this.progress[this.entries[i].order - 1] = p
-                        }
-                    }
+                    this.progress[this.entry.hash] = p
                 })
         },
 
