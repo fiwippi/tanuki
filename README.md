@@ -67,7 +67,8 @@ debug_mode: false
 ```
 - To disable logging set `logging.log_to_file` and `logging.log_to_console` to `false`
 - `logging.level` can be `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `panic`
-- `scan_interval_minutes`  can be any non-negative integer. To disable interval scanning set the value to `0`;
+- `scan_interval_minutes`  can be any non-negative integer. To disable interval scanning set the value to `0`
+
 ⚠️ - Tanuki expects all archives in the library folder to be within their own folder. So, you can't have any standalone archives in ther root library folder
 
 ### Initial Login
