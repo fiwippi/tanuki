@@ -67,8 +67,9 @@ debug_mode: false
 ```
 - To disable logging set `logging.log_to_file` and `logging.log_to_console` to `false`
 - `logging.level` can be `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `panic`
-- `scan_interval_minutes`  can be any non-negative integer. To disable interval scanning set the value to `0`;
-⚠️ - Tanuki expects all archives in the library folder to be within their own folder. So, you can't have any standalone archives in ther root library folder
+- `scan_interval_minutes`  can be any non-negative integer. To disable interval scanning set the value to `0`
+
+⚠️ - Tanuki expects all archives in the library folder to be within their own folder. So, you can't have any standalone archives in the root of the library folder
 
 ### Initial Login
 On the first run Tanuki logs the default username and randomly generated password to `STDOUT`. It is advised to immediately change the password
