@@ -13,6 +13,12 @@
             Alpine.data('logout', logout)
             Alpine.data('navbar', () => ({
                 showNavbar: window.innerWidth > 820,
+
+                async init() {
+                    window.addEventListener("resize", () => {
+                        this.showNavbar = window.innerWidth > 820
+                    });
+                }
             }))
         })
     </script>

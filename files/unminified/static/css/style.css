@@ -108,6 +108,7 @@ a:focus {
     grid-area: main;
     overflow: hidden;
     word-wrap: break-word;
+    max-width: 95vw;
 }
 
 /* Modal styles -------------------------------------------------*/
@@ -479,8 +480,7 @@ button:disabled {
 
 
 /* Mobile styles -------------------------------------------------*/
-@media only screen
-  and (max-device-width: 820px) {
+@media screen and (max-width: 820px) {
     /* Structure ------------*/
     .container {
         grid-template-rows: auto 1fr;
