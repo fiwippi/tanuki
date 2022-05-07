@@ -128,9 +128,14 @@ export default function (sid, eid, entry, initialProgress, entries, modal) {
             }
 
             // Current page could be zero if the initalProgress.current
-            // or the specified page is zero so we max to ensure it's 1
+            // or the specified page is zero so we max to ensure it's 1            
             this.currentPage = Math.max(this.currentPage, 1)
 
+            // If currentPage is previously null or undefined then Math.max
+            // will return NaN so we check for this and set it to 1 if needed
+            if (isNaN(this.currentPage)) this.currentPage = 1;
+
+            // Keep track of the last page we saved progress on
             this.lastSavedPage = this.currentPage
 
             // Determine which buttons can be displayed
