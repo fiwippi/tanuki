@@ -12,6 +12,13 @@ export default function (entries) {
         async preInit() {
             let prefix = "/tags/"
             this.tag = window.location.pathname.slice(prefix.length)
+
+            // We need to reindex the entries starting at 1 and
+            // moving up so that the thumbnails can be retrieved
+            // with the getThumbnail() function
+            for (let i = 0; i < this.entries.length; i++) {
+                this.entries[i].order = i + 1;
+            }
         },
     }
 
