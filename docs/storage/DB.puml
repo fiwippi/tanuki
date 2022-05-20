@@ -1,0 +1,15 @@
+@startuml
+
+hide circle
+
+namespace Downloads {
+    !include Downloads.puml
+}
+namespace Manga {
+    !include Manga.puml
+}
+namespace Users {
+    !include User.puml
+}
+
+@enduml

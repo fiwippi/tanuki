@@ -1,0 +1,18 @@
+@startuml user
+
+' TODO: user progress
+
+class User {
+  Name : string
+  Pass : string
+  Type : UserType
+}
+
+enum UserType {
+    ADMIN
+    STANDARD
+}
+
+User *-- UserType
+
+@enduml

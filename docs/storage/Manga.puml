@@ -1,0 +1,45 @@
+@startuml manga
+
+' TODO: custom cover
+' TODO: custom metadata
+' TODO: link to online manga to be downloaded regularly
+
+class Manga {
+    Archive: Archive
+    Thumbnail: []byte
+    Order: int
+}
+
+class Cover {
+    Filepath : string
+    ImageType: ImageType
+}
+
+enum ImageType{
+    PNG
+    JPEG
+    GIF
+    WEBP
+    TIFF
+    BMP
+}
+
+Cover *-- ImageType
+
+class Archive {
+    Title: string
+    Path: string
+    Type: ArchiveType
+    Cover: Cover
+    ModTime: time.Time
+}
+
+enum ArchiveType{
+    ZIP
+    RAR
+}
+
+Archive *-- ArchiveType
+Archive *-- Cover
+
+@enduml

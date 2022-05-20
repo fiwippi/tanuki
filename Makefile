@@ -23,3 +23,9 @@ clean:
 		rm -Rf files/minified/static/js/mangadex.js
 		rm -Rf files/minified/static/js/components
 		rm -Rf files/minified/templates
+
+test:
+		go test ./... -v
+
+test-quiet:
+		go test ./...

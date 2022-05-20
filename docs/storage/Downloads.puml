@@ -1,0 +1,25 @@
+@startuml downloads
+
+class Download {
+  Manga: string
+  ' TODO: define how a downloadable chapter looks like
+  Chapter: Chapter
+  Status: DownloadStatus
+  CurrentPage: int
+  TotalPages: int
+  StartTime: time.Time
+  TimeTaken string
+}
+
+enum DownloadStatus {
+    QUEUED
+    STARTED
+    FINISHED
+    CANCELLED
+    EXISTS
+    FAILED
+}
+
+Download *-- DownloadStatus
+
+@enduml

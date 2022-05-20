@@ -2,12 +2,13 @@
 package archive
 
 import (
-	"compress/flate"
+	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/mholt/archiver/v3"
+	"github.com/mholt/archiver/v4"
 )
 
 // Type defines what the archive format is
@@ -16,6 +17,8 @@ type Type int
 const (
 	Zip Type = iota
 	Rar
+
+	Invalid = -1
 )
 
 // MimeType returns the archive's mimetype used for sending it
@@ -28,23 +31,25 @@ func (at Type) String() string {
 	return [...]string{"zip", "rar"}[at]
 }
 
-// Walker returns a walker which is used to iterate
-// over each file within the archive
-func (at Type) Walker() archiver.Walker {
-	switch at {
-	case Zip:
-		a := archiver.NewZip()
-		a.MkdirAll = true
-		a.SelectiveCompression = true
-		a.CompressionLevel = flate.BestSpeed
-		return a
-	case Rar:
-		a := archiver.NewRar()
-		a.MkdirAll = true
-		return a
+func (at Type) Walk(ctx context.Context, fp string, handleFile archiver.FileHandler) error {
+	if at != Zip && at != Rar {
+		return fmt.Errorf("invalid archive type")
 	}
 
-	panic(fmt.Sprintf("invalid archive type: '%d'", at))
+	f, err := os.Open(fp)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	var a archiver.Extractor
+	if at == Zip {
+		a = archiver.Zip{}
+	} else {
+		a = archiver.Rar{}
+	}
+
+	return a.Extract(ctx, f, nil, handleFile)
 }
 
 // InferType attempts to guess an archive's type from its
@@ -62,5 +67,5 @@ func InferType(fp string) (Type, error) {
 		return Rar, nil
 	}
 
-	return -1, fmt.Errorf("invalid archive type: '%s'", ext)
+	return Invalid, fmt.Errorf("invalid archive type: '%s'", ext)
 }
