@@ -4,16 +4,20 @@
 ' TODO: custom metadata
 ' TODO: link to online manga to be downloaded regularly
 
-class Manga {
+class Entry {
     Archive: Archive
     Thumbnail: []byte
     Order: int
 }
 
+Entry *-- Archive
+
 class Cover {
     Filepath : string
     ImageType: ImageType
 }
+
+Cover -- ImageType
 
 enum ImageType{
     PNG
@@ -23,8 +27,6 @@ enum ImageType{
     TIFF
     BMP
 }
-
-Cover *-- ImageType
 
 class Archive {
     Title: string
@@ -39,7 +41,7 @@ enum ArchiveType{
     RAR
 }
 
-Archive *-- ArchiveType
+Archive -- ArchiveType
 Archive *-- Cover
 
 @enduml

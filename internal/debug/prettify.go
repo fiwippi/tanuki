@@ -3,31 +3,41 @@ package debug
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 )
 
-func prettifyJSON(text []byte) string {
+func prettifyJSON(text []byte) {
 	var prettyJSON bytes.Buffer
 	err := json.Indent(&prettyJSON, text, "", "    ")
 	if err != nil {
 		panic(err)
 	}
-	return prettyJSON.String()
+	fmt.Println(prettyJSON.String())
 }
 
-func PrettifyJSONFromReader(r io.Reader) string {
+func PrintJSONFromReader(r io.Reader) {
 	bd, err := ioutil.ReadAll(r)
 	if err != nil {
 		panic(err)
 	}
-	return prettifyJSON(bd)
+	prettifyJSON(bd)
 }
 
-func PrettifyJSONFromStruct(v any) string {
+func PrintJSONFromStruct(v any) {
 	b, err := json.MarshalIndent(v, "", "    ")
 	if err != nil {
 		panic(err)
 	}
-	return string(b)
+	fmt.Println(string(b))
+}
+
+func PrintRespBody(r *http.Response) {
+	bd, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(bd))
 }

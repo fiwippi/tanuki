@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/mholt/archiver/v4 v4.0.0-alpha.6
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
+	github.com/rs/xid v1.4.0
 	github.com/rs/zerolog v1.23.0
 	github.com/stretchr/testify v1.7.1
 	golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d

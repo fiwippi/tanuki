@@ -2,11 +2,15 @@ package manga
 
 import (
 	"context"
+	"encoding/json"
 	"io/fs"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"sort"
+	"time"
 
-	"github.com/rs/zerolog/log"
+	"github.com/rs/xid"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/fiwippi/tanuki/internal/archive"
@@ -14,12 +18,62 @@ import (
 )
 
 type Series struct {
+	ID      xid.ID
 	Title   string
 	Entries []*Entry
+
+	// Below are fields which aren't picked up by
+	// the scan and shouldn't overwrite current
+	// values that could exist
+	// TODO: move these to within the DB and move all stuf in the manga pckag out?
+	MangadexUUID         string    // UUID of a Mangadex entry
+	MangadexLastAccessed time.Time // Last time the Mangadex entry was queried for new chapters
+}
+
+func folderID(dir string) (xid.ID, error) {
+	f, err := os.Create(filepath.Join(dir, "/info.tanuki"))
+	if err != nil {
+		return xid.NilID(), err
+	}
+	defer f.Close()
+
+	data, err := ioutil.ReadAll(f)
+	if err != nil {
+		return xid.NilID(), err
+	}
+
+	// If the file is empty then generate an ID
+	if len(data) == 0 {
+		id := xid.New()
+
+		data, err := json.Marshal(id)
+		if err != nil {
+			return xid.NilID(), err
+		}
+		_, err = f.Write(data)
+		if err != nil {
+			return xid.NilID(), err
+		}
+
+		return id, nil
+	}
+
+	// Otherwise unmarshal it from the file
+	var id xid.ID
+	if err := json.Unmarshal(data, &id); err != nil {
+		return xid.NilID(), err
+	}
+	return id, nil
 }
 
 func ParseSeries(ctx context.Context, dir string) (*Series, error) {
+	id, err := folderID(dir)
+	if err != nil {
+		return nil, err
+	}
+
 	s := &Series{
+		ID:      id,
 		Title:   fse.Filename(dir),
 		Entries: make([]*Entry, 0),
 	}
@@ -31,8 +85,7 @@ func ParseSeries(ctx context.Context, dir string) (*Series, error) {
 			// We want to avoid parsing non-archive files like cover images
 			_, err = archive.InferType(path)
 			if err != nil {
-				// We log it but we continue processing the folder
-				log.Trace().Err(err).Str("fp", path).Msg("file is not archive")
+				// We continue processing the folder if the file is not an archive
 				return nil
 			}
 

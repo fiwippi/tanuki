@@ -13,6 +13,6 @@ enum UserType {
     STANDARD
 }
 
-User *-- UserType
+User -- UserType
 
 @enduml
