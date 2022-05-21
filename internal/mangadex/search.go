@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
-	"time"
 )
 
 func SearchManga(ctx context.Context, title string, limit int) ([]Listing, error) {
@@ -19,8 +18,6 @@ func SearchManga(ctx context.Context, title string, limit int) ([]Listing, error
 	q.Add("title", title)
 	q.Add("limit", strconv.Itoa(limit))
 	q.Add("includes[]", "cover_art")
-
-	requestTime := time.Now()
 
 	resp, err := get(ctx, "manga", q)
 	if err != nil {
@@ -71,7 +68,6 @@ func SearchManga(ctx context.Context, title string, limit int) ([]Listing, error
 
 		l := Listing{
 			ID:            d.ID,
-			RequestTime:   requestTime,
 			Title:         d.Attributes.Title.English,
 			Description:   d.Attributes.Description.English,
 			CoverURL:      coverURL,

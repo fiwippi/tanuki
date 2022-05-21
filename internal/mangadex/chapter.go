@@ -16,8 +16,8 @@ type Chapter struct {
 	ScanlationGroup string
 	PublishedAt     time.Time
 	Pages           int
-	Volume          string
-	Chapter         string
+	VolumeNo        string
+	ChapterNo       string
 }
 
 func (ch Chapter) getHomeURL(ctx context.Context) (atHomeURLData, error) {
@@ -40,6 +40,12 @@ func (ch Chapter) getHomeURL(ctx context.Context) (atHomeURLData, error) {
 }
 
 func (ch Chapter) DownloadZip(ctx context.Context, progress chan<- int) (*archive.ZipFile, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	if progress != nil {
 		defer close(progress)
 	}
@@ -60,6 +66,12 @@ func (ch Chapter) DownloadZip(ctx context.Context, progress chan<- int) (*archiv
 
 	// Download each page and write it to the archive
 	for i, p := range home.Chapter.Data {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+		}
+
 		if progress != nil {
 			progress <- i + 1
 		}
@@ -69,7 +81,7 @@ func (ch Chapter) DownloadZip(ctx context.Context, progress chan<- int) (*archiv
 			return nil, err
 		}
 
-		err = home.WritePage(i+1, p, z)
+		err = home.WritePage(i, p, z)
 		if err != nil {
 			return nil, err
 		}

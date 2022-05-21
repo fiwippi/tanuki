@@ -18,10 +18,10 @@ import (
 
 // Entry represents an entry which you read, i.e. an archive file
 type Entry struct {
-	Hash    string
-	Title   string
-	Archive *Archive
-	Pages   []string
+	Hash    string   `json:"hash"`
+	Title   string   `json:"title"`
+	Archive *Archive `json:"archive"`
+	Pages   []string `json:"pages"`
 }
 
 func ParseArchive(ctx context.Context, fp string) (*Entry, error) {

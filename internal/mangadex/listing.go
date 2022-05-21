@@ -9,7 +9,6 @@ import (
 
 type Listing struct {
 	ID            string
-	RequestTime   time.Time
 	Title         string
 	Description   string
 	CoverURL      string
@@ -84,8 +83,8 @@ func (l Listing) NewChapters(ctx context.Context, since time.Time) ([]Chapter, e
 			ScanlationGroup: scanG,
 			PublishedAt:     d.Attributes.PublishedAt,
 			Pages:           d.Attributes.Pages,
-			Volume:          d.Attributes.Volume,
-			Chapter:         d.Attributes.Chapter,
+			VolumeNo:        d.Attributes.Volume,
+			ChapterNo:       d.Attributes.Chapter,
 		}
 
 		chapters = append(chapters, ch)
