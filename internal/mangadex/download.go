@@ -1,4 +1,4 @@
-package transfer
+package mangadex
 
 import (
 	"context"
@@ -6,14 +6,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/fiwippi/tanuki/internal/fse"
-	"github.com/fiwippi/tanuki/internal/mangadex"
-	"github.com/fiwippi/tanuki/internal/pretty"
+	"github.com/fiwippi/tanuki/internal/platform/fse"
+	"github.com/fiwippi/tanuki/internal/platform/pretty"
 )
 
 type Download struct {
-	MangaTitle string           `json:"manga_title"`
-	Chapter    mangadex.Chapter `json:"chapter"`
+	MangaTitle string  `json:"manga_title"`
+	Chapter    Chapter `json:"chapter"`
 
 	cancelFn    func()
 	Status      DownloadStatus `json:"status"`
@@ -23,20 +22,10 @@ type Download struct {
 }
 
 func (d Download) String() string {
-	return d.Filepath()
+	return d.filepath()
 }
 
-func newDownload(mangaTitle string, ch mangadex.Chapter) *Download {
-	return &Download{
-		MangaTitle:  mangaTitle,
-		Chapter:     ch,
-		Status:      DownloadQueued,
-		CurrentPage: 0,
-		TotalPages:  ch.Pages,
-	}
-}
-
-func (d *Download) Filepath() string {
+func (d *Download) filepath() string {
 	title := fse.Sanitise(d.MangaTitle)
 	vol := fse.Sanitise(d.Chapter.VolumeNo)
 	chapter := fse.Sanitise(d.Chapter.ChapterNo)
@@ -62,7 +51,7 @@ func (d *Download) Run(ctx context.Context, libraryPath string) error {
 	}()
 
 	// If the download already exists then finish and exit
-	path := fmt.Sprintf("%s/%s", libraryPath, d.Filepath())
+	path := fmt.Sprintf("%s/%s", libraryPath, d.filepath())
 	if fse.Exists(path) {
 		d.Status = DownloadExists
 		return nil
@@ -75,7 +64,7 @@ func (d *Download) Run(ctx context.Context, libraryPath string) error {
 			d.CurrentPage = p
 		}
 	}()
-	z, err := d.Chapter.DownloadZip(ctx, progress)
+	z, err := d.Chapter.downloadZip(ctx, progress)
 	if err != nil {
 		d.Status = DownloadFailed
 		if errors.Is(err, context.Canceled) {

@@ -1,4 +1,4 @@
-package transfer
+package mangadex
 
 type DownloadStatus string
 

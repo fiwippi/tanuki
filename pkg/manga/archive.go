@@ -6,8 +6,8 @@ import (
 
 	"github.com/mholt/archiver/v4"
 
-	"github.com/fiwippi/tanuki/internal/archive"
-	"github.com/fiwippi/tanuki/internal/fse"
+	"github.com/fiwippi/tanuki/internal/platform/archive"
+	"github.com/fiwippi/tanuki/internal/platform/fse"
 )
 
 type Archive struct {

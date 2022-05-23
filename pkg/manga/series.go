@@ -13,8 +13,8 @@ import (
 	"github.com/rs/xid"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/fiwippi/tanuki/internal/archive"
-	"github.com/fiwippi/tanuki/internal/fse"
+	"github.com/fiwippi/tanuki/internal/platform/archive"
+	"github.com/fiwippi/tanuki/internal/platform/fse"
 )
 
 type Series struct {

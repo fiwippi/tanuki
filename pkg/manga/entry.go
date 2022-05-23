@@ -10,15 +10,15 @@ import (
 
 	"github.com/mholt/archiver/v4"
 
-	"github.com/fiwippi/tanuki/internal/archive"
-	"github.com/fiwippi/tanuki/internal/fse"
-	"github.com/fiwippi/tanuki/internal/hash"
-	"github.com/fiwippi/tanuki/internal/image"
+	"github.com/fiwippi/tanuki/internal/platform/archive"
+	"github.com/fiwippi/tanuki/internal/platform/fse"
+	"github.com/fiwippi/tanuki/internal/platform/hash"
+	"github.com/fiwippi/tanuki/internal/platform/image"
 )
 
 // Entry represents an entry which you read, i.e. an archive file
 type Entry struct {
-	Hash    string   `json:"hash"`
+	EID     string   `json:"eid"`
 	Title   string   `json:"title"`
 	Archive *Archive `json:"archive"`
 	Pages   []string `json:"pages"`
@@ -51,7 +51,7 @@ func ParseArchive(ctx context.Context, fp string) (*Entry, error) {
 	title := fse.Filename(a.Path)
 	e := &Entry{
 		Archive: a,
-		Hash:    hash.SHA1(title),
+		EID:     hash.SHA1(title),
 		Title:   title,
 		Pages:   make([]string, 0),
 	}

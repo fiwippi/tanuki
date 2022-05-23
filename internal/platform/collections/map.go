@@ -21,7 +21,7 @@ func (s *Map[K, V]) Set(k K, v V) {
 func (s *Map[K, V]) Get(k K) (V, error) {
 	v, b := s.m[k]
 	if !b {
-		return nil, ErrDoesNotExist
+		return *new(V), ErrDoesNotExist
 	}
 	return v, nil
 }

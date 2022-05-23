@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/fiwippi/tanuki/internal/archive"
+	"github.com/fiwippi/tanuki/internal/platform/archive"
 )
 
 type Chapter struct {
@@ -39,7 +39,7 @@ func (ch Chapter) getHomeURL(ctx context.Context) (atHomeURLData, error) {
 	return data, nil
 }
 
-func (ch Chapter) DownloadZip(ctx context.Context, progress chan<- int) (*archive.ZipFile, error) {
+func (ch Chapter) downloadZip(ctx context.Context, progress chan<- int) (*archive.ZipFile, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -88,4 +88,14 @@ func (ch Chapter) DownloadZip(ctx context.Context, progress chan<- int) (*archiv
 	}
 
 	return z, nil
+}
+
+func (ch Chapter) CreateDownload(mangaTitle string) *Download {
+	return &Download{
+		MangaTitle:  mangaTitle,
+		Chapter:     ch,
+		Status:      DownloadQueued,
+		CurrentPage: 0,
+		TotalPages:  ch.Pages,
+	}
 }

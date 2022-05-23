@@ -1,23 +1,27 @@
 package transfer
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/fiwippi/tanuki/internal/mangadex"
+)
 
 // DownloadList keeps track of the queued and active
 // downloads in the download manager
 type DownloadList struct {
-	l []*Download // Downloads list
-	m *sync.Mutex // Mutex
+	l []*mangadex.Download // Downloads list
+	m *sync.Mutex          // Mutex
 }
 
 func NewDownloadList() *DownloadList {
 	return &DownloadList{
-		l: make([]*Download, 0),
+		l: make([]*mangadex.Download, 0),
 		m: &sync.Mutex{},
 	}
 }
 
 // Add adds a download to the list
-func (dl *DownloadList) Add(d *Download) {
+func (dl *DownloadList) Add(d *mangadex.Download) {
 	dl.m.Lock()
 	defer dl.m.Unlock()
 
@@ -25,7 +29,7 @@ func (dl *DownloadList) Add(d *Download) {
 }
 
 // Remove removes a download from the list
-func (dl *DownloadList) Remove(d *Download) {
+func (dl *DownloadList) Remove(d *mangadex.Download) {
 	dl.m.Lock()
 	defer dl.m.Unlock()
 
@@ -41,7 +45,7 @@ func (dl *DownloadList) Remove(d *Download) {
 }
 
 // Has returns whether the list has a given download
-func (dl *DownloadList) Has(d *Download) bool {
+func (dl *DownloadList) Has(d *mangadex.Download) bool {
 	dl.m.Lock()
 	defer dl.m.Unlock()
 
@@ -54,7 +58,7 @@ func (dl *DownloadList) Has(d *Download) bool {
 }
 
 // List returns a slice copy of the list
-func (dl *DownloadList) List() []*Download {
+func (dl *DownloadList) List() []*mangadex.Download {
 	dl.m.Lock()
 	defer dl.m.Unlock()
 

@@ -1,6 +1,6 @@
 package human
 
-import "github.com/fiwippi/tanuki/internal/collections"
+import "github.com/fiwippi/tanuki/internal/platform/collections"
 
 type SeriesProgress struct {
 	Raw *collections.Map[string, EntryProgress] `json:"entries"`

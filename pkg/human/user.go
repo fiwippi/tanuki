@@ -1,18 +1,18 @@
 package human
 
-import "github.com/fiwippi/tanuki/internal/hash"
+import "github.com/fiwippi/tanuki/internal/platform/hash"
 
 type User struct {
-	Hash string `json:"hash"`
-	Name string `json:"name"`
-	Pass string `json:"pass"`
-	Type Type   `json:"type"`
+	UID  string `db:"uid"`
+	Name string `db:"name"`
+	Pass string `db:"pass"`
+	Type Type   `db:"type"`
 }
 
 // NewUser expects username and unhashed password along with the users permission
-func NewUser(name, pass string, t Type) *User {
-	return &User{
-		Hash: hash.SHA1(name),
+func NewUser(name, pass string, t Type) User {
+	return User{
+		UID:  hash.SHA1(name),
 		Name: name,
 		Pass: hash.SHA256(pass),
 		Type: t,

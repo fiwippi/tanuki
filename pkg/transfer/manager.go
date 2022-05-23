@@ -3,8 +3,7 @@ package transfer
 import (
 	"context"
 
-	"github.com/rs/zerolog/log" // TODO: ensure using the custom tanuki log
-
+	"github.com/fiwippi/tanuki/internal/log"
 	"github.com/fiwippi/tanuki/internal/mangadex"
 )
 
@@ -13,14 +12,14 @@ var downloadsPool = NewPool()
 type Manager struct {
 	libraryPath     string
 	activeDownloads *DownloadList
-	queue           chan *Download
+	queue           chan *mangadex.Download
 }
 
 func NewManager(libraryPath string, workers int) *Manager {
 	m := &Manager{
 		libraryPath:     libraryPath,
 		activeDownloads: NewDownloadList(),
-		queue:           make(chan *Download, 10),
+		queue:           make(chan *mangadex.Download, 10),
 	}
 
 	for id := 0; id < workers; id++ {
@@ -62,7 +61,7 @@ func (m *Manager) Cancel() {
 	m.activeDownloads.Cancel()
 }
 
-func (m *Manager) List() ([]*Download, func()) {
+func (m *Manager) List() ([]*mangadex.Download, func()) {
 	p := m.activeDownloads.List()
 	//p = append(p, m.store.GetDownloads()...) TODO: appedn this
 
@@ -76,7 +75,7 @@ func (m *Manager) List() ([]*Download, func()) {
 // Downloading
 
 func (m *Manager) Queue(mangaTitle string, ch mangadex.Chapter) {
-	d := newDownload(mangaTitle, ch)
+	d := ch.CreateDownload(mangaTitle)
 	m.activeDownloads.Add(d)
 	m.queue <- d
 }

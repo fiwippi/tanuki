@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/fiwippi/tanuki/internal/archive"
-	"github.com/fiwippi/tanuki/internal/image"
-	"github.com/fiwippi/tanuki/internal/pretty"
+	"github.com/fiwippi/tanuki/internal/platform/archive"
+	"github.com/fiwippi/tanuki/internal/platform/image"
+	"github.com/fiwippi/tanuki/internal/platform/pretty"
 )
 
 type atHomeURLData struct {
