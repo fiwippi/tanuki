@@ -11,14 +11,14 @@ import (
 )
 
 type Download struct {
-	MangaTitle string  `json:"manga_title"`
-	Chapter    Chapter `json:"chapter"`
+	MangaTitle string  `json:"manga_title" db:"manga_title"`
+	Chapter    Chapter `json:"chapter" db:"chapter"`
 
 	cancelFn    func()
-	Status      DownloadStatus `json:"status"`
-	CurrentPage int            `json:"current_page"`
-	TotalPages  int            `json:"total_pages"`
-	TimeTaken   string         `json:"time_taken"`
+	Status      DownloadStatus `json:"status" db:"status"`
+	CurrentPage int            `json:"current_page" db:"current_page"`
+	TotalPages  int            `json:"total_pages" db:"total_pages"`
+	TimeTaken   string         `json:"time_taken" db:"time_taken"`
 }
 
 func (d Download) String() string {

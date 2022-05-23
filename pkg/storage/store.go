@@ -9,6 +9,7 @@ import (
 	"github.com/fiwippi/tanuki/pkg/human"
 )
 
+// TODO: test stuff like user's progress being deleted if the user is deleted
 // TODO: SQL VACCUUM MODE
 
 type Store struct {
@@ -17,31 +18,28 @@ type Store struct {
 
 func NewStore(path string, recreate bool) (*Store, error) {
 	// Create the pool of connections to the DB
-	pl, err := sqlx.Open("sqlite", path)
-	if err != nil {
-		return nil, err
-	}
+	pl := sqlx.MustConnect("sqlite", path)
 	s := &Store{pool: pl}
-
-	// Ensure we can connect to the DB
-	err = s.pool.Ping()
-	if err != nil {
-		return nil, err
-	}
 
 	// Drop if recreating
 	if recreate {
 		stmt := `
 		DROP TABLE IF EXISTS downloads;
 		DROP TABLE IF EXISTS users;`
-		if _, err = s.pool.Exec(stmt); err != nil {
+		if _, err := s.pool.Exec(stmt); err != nil {
 			return nil, err
 		}
 	}
 
 	// Create the downloads table
-	stmt := `CREATE TABLE IF NOT EXISTS downloads (data TEXT NOT NULL);`
-	if _, err = s.pool.Exec(stmt); err != nil {
+	stmt := `CREATE TABLE IF NOT EXISTS downloads (
+    manga_title  TEXT    NOT NULL,
+    chapter      BLOB    NOT NULL,
+    status       TEXT    NOT NULL,
+    current_page INTEGER NOT NULL,
+    total_pages  INTEGER NOT NULL,
+    time_taken   TEXT    NOT NULL);`
+	if _, err := s.pool.Exec(stmt); err != nil {
 		return nil, err
 	}
 
@@ -52,7 +50,7 @@ func NewStore(path string, recreate bool) (*Store, error) {
 		pass TEXT NOT NULL,
 		type TEXT NOT NULL
 	);`
-	if _, err = s.pool.Exec(stmt); err != nil {
+	if _, err := s.pool.Exec(stmt); err != nil {
 		return nil, err
 	}
 

@@ -24,18 +24,18 @@ func mustOpenStoreFile(t *testing.T, f *os.File, recreate bool) (*Store, *os.Fil
 	}
 
 	s, err := NewStore(f.Name(), recreate)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	return s, f
 }
 
 func mustOpenStoreMem(t *testing.T) *Store {
 	s, err := NewStore("file::memory:", false)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	return s
 }
 
 func mustCloseStore(t *testing.T, s *Store) {
-	assert.Nil(t, s.Close())
+	require.Nil(t, s.Close())
 }
 
 func TestMain(m *testing.M) {

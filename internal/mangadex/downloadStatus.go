@@ -10,3 +10,12 @@ const (
 	DownloadExists    DownloadStatus = "Already Downloaded"
 	DownloadFailed    DownloadStatus = "Failed"
 )
+
+var DownloadStatuses = []DownloadStatus{
+	DownloadQueued,
+	DownloadStarted,
+	DownloadFinished,
+	DownloadCancelled,
+	DownloadExists,
+	DownloadFailed,
+}

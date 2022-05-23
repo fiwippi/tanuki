@@ -9,10 +9,6 @@ import (
 	"github.com/fiwippi/tanuki/pkg/human"
 )
 
-// TODO: test all these functions
-// TODO: have functions which are depenedn by larget function to have
-//       tx versions so everything can be done in one transaction
-
 var ErrUserExists = errors.New("user already exists")
 var ErrNotEnoughUsers = errors.New("not enough users in the db")
 var ErrNotEnoughAdmins = errors.New("not enough admins in the db")

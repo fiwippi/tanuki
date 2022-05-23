@@ -2,6 +2,7 @@ package mangadex
 
 import (
 	"context"
+	"database/sql/driver"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,13 +12,13 @@ import (
 )
 
 type Chapter struct {
-	ID              string
-	Title           string
-	ScanlationGroup string
-	PublishedAt     time.Time
-	Pages           int
-	VolumeNo        string
-	ChapterNo       string
+	ID              string    `json:"id"`
+	Title           string    `json:"title"`
+	ScanlationGroup string    `json:"scanlation_group"`
+	PublishedAt     time.Time `json:"published_at"`
+	Pages           int       `json:"pages"`
+	VolumeNo        string    `json:"volume_no"`
+	ChapterNo       string    `json:"chapter_no"`
 }
 
 func (ch Chapter) getHomeURL(ctx context.Context) (atHomeURLData, error) {
@@ -98,4 +99,25 @@ func (ch Chapter) CreateDownload(mangaTitle string) *Download {
 		CurrentPage: 0,
 		TotalPages:  ch.Pages,
 	}
+}
+
+// Satisfy the SQL interface
+
+func (ch Chapter) Value() (driver.Value, error) {
+	data, err := json.Marshal(ch)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func (ch *Chapter) Scan(src interface{}) error {
+	data, ok := src.([]byte)
+	if !ok {
+		return errors.New("bad []byte type assertion")
+	}
+	if err := json.Unmarshal(data, ch); err != nil {
+		return err
+	}
+	return nil
 }
