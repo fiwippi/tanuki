@@ -33,12 +33,12 @@ func NewStore(path string, recreate bool) (*Store, error) {
 
 	// Create the downloads table
 	stmt := `CREATE TABLE IF NOT EXISTS downloads (
-    manga_title  TEXT    NOT NULL,
-    chapter      BLOB    NOT NULL,
-    status       TEXT    NOT NULL,
-    current_page INTEGER NOT NULL,
-    total_pages  INTEGER NOT NULL,
-    time_taken   TEXT    NOT NULL);`
+		manga_title  TEXT    NOT NULL,
+		chapter      BLOB    NOT NULL,
+		status       TEXT    NOT NULL,
+		current_page INTEGER NOT NULL,
+		total_pages  INTEGER NOT NULL,
+		time_taken   TEXT    NOT NULL);`
 	if _, err := s.pool.Exec(stmt); err != nil {
 		return nil, err
 	}
