@@ -11,18 +11,22 @@ import (
 var downloadsPool = NewPool()
 
 type Manager struct {
+	*controller
 	libraryPath     string
 	activeDownloads *DownloadList
 	queue           chan *mangadex.Download
 	store           *storage.Store
+	doneFunc        func() error
 }
 
-func NewManager(libraryPath string, workers int, store *storage.Store) *Manager {
+func NewManager(libraryPath string, workers int, store *storage.Store, done func() error) *Manager {
 	m := &Manager{
-		libraryPath:     libraryPath,
-		activeDownloads: NewDownloadList(),
-		queue:           make(chan *mangadex.Download, 10),
 		store:           store,
+		controller:      newController(),
+		activeDownloads: NewDownloadList(),
+		libraryPath:     libraryPath,
+		queue:           make(chan *mangadex.Download, 10),
+		doneFunc:        done,
 	}
 
 	for id := 0; id < workers; id++ {
@@ -38,10 +42,13 @@ func (m *Manager) worker(id int) {
 	log.Debug().Int("wid", id).Msg("starting worker")
 
 	for d := range m.queue {
+		m.WaitIfPaused()
+
 		log.Info().Str("dl", d.String()).Int("wid", id).Msg("download started")
 
 		// Process the download
 		if m.activeDownloads.Has(d) {
+
 			err := d.Run(context.Background(), m.libraryPath)
 
 			l := log.Info()
@@ -60,7 +67,16 @@ func (m *Manager) worker(id int) {
 			log.Debug().Err(err).Int("wid", id).Str("dl", d.String()).Msg("could not save dl to store")
 		}
 
-		// TODO: if no other downloads are running then call the done func (scan the library)
+		// If no more downloads left then call the doneFunc
+		if len(m.activeDownloads.l) == 0 {
+			m.Pause()
+			log.Debug().Err(err).Int("wid", id).Msg("running doneFunc since list is empty")
+			err := m.doneFunc()
+			if err != nil {
+				log.Error().Err(err).Int("wid", id).Msg("error when running doneFunc")
+			}
+			m.Resume()
+		}
 	}
 }
 

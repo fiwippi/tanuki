@@ -26,15 +26,24 @@ func TestClient(t *testing.T) {
 	assert.NotZero(t, len(chsSince))
 	assert.NotEqual(t, chs, chsSince)
 
-	// DownloadChapter
+	// DownloadChapter - choose a chapter which has a few amount of pages
+	smallCh := chs[0]
+	if len(chs) > 1 {
+		for _, ch := range chs[1:] {
+			if ch.Pages < smallCh.Pages {
+				smallCh = ch
+			}
+		}
+	}
+	assert.NotZero(t, smallCh.Pages)
+
 	progress := make(chan int)
 	go func() {
 		for p := range progress {
-			t.Logf("DL Progress: %d/%d\n", p, chs[0].Pages)
+			t.Logf("DL Progress: %d/%d\n", p, smallCh.Pages)
 		}
 	}()
-	defer close(progress)
-	zF, err := chs[0].DownloadZip(context.TODO(), progress)
+	zF, err := smallCh.downloadZip(context.TODO(), progress)
 	assert.Nil(t, err)
 	assert.NotZero(t, len(zF.Data()))
 }

@@ -1,6 +1,10 @@
 package transfer
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/fiwippi/tanuki/internal/mangadex"
+)
 
 const poolStartCap = 20
 
@@ -14,13 +18,13 @@ func NewPool() *Pool {
 	return &Pool{pool: &sync.Pool{}}
 }
 
-func (p Pool) Get() []*Download {
+func (p Pool) Get() []*mangadex.Download {
 	dp := p.pool.Get()
 	if dp == nil {
-		return make([]*Download, 0, poolStartCap)
+		return make([]*mangadex.Download, 0, poolStartCap)
 	}
 
-	dl := dp.([]*Download)
+	dl := dp.([]*mangadex.Download)
 	for i := range dl {
 		dl[i] = nil
 	}
@@ -28,6 +32,6 @@ func (p Pool) Get() []*Download {
 	return dl[0:0]
 }
 
-func (p Pool) Put(dl []*Download) {
+func (p Pool) Put(dl []*mangadex.Download) {
 	p.pool.Put(dl)
 }
