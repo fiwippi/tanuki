@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/url"
 	"time"
+
+	"github.com/fiwippi/tanuki/internal/platform/dbutil"
 )
 
 type Listing struct {
@@ -14,13 +16,18 @@ type Listing struct {
 	CoverURL      string
 	SmallCoverURL string
 	Year          int
+	QueryTime     time.Time
 }
 
 func (l Listing) ListChapters(ctx context.Context) ([]Chapter, error) {
-	return l.NewChapters(ctx, time.Time{})
+	return NewChapters(ctx, l.ID, time.Time{})
 }
 
 func (l Listing) NewChapters(ctx context.Context, since time.Time) ([]Chapter, error) {
+	return NewChapters(ctx, l.ID, since)
+}
+
+func NewChapters(ctx context.Context, id string, since time.Time) ([]Chapter, error) {
 	q := url.Values{}
 	q.Add("offset", "0")
 	q.Add("limit", "500")
@@ -31,7 +38,7 @@ func (l Listing) NewChapters(ctx context.Context, since time.Time) ([]Chapter, e
 		q.Add("publishAtSince", since.Format(mangadexTime))
 	}
 
-	resp, err := get(ctx, "manga/"+l.ID+"/feed", q)
+	resp, err := get(ctx, "manga/"+id+"/feed", q)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +88,7 @@ func (l Listing) NewChapters(ctx context.Context, since time.Time) ([]Chapter, e
 			ID:              d.ID,
 			Title:           d.Attributes.Title,
 			ScanlationGroup: scanG,
-			PublishedAt:     d.Attributes.PublishedAt,
+			PublishedAt:     dbutil.Time(d.Attributes.PublishedAt),
 			Pages:           d.Attributes.Pages,
 			VolumeNo:        d.Attributes.Volume,
 			ChapterNo:       d.Attributes.Chapter,

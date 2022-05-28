@@ -8,6 +8,11 @@ import (
 	"github.com/fiwippi/tanuki/pkg/storage"
 )
 
+// TODO:
+//     1. ability to bind a listing uuid to a specific folder
+//     2. ability to download a listing and create a subscription for it
+//        if one doesn't exist already
+
 var downloadsPool = NewPool()
 
 type Manager struct {
@@ -48,9 +53,7 @@ func (m *Manager) worker(id int) {
 
 		// Process the download
 		if m.activeDownloads.Has(d) {
-
 			err := d.Run(context.Background(), m.libraryPath)
-
 			l := log.Info()
 			if err != nil {
 				l = log.Error()
@@ -66,6 +69,9 @@ func (m *Manager) worker(id int) {
 		if err != nil {
 			log.Debug().Err(err).Int("wid", id).Str("dl", d.String()).Msg("could not save dl to store")
 		}
+
+		// TODO: manager updates the last published at of the subscription here if possible
+		//       by checking if the download folder has an info.tanuki
 
 		// If no more downloads left then call the doneFunc
 		if len(m.activeDownloads.l) == 0 {

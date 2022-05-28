@@ -5,26 +5,26 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestClient(t *testing.T) {
 	// SearchManga
 	ls, err := SearchManga(context.TODO(), "hori", 2)
-	assert.Nil(t, err)
-	assert.NotZero(t, len(ls))
+	require.Nil(t, err)
+	require.NotZero(t, len(ls))
 
 	// ListChapters
 	chs, err := ls[0].ListChapters(context.Background())
-	assert.Nil(t, err)
-	assert.NotZero(t, len(chs))
+	require.Nil(t, err)
+	require.NotZero(t, len(chs))
 
 	// NewChapters
 	since, _ := time.Parse("2006-01-02", "2020-01-01")
 	chsSince, err := ls[0].NewChapters(context.TODO(), since)
-	assert.Nil(t, err)
-	assert.NotZero(t, len(chsSince))
-	assert.NotEqual(t, chs, chsSince)
+	require.Nil(t, err)
+	require.NotZero(t, len(chsSince))
+	require.NotEqual(t, chs, chsSince)
 
 	// DownloadChapter - choose a chapter which has a few amount of pages
 	smallCh := chs[0]
@@ -35,7 +35,7 @@ func TestClient(t *testing.T) {
 			}
 		}
 	}
-	assert.NotZero(t, smallCh.Pages)
+	require.NotZero(t, smallCh.Pages)
 
 	progress := make(chan int)
 	go func() {
@@ -44,6 +44,6 @@ func TestClient(t *testing.T) {
 		}
 	}()
 	zF, err := smallCh.downloadZip(context.TODO(), progress)
-	assert.Nil(t, err)
-	assert.NotZero(t, len(zF.Data()))
+	require.Nil(t, err)
+	require.NotZero(t, len(zF.Data()))
 }

@@ -5,19 +5,28 @@ package image
 import (
 	"bytes"
 	"image"
+	_ "image/gif"
 	"image/jpeg"
+	_ "image/jpeg"
+	_ "image/png"
 
 	"github.com/nfnt/resize"
+	_ "golang.org/x/image/bmp"
+	_ "golang.org/x/image/tiff"
+	_ "golang.org/x/image/webp"
 )
 
 var jpegOption = &jpeg.Options{Quality: 70}
 
-// EncodeThumbnail encodes a given image into a JPEG thumbnail given
-// maximum dimensions and then returns its byte contents
-func EncodeThumbnail(img image.Image, maxWidth, maxHeight uint) ([]byte, error) {
-	thumb := resize.Thumbnail(maxWidth, maxHeight, img, resize.Bicubic)
+func EncodeThumbnail(data []byte) ([]byte, error) {
+	img, _, err := image.Decode(bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+
+	thumb := resize.Thumbnail(300, 300, img, resize.Bicubic)
 	buf := bytes.NewBuffer(nil)
-	err := jpeg.Encode(buf, thumb, jpegOption)
+	err = jpeg.Encode(buf, thumb, jpegOption)
 	if err != nil {
 		return nil, err
 	}

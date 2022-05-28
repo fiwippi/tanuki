@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func Padded(num int, p int) string {
+func PadInt(num int, p int) string {
 	var s = fmt.Sprintf("%d", num)
 	var zeroNum = p - len(s)
 	var sb strings.Builder

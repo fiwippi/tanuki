@@ -15,63 +15,42 @@ var ErrNotEnoughAdmins = errors.New("not enough admins in the db")
 
 // Editing
 
-func (s *Store) CreateUser(u human.User) error {
-	return s.SaveUser(u, true)
-}
-
-func (s *Store) SaveUser(u human.User, overwrite bool) error {
-	tx, err := s.pool.Beginx()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	if s.hasUser(tx, u.UID) && !overwrite {
-		return ErrUserExists
-	}
-	if s.hasUser(tx, u.UID) && overwrite {
-		valid, err := s.validUserTypeChange(tx, u.UID, u.Type)
-		if err != nil {
-			return err
+func (s *Store) AddUser(u human.User, overwrite bool) error {
+	fn := func(tx *sqlx.Tx) error {
+		if s.hasUser(tx, u.UID) && !overwrite {
+			return ErrUserExists
 		}
-		if !valid {
-			return ErrNotEnoughAdmins
+		if s.hasUser(tx, u.UID) && overwrite {
+			valid, err := s.validUserTypeChange(tx, u.UID, u.Type)
+			if err != nil {
+				return err
+			}
+			if !valid {
+				return ErrNotEnoughAdmins
+			}
 		}
-	}
 
-	_, err = tx.NamedExec(`REPLACE INTO users (uid, name, pass, type) Values (:uid,:name,:pass,:type)`, u)
-	if err != nil {
+		_, err := tx.NamedExec(`REPLACE INTO users (uid, name, pass, type) Values (:uid,:name,:pass,:type)`, u)
 		return err
 	}
 
-	if err := tx.Commit(); err != nil {
-		return err
-	}
-	return nil
+	return s.tx(fn)
 }
 
 func (s *Store) DeleteUser(uid string) error {
-	tx, err := s.pool.Beginx()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	var count int
-	if err = tx.Get(&count, "SELECT COUNT(*) FROM users"); err != nil {
-		return err
-	}
-	if count == 1 {
-		return ErrNotEnoughUsers
-	}
-	if _, err = tx.Exec(`DELETE FROM users WHERE uid = ?`, uid); err != nil {
+	fn := func(tx *sqlx.Tx) error {
+		var count int
+		if err := tx.Get(&count, "SELECT COUNT(*) FROM users"); err != nil {
+			return err
+		}
+		if count == 1 {
+			return ErrNotEnoughUsers
+		}
+		_, err := tx.Exec(`DELETE FROM users WHERE uid = ?`, uid)
 		return err
 	}
 
-	if err = tx.Commit(); err != nil {
-		return err
-	}
-	return nil
+	return s.tx(fn)
 }
 
 func (s *Store) ChangeUsername(currentUID, newName string) error {
@@ -80,24 +59,15 @@ func (s *Store) ChangeUsername(currentUID, newName string) error {
 		return nil
 	}
 
-	tx, err := s.pool.Beginx()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	if s.hasUser(tx, newUID) {
-		return ErrUserExists
-	}
-	_, err = tx.Exec(`UPDATE users SET uid = ?, name = ? WHERE uid = ?`, newUID, newName, currentUID)
-	if err != nil {
+	fn := func(tx *sqlx.Tx) error {
+		if s.hasUser(tx, newUID) {
+			return ErrUserExists
+		}
+		_, err := tx.Exec(`UPDATE users SET uid = ?, name = ? WHERE uid = ?`, newUID, newName, currentUID)
 		return err
 	}
 
-	if err = tx.Commit(); err != nil {
-		return err
-	}
-	return nil
+	return s.tx(fn)
 }
 
 func (s *Store) ChangePassword(uid, password string) error {
@@ -109,31 +79,22 @@ func (s *Store) ChangePassword(uid, password string) error {
 }
 
 func (s *Store) ChangeType(uid string, t human.Type) error {
-	tx, err := s.pool.Beginx()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
+	fn := func(tx *sqlx.Tx) error {
+		// Check if enough admins
+		valid, err := s.validUserTypeChange(tx, uid, t)
+		if err != nil {
+			return err
+		}
+		if !valid {
+			return ErrNotEnoughAdmins
+		}
 
-	// Check if enough admins
-	valid, err := s.validUserTypeChange(tx, uid, t)
-	if err != nil {
-		return err
-	}
-	if !valid {
-		return ErrNotEnoughAdmins
-	}
-
-	// If there will be enough admins then change the user type
-	_, err = tx.Exec(`UPDATE users SET type = ? WHERE uid = ?`, t, uid)
-	if err != nil {
+		// If there will be enough admins then change the user type
+		_, err = tx.Exec(`UPDATE users SET type = ? WHERE uid = ?`, t, uid)
 		return err
 	}
 
-	if err := tx.Commit(); err != nil {
-		return err
-	}
-	return nil
+	return s.tx(fn)
 }
 
 // Querying
@@ -148,18 +109,14 @@ func (s *Store) getUser(tx *sqlx.Tx, uid string) (human.User, error) {
 }
 
 func (s *Store) GetUser(uid string) (human.User, error) {
-	tx, err := s.pool.Beginx()
-	if err != nil {
-		return human.User{}, err
-	}
-	defer tx.Rollback()
-
-	u, err := s.getUser(tx, uid)
-	if err != nil {
-		return human.User{}, err
+	var u human.User
+	var err error
+	fn := func(tx *sqlx.Tx) error {
+		u, err = s.getUser(tx, uid)
+		return err
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err := s.tx(fn); err != nil {
 		return human.User{}, err
 	}
 	return u, nil
@@ -181,18 +138,16 @@ func (s *Store) hasUser(tx *sqlx.Tx, uid string) bool {
 }
 
 func (s *Store) HasUser(uid string) (bool, error) {
-	tx, err := s.pool.Beginx()
-	if err != nil {
+	var exists bool
+	fn := func(tx *sqlx.Tx) error {
+		exists = s.hasUser(tx, uid)
+		return nil
+	}
+
+	if err := s.tx(fn); err != nil {
 		return false, err
 	}
-	defer tx.Rollback()
-
-	valid := s.hasUser(tx, uid)
-
-	if err := tx.Commit(); err != nil {
-		return false, err
-	}
-	return valid, nil
+	return exists, nil
 }
 
 func (s *Store) HasUsers() (bool, error) {

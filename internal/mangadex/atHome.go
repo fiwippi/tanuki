@@ -41,7 +41,7 @@ func (h atHomeURLData) WritePage(i int, p string, z *archive.ZipFile) error {
 	}
 
 	padding := len(strconv.Itoa(len(h.Chapter.Data)))
-	fileName := fmt.Sprintf("%s.%s", pretty.Padded(i+1, padding), imgType)
+	fileName := fmt.Sprintf("%s.%s", pretty.PadInt(i+1, padding), imgType)
 	err = z.Write(fileName, resp.Body)
 	if err != nil {
 		return err

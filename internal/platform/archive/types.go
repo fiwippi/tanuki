@@ -2,8 +2,11 @@
 package archive
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,25 +34,73 @@ func (at Type) String() string {
 	return [...]string{"zip", "rar"}[at]
 }
 
-func (at Type) Walk(ctx context.Context, fp string, handleFile archiver.FileHandler) error {
+func (at Type) extractor(fp string) (archiver.Extractor, *os.File, error) {
 	if at != Zip && at != Rar {
-		return fmt.Errorf("invalid archive type")
+		return nil, nil, fmt.Errorf("invalid archive type")
 	}
 
 	f, err := os.Open(fp)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var e archiver.Extractor
+	if at == Zip {
+		e = archiver.Zip{}
+	} else {
+		e = archiver.Rar{}
+	}
+
+	return e, f, nil
+}
+
+func (at Type) Walk(ctx context.Context, fp string, handleFile archiver.FileHandler) error {
+	e, f, err := at.extractor(fp)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	var a archiver.Extractor
-	if at == Zip {
-		a = archiver.Zip{}
-	} else {
-		a = archiver.Rar{}
+	return e.Extract(ctx, f, nil, handleFile)
+}
+
+func (at Type) Extract(ctx context.Context, archivePath, fp string) (io.Reader, int64, error) {
+	e, f, err := at.extractor(archivePath)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer f.Close()
+
+	var r = bytes.NewBuffer(nil)
+	var size int64
+	fn := func(ctx context.Context, f archiver.File) error {
+		if f.Open == nil {
+			return errors.New("file in archive cannot be opened")
+		}
+
+		src, err := f.Open()
+		if err != nil {
+			return err
+		}
+		defer src.Close()
+
+		_, err = io.Copy(r, src)
+		if err != nil {
+			return err
+		}
+
+		size = f.Size()
+
+		return nil
 	}
 
-	return a.Extract(ctx, f, nil, handleFile)
+	if err := e.Extract(ctx, f, []string{fp}, fn); err != nil {
+		return nil, 0, err
+	}
+	if size == 0 {
+		return nil, 0, errors.New("extracted file has no size")
+	}
+	return r, size, nil
 }
 
 // InferType attempts to guess an archive's type from its

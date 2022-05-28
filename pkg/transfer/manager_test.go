@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/fiwippi/tanuki/internal/log"
@@ -27,12 +26,12 @@ func TestMain(m *testing.M) {
 
 func TestManager(t *testing.T) {
 	ls, err := mangadex.SearchManga(context.TODO(), "hori", 2)
-	assert.Nil(t, err)
-	assert.NotZero(t, len(ls))
+	require.Nil(t, err)
+	require.NotZero(t, len(ls))
 
 	chs, err := ls[0].ListChapters(context.Background())
-	assert.Nil(t, err)
-	assert.NotZero(t, len(chs))
+	require.Nil(t, err)
+	require.NotZero(t, len(chs))
 
 	m := NewManager(".", 1, mustOpenStoreMem(t), func() error { return nil })
 	m.Queue(ls[0].Title, chs[1])

@@ -4,20 +4,20 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func testArchive(t *testing.T, path, name string, pageCount int, pages []string) {
-	a, err := ParseArchive(context.TODO(), path)
-	assert.Nil(t, err)
-	assert.Equal(t, name, a.Title)
-	assert.Equal(t, pageCount, len(a.Pages))
-	assert.Equal(t, pages, a.Pages)
-	assert.Equal(t, a.Archive.Exists(), true)
+func testArchive(t *testing.T, path, name string, pageCount int, pages Pages) {
+	a, err := ParseEntry(context.TODO(), path)
+	require.Nil(t, err)
+	require.Equal(t, name, a.Title)
+	require.Equal(t, pageCount, len(a.Pages))
+	require.Equal(t, pages, a.Pages)
+	require.Equal(t, a.Archive.Exists(), true)
 }
 
 func TestParseArchive(t *testing.T) {
-	pages := []string{
+	pages := Pages{
 		"akira_1_c001.jpg",
 		"akira_1_ic01.jpg",
 		"akira_1_ic02-ic03.jpg",
@@ -36,7 +36,7 @@ func TestParseArchive(t *testing.T) {
 	}
 	testArchive(t, "../../tests/lib/Akira/Volume 01.zip", "Volume 01", 15, pages)
 
-	pages = []string{
+	pages = Pages{
 		"0000.jpg",
 		"20th Century Boys v01 (001).png",
 		"20th Century Boys v01 (002).png",
@@ -47,7 +47,7 @@ func TestParseArchive(t *testing.T) {
 	}
 	testArchive(t, "../../tests/lib/20th Century Boys/v1.zip", "v1", 7, pages)
 
-	pages = []string{
+	pages = Pages{
 		"Vol.01 Ch.0001 - A/001.jpg",
 		"Vol.01 Ch.0001 - A/002.png",
 		"Vol.01 Ch.0001 - A/003.jpg",

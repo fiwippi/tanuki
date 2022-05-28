@@ -7,10 +7,12 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/mholt/archiver/v4"
 
 	"github.com/fiwippi/tanuki/internal/platform/archive"
+	"github.com/fiwippi/tanuki/internal/platform/dbutil"
 	"github.com/fiwippi/tanuki/internal/platform/fse"
 	"github.com/fiwippi/tanuki/internal/platform/hash"
 	"github.com/fiwippi/tanuki/internal/platform/image"
@@ -18,13 +20,16 @@ import (
 
 // Entry represents an entry which you read, i.e. an archive file
 type Entry struct {
-	EID     string   `json:"eid"`
-	Title   string   `json:"title"`
-	Archive *Archive `json:"archive"`
-	Pages   []string `json:"pages"`
+	SID         string            `json:"sid" db:"sid"`
+	EID         string            `json:"eid" db:"eid"`
+	Title       string            `json:"title" db:"title"`
+	Archive     Archive           `json:"archive" db:"archive"`
+	Pages       Pages             `json:"pages" db:"pages"`
+	ModTime     dbutil.Time       `json:"mod_time" db:"mod_time"`
+	DisplayTile dbutil.NullString `json:"display_title" db:"display_title"`
 }
 
-func ParseArchive(ctx context.Context, fp string) (*Entry, error) {
+func ParseEntry(ctx context.Context, fp string) (*Entry, error) {
 	// Ensure valid archive
 	at, err := archive.InferType(fp)
 	if err != nil {
@@ -40,11 +45,10 @@ func ParseArchive(ctx context.Context, fp string) (*Entry, error) {
 	if err != nil {
 		return nil, err
 	}
-	a := &Archive{
-		Path:    absFp,
-		Type:    at,
-		ModTime: aStats.ModTime(),
-		Title:   fse.Filename(fp),
+	a := Archive{
+		Path:  absFp,
+		Type:  at,
+		Title: fse.Filename(fp),
 	}
 
 	// Create the entry
@@ -53,7 +57,8 @@ func ParseArchive(ctx context.Context, fp string) (*Entry, error) {
 		Archive: a,
 		EID:     hash.SHA1(title),
 		Title:   title,
-		Pages:   make([]string, 0),
+		Pages:   make(Pages, 0),
+		ModTime: dbutil.Time(aStats.ModTime().Round(time.Second)),
 	}
 
 	// Iterate through the files in the archive

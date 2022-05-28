@@ -2,18 +2,11 @@ package image
 
 import (
 	"fmt"
-	"image"
-	"image/gif"
-	"image/jpeg"
-	"image/png"
-	"io"
 	"path/filepath"
 	"strings"
-
-	"golang.org/x/image/bmp"
-	"golang.org/x/image/tiff"
-	"golang.org/x/image/webp"
 )
+
+// TODO remove all these types and only have a function which checks for valid images
 
 // Type represents an image format
 type Type int
@@ -36,40 +29,7 @@ func (t Type) String() string {
 	return [...]string{"png", "jpg", "gif", "webp", "tiff", "bmp"}[t]
 }
 
-// Decode decodes an image given its type
-func (t Type) Decode(r io.Reader) (image.Image, error) {
-	switch t {
-	case PNG, JPEG, GIF, WEBP, TIFF, BMP:
-		// Try generic decoding first because even if the
-		// file extension is .png for example, the actual
-		// image might not be
-		img, _, err := image.Decode(r)
-		if err == nil {
-			return img, err
-		}
-
-		// Generic decoding doesn't always work so if the
-		// image format is unrecognised we know we try again
-		// with specific encoding
-		switch t {
-		case PNG:
-			return png.Decode(r)
-		case JPEG:
-			return jpeg.Decode(r)
-		case GIF:
-			return gif.Decode(r)
-		case WEBP:
-			return webp.Decode(r)
-		case TIFF:
-			return tiff.Decode(r)
-		case BMP:
-			return bmp.Decode(r)
-		}
-	}
-
-	panic(fmt.Sprintf("invalid image type: '%d'", t))
-}
-
+// TODO switch this func to just validate the extension and dont return the type
 // InferType attempts to guess a files image type based
 // on its filepath and fails if not possible
 func InferType(fp string) (Type, error) {
