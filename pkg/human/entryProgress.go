@@ -3,8 +3,9 @@ package human
 import "fmt"
 
 type EntryProgress struct {
-	Current int `json:"current"`
-	Total   int `json:"total"`
+	EID     string `json:"eid" db:"eid"`
+	Current int    `json:"current" db:"current"`
+	Total   int    `json:"total" db:"total"`
 }
 
 func (ep EntryProgress) String() string {

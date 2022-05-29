@@ -59,9 +59,9 @@ func (t Time) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v)
 }
 
-func (t *Time) UnmarshalJSON(b []byte) error {
+func (t *Time) UnmarshalJSON(data []byte) error {
 	var s string
-	if err := json.Unmarshal(b, &s); err != nil {
+	if err := json.Unmarshal(data, &s); err != nil {
 		return err
 	}
 

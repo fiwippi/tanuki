@@ -1,40 +1,46 @@
 package human
 
-import "errors"
-
-var ErrEntryProgressNotFound = errors.New("entry progress not found")
+import (
+	"encoding/json"
+	"errors"
+)
 
 type SeriesProgress struct {
-	m map[string]*EntryProgress
+	m map[string]EntryProgress
 }
 
 func NewSeriesProgress() *SeriesProgress {
-	return &SeriesProgress{m: map[string]*EntryProgress{}}
+	return &SeriesProgress{m: map[string]EntryProgress{}}
 }
 
-func (sp *SeriesProgress) AddEntry(eid string, total int) {
-	sp.m[eid] = &EntryProgress{Total: total}
+func (sp *SeriesProgress) Add(eid string, p EntryProgress) {
+	sp.m[eid] = p
 }
 
-func (sp *SeriesProgress) Set(eid string, n int) error {
+func (sp *SeriesProgress) Get(eid string) (EntryProgress, error) {
 	ep, found := sp.m[eid]
 	if !found {
-		return ErrEntryProgressNotFound
+		return EntryProgress{}, errors.New("entry progress does not exist")
+	}
+	return ep, nil
+}
+
+// TODO Tests for marshalling series progress
+
+func (sp SeriesProgress) MarshalJSON() ([]byte, error) {
+	return json.Marshal(sp.m)
+}
+
+func (sp *SeriesProgress) UnmarshalJSON(data []byte) error {
+	var m map[string]EntryProgress
+	if err := json.Unmarshal(data, &m); err != nil {
+		return err
+	}
+	if m == nil {
+		return errors.New("unmarshalled map is nil")
 	}
 
-	ep.set(n)
-	sp.m[eid] = ep
+	sp.m = m
+
 	return nil
-}
-
-func (sp *SeriesProgress) SetAllRead() {
-	for k := range sp.m {
-		sp.m[k].setRead()
-	}
-}
-
-func (sp *SeriesProgress) SetAllUnread() {
-	for k := range sp.m {
-		sp.m[k].setUnread()
-	}
 }

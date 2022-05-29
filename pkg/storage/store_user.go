@@ -9,7 +9,7 @@ import (
 	"github.com/fiwippi/tanuki/pkg/human"
 )
 
-var ErrUserExists = errors.New("user already exists")
+var ErrUserExist = errors.New("user already exists")
 var ErrNotEnoughUsers = errors.New("not enough users in the db")
 var ErrNotEnoughAdmins = errors.New("not enough admins in the db")
 
@@ -18,7 +18,7 @@ var ErrNotEnoughAdmins = errors.New("not enough admins in the db")
 func (s *Store) AddUser(u human.User, overwrite bool) error {
 	fn := func(tx *sqlx.Tx) error {
 		if s.hasUser(tx, u.UID) && !overwrite {
-			return ErrUserExists
+			return ErrUserExist
 		}
 		if s.hasUser(tx, u.UID) && overwrite {
 			valid, err := s.validUserTypeChange(tx, u.UID, u.Type)
@@ -61,7 +61,7 @@ func (s *Store) ChangeUsername(currentUID, newName string) error {
 
 	fn := func(tx *sqlx.Tx) error {
 		if s.hasUser(tx, newUID) {
-			return ErrUserExists
+			return ErrUserExist
 		}
 		_, err := tx.Exec(`UPDATE users SET uid = ?, name = ? WHERE uid = ?`, newUID, newName, currentUID)
 		return err

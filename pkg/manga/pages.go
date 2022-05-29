@@ -9,6 +9,10 @@ import (
 
 type Pages []string
 
+func (p Pages) Total() int {
+	return len(p)
+}
+
 func (p Pages) Value() (driver.Value, error) {
 	return json.Marshal(p)
 }

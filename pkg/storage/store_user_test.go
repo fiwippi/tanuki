@@ -21,7 +21,7 @@ func TestStore_AddUser(t *testing.T) {
 	// Can't save if overwrite is false
 	err := s.AddUser(uAdmin, false)
 	require.NotNil(t, err)
-	require.ErrorIs(t, err, ErrUserExists)
+	require.ErrorIs(t, err, ErrUserExist)
 
 	// Can save if overwrite is true, verify this by seeing the user type has changed
 	require.Nil(t, s.AddUser(uStandard, true))
@@ -69,7 +69,7 @@ func TestStore_ChangeUsername(t *testing.T) {
 	// Check 'a' cannot be renamed to 'b' since it already exists
 	err = s.ChangeUsername(u1.UID, "b")
 	require.NotNil(t, err)
-	require.ErrorIs(t, err, ErrUserExists)
+	require.ErrorIs(t, err, ErrUserExist)
 
 	// Check 'a' can be renamed to 'c', meaning 'c' exists and 'a' does not exist
 	err = s.ChangeUsername(u1.UID, "c")

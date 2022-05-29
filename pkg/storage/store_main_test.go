@@ -27,6 +27,7 @@ func mustOpenStoreFile(t *testing.T, f *os.File, recreate bool) (*Store, *os.Fil
 	if f == nil {
 		f, err = os.CreateTemp("", "tanuki-store-test")
 		require.Nil(t, err)
+		tempFiles = append(tempFiles, f.Name())
 	}
 
 	s, err := NewStore(f.Name(), recreate)
@@ -91,6 +92,7 @@ func TestMain(m *testing.M) {
 func TestNewStore(t *testing.T) {
 	// Ensure no error on sartup
 	s, tf := mustOpenStoreFile(t, nil, false)
+	defer tf.Close()
 
 	// Default user must exist in the DB
 	has, err := s.HasUsers()

@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"fmt"
+
 	"github.com/jmoiron/sqlx"
 	_ "modernc.org/sqlite"
 
@@ -21,19 +23,18 @@ type Store struct {
 
 func NewStore(path string, recreate bool) (*Store, error) {
 	// Create the pool of connections to the DB
-	pl := sqlx.MustConnect("sqlite", path)
+	pl := sqlx.MustConnect("sqlite", path+"?_pragma=foreign_keys(on)")
 	s := &Store{pool: pl}
 
 	// Drop if recreating
 	if recreate {
-		stmt := `
-		DROP TABLE IF EXISTS downloads;
-		DROP TABLE IF EXISTS users;
-		DROP TABLE IF EXISTS series;
-		DROP TABLE IF EXISTS entries;
-		DROP TABLE IF EXISTS progress;`
-		if _, err := s.pool.Exec(stmt); err != nil {
-			return nil, err
+		// We have to delete the tables which depend on other tables first
+		// and work our way back to tables which don't depend on anything
+		// to satisfy the foreign keys constraint
+		for _, t := range []string{"progress", "entries", "series", "users", "downloads"} {
+			if _, err := s.pool.Exec(fmt.Sprintf(`DROP TABLE IF EXISTS %s`, t)); err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -111,19 +112,25 @@ func NewStore(path string, recreate bool) (*Store, error) {
 
 	// Create the progress table
 	stmt = `CREATE TABLE IF NOT EXISTS progress (
-		sid     TEXT NOT NULL,
-		uid     TEXT NOT NULL,
-		data    TEXT NOT NULL,
-		PRIMARY KEY (sid, uid),
+		sid     TEXT    NOT NULL,
+		eid     TEXT    NOT NULL,
+		uid     TEXT    NOT NULL,
+		current INTEGER NOT NULL,
+		total   INTEGER NOT NULL,
+		PRIMARY KEY (sid, eid, uid),
 		FOREIGN KEY (sid) 
 		    REFERENCES series (sid)
+                ON UPDATE CASCADE 
+                ON DELETE CASCADE,
+		FOREIGN KEY (sid, eid) 
+		    REFERENCES entries (sid, eid)
                 ON UPDATE CASCADE 
                 ON DELETE CASCADE,
 		FOREIGN KEY (uid) 
 		    REFERENCES users (uid)
                 ON UPDATE CASCADE 
                 ON DELETE CASCADE 
-	) WITHOUT ROWID ;`
+	) WITHOUT ROWID;`
 	if _, err := s.pool.Exec(stmt); err != nil {
 		return nil, err
 	}
