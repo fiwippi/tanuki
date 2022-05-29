@@ -202,28 +202,36 @@ func (s *Store) DeleteEntryCustomCover(sid, eid string) error {
 	return err
 }
 
+func (s *Store) generateEntryThumbnail(tx *sqlx.Tx, sid, eid string, overwrite bool) ([]byte, error) {
+	var data []byte
+	tx.Get(&data, "SELECT thumbnail FROM entries WHERE sid = ? AND eid = ?", sid, eid)
+	if len(data) > 0 && !overwrite {
+		return data, nil
+	}
+
+	cover, err := s.getEntryCover(tx, sid, eid)
+	if err != nil {
+		return nil, err
+	}
+	thumb, err := image.EncodeThumbnail(cover)
+	if err != nil {
+		return nil, err
+	}
+
+	// Save the created thumbnail
+	_, err = tx.Exec("UPDATE entries SET thumbnail = ? WHERE sid = ? AND eid = ?", thumb, sid, eid)
+	if err != nil {
+		return nil, err
+	}
+	return thumb, nil
+
+}
+
 func (s *Store) GetEntryThumbnail(sid, eid string) ([]byte, error) {
 	var data []byte
 	fn := func(tx *sqlx.Tx) error {
-		// Get the thumbnail
-		tx.Get(&data, "SELECT thumbnail FROM entries WHERE sid = ? AND eid = ?", sid, eid)
-		if len(data) > 0 {
-			return nil
-		}
-
-		// If it doesn't exist then get the cover and generate it
-		cover, err := s.getEntryCover(tx, sid, eid)
-		if err != nil {
-			return err
-		}
-		thumb, err := image.EncodeThumbnail(cover)
-		if err != nil {
-			return err
-		}
-		data = thumb
-
-		// Save the created thumbnail
-		_, err = tx.Exec("UPDATE entries SET thumbnail = ? WHERE sid = ? AND eid = ?", data, sid, eid)
+		var err error
+		data, err = s.generateEntryThumbnail(tx, sid, eid, false)
 		return err
 	}
 

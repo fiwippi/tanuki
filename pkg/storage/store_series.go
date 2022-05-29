@@ -168,28 +168,34 @@ func (s *Store) DeleteSeriesCustomCover(sid string) error {
 	return err
 }
 
+func (s *Store) generateSeriesThumbnail(tx *sqlx.Tx, sid string, overwrite bool) ([]byte, error) {
+	var data []byte
+	tx.Get(&data, "SELECT thumbnail FROM series WHERE sid = ?", sid)
+	if len(data) > 0 && !overwrite {
+		return data, nil
+	}
+
+	cover, err := s.getSeriesCover(tx, sid)
+	if err != nil {
+		return nil, err
+	}
+	thumb, err := image.EncodeThumbnail(cover)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = tx.Exec("UPDATE series SET thumbnail = ? WHERE sid = ?", thumb, sid)
+	if err != nil {
+		return nil, err
+	}
+	return thumb, nil
+}
+
 func (s *Store) GetSeriesThumbnail(sid string) ([]byte, error) {
 	var data []byte
 	fn := func(tx *sqlx.Tx) error {
-		// Get the thumbnail
-		tx.Get(&data, "SELECT thumbnail FROM series WHERE sid = ?", sid)
-		if len(data) > 0 {
-			return nil
-		}
-
-		// If it doesn't exist then get the cover and generate it
-		cover, err := s.getSeriesCover(tx, sid)
-		if err != nil {
-			return err
-		}
-		thumb, err := image.EncodeThumbnail(cover)
-		if err != nil {
-			return err
-		}
-		data = thumb
-
-		// Save the created thumbnail
-		_, err = tx.Exec("UPDATE series SET thumbnail = ? WHERE sid = ?", data, sid)
+		var err error
+		data, err = s.generateSeriesThumbnail(tx, sid, false)
 		return err
 	}
 

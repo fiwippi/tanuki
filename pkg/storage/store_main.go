@@ -18,13 +18,15 @@ import (
 // TODO: SQL VACCUUM MODE
 
 type Store struct {
-	pool *sqlx.DB
+	libraryPath string
+	pool        *sqlx.DB
 }
 
-func NewStore(path string, recreate bool) (*Store, error) {
-	// Create the pool of connections to the DB
-	pl := sqlx.MustConnect("sqlite", path+"?_pragma=foreign_keys(on)")
-	s := &Store{pool: pl}
+func NewStore(dbPath, libraryPath string, recreate bool) (*Store, error) {
+	s := &Store{
+		libraryPath: libraryPath,
+		pool:        sqlx.MustConnect("sqlite", dbPath+"?_pragma=foreign_keys(on)"),
+	}
 
 	// Drop if recreating
 	if recreate {

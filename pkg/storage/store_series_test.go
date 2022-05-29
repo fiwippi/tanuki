@@ -9,6 +9,9 @@ import (
 	"github.com/fiwippi/tanuki/pkg/manga"
 )
 
+// TODO if series is removed and then added it should be at the start when getting it
+//      from the db like in the entries test
+
 func equalSeries(t *testing.T, s1, s2 *manga.Series) {
 	require.NotNil(t, s1)
 	require.NotNil(t, s2)
