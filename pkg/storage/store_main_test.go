@@ -49,7 +49,11 @@ func TestMain(m *testing.M) {
 
 	// Make an example db in tests/data/tanuki.db which
 	// can be read by the IDE for linting etc.
-	_, err := NewStore("../../tests/data/tanuki.db", true)
+	err := os.Remove("../../tests/data/tanuki.db")
+	if err != nil {
+		panic(err)
+	}
+	_, err = NewStore("../../tests/data/tanuki.db", true)
 	if err != nil {
 		panic(err)
 	}

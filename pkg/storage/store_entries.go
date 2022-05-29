@@ -10,6 +10,8 @@ import (
 	"github.com/fiwippi/tanuki/pkg/manga"
 )
 
+// TODO test modtime changing causes entry metadata to be deleted
+
 func (s *Store) hasEntry(tx *sqlx.Tx, sid, eid string) bool {
 	var exists bool
 	tx.Get(&exists, "SELECT COUNT(sid) > 0 FROM entries WHERE sid = ? AND eid = ?", sid, eid)
@@ -35,7 +37,7 @@ func (s *Store) getEntry(tx *sqlx.Tx, sid, eid string) (*manga.Entry, error) {
 		SELECT 
 			sid, eid, title, archive, pages, mod_time, display_title
 		FROM entries WHERE sid = ? AND eid = ?`
-	err := tx.Get(e, stmt, sid, eid)
+	err := tx.Get(&e, stmt, sid, eid)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +63,7 @@ func (s *Store) getFirstEntry(tx *sqlx.Tx, sid string) (*manga.Entry, error) {
 	stmt := `
 		SELECT 
 			sid, eid, title, archive, pages, mod_time, display_title
-		FROM entries WHERE sid = ? ORDER BY ROWID LIMIT 1`
+		FROM entries WHERE sid = ? ORDER BY position ASC, ROWID DESC LIMIT 1`
 	err := tx.Get(&e, stmt, sid)
 	if err != nil {
 		return nil, err
@@ -74,7 +76,7 @@ func (s *Store) getEntries(tx *sqlx.Tx, sid string) ([]*manga.Entry, error) {
 	stmt := `
 	SELECT 
 	    sid, eid, title, archive, pages, mod_time, display_title
-	FROM entries WHERE sid = ? ORDER BY ROWID ASC `
+	FROM entries WHERE sid = ? ORDER BY position ASC, ROWID DESC `
 	err := tx.Select(&e, stmt, sid)
 	if err != nil {
 		return nil, err
@@ -96,7 +98,7 @@ func (s *Store) GetEntries(sid string) ([]*manga.Entry, error) {
 	return e, nil
 }
 
-func (s *Store) addEntry(tx *sqlx.Tx, e *manga.Entry) error {
+func (s *Store) addEntry(tx *sqlx.Tx, e *manga.Entry, position int) error {
 	// If the entries modtimes are different, then the file
 	// itself has changed which means we want to delete it
 	// and then recreate it so data associated with it gets
@@ -120,6 +122,11 @@ func (s *Store) addEntry(tx *sqlx.Tx, e *manga.Entry) error {
 		Values 
 			(:sid, :eid, :title, :archive, :pages, :mod_time)`
 	_, err := tx.NamedExec(stmt, e)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec("UPDATE entries SET position = ? WHERE sid = ? AND  eid = ?", position, e.SID, e.EID)
 	return err
 }
 
@@ -138,7 +145,7 @@ func (s *Store) getEntryCover(tx *sqlx.Tx, sid, eid string) ([]byte, error) {
 
 	// Check if the custom cover exists
 	var data []byte
-	tx.Get(data, "SELECT custom_cover FROM entries WHERE sid = ? AND eid = ?", sid, eid)
+	tx.Get(&data, "SELECT custom_cover FROM entries WHERE sid = ? AND eid = ?", sid, eid)
 	if len(data) > 0 {
 		return data, nil
 	}
@@ -199,17 +206,17 @@ func (s *Store) GetEntryThumbnail(sid, eid string) ([]byte, error) {
 	var data []byte
 	fn := func(tx *sqlx.Tx) error {
 		// Get the thumbnail
-		tx.Get(data, "SELECT thumbnail FROM entries WHERE sid = ? AND eid = ?", sid, eid)
+		tx.Get(&data, "SELECT thumbnail FROM entries WHERE sid = ? AND eid = ?", sid, eid)
 		if len(data) > 0 {
 			return nil
 		}
 
 		// If it doesn't exist then get the cover and generate it
-		data, err := s.getEntryCover(tx, sid, eid)
+		cover, err := s.getEntryCover(tx, sid, eid)
 		if err != nil {
 			return err
 		}
-		thumb, err := image.EncodeThumbnail(data)
+		thumb, err := image.EncodeThumbnail(cover)
 		if err != nil {
 			return err
 		}

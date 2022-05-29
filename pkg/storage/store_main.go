@@ -28,7 +28,10 @@ func NewStore(path string, recreate bool) (*Store, error) {
 	if recreate {
 		stmt := `
 		DROP TABLE IF EXISTS downloads;
-		DROP TABLE IF EXISTS users;`
+		DROP TABLE IF EXISTS users;
+		DROP TABLE IF EXISTS series;
+		DROP TABLE IF EXISTS entries;
+		DROP TABLE IF EXISTS progress;`
 		if _, err := s.pool.Exec(stmt); err != nil {
 			return nil, err
 		}
@@ -88,6 +91,7 @@ func NewStore(path string, recreate bool) (*Store, error) {
 		archive   TEXT NOT NULL,
 		pages     TEXT NOT NULL,
 		mod_time  TEXT NOT NULL,
+		position  INTEGER,
 		thumbnail BLOB,
 		
 		-- Custom metadata

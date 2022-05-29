@@ -76,8 +76,8 @@ func (s *Store) AddSeries(series *manga.Series, entries []*manga.Entry) error {
 		}
 
 		//Insert each entry
-		for _, e := range entries {
-			if err := s.addEntry(tx, e); err != nil {
+		for i, e := range entries {
+			if err := s.addEntry(tx, e, i+1); err != nil {
 				return err
 			}
 		}
@@ -201,7 +201,7 @@ func (s *Store) GetSeriesThumbnail(sid string) ([]byte, error) {
 
 // Tags / Metadata
 
-// TODO test that modtime change deletes the custom metadata for entries
+// TODO test that modtime change on the archive deletes the custom metadata for entries
 // TODO can we make tags only values and not pointers
 
 func (s *Store) SetSeriesTags(sid string, tags *manga.Tags) error {
