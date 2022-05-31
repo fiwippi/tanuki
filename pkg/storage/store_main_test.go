@@ -14,6 +14,11 @@ import (
 	"github.com/fiwippi/tanuki/pkg/manga"
 )
 
+const (
+	dbPath  = "../../tests/data/tanuki.db"
+	libPath = "../../tests/lib"
+)
+
 var tempFiles = make([]string, 0)
 var defaultUID = hash.SHA1("default")
 var parsedData []struct {
@@ -30,13 +35,13 @@ func mustOpenStoreFile(t *testing.T, f *os.File, recreate bool) (*Store, *os.Fil
 		tempFiles = append(tempFiles, f.Name())
 	}
 
-	s, err := NewStore(f.Name(), recreate)
+	s, err := NewStore(f.Name(), libPath, recreate)
 	require.Nil(t, err)
 	return s, f
 }
 
 func mustOpenStoreMem(t *testing.T) *Store {
-	s, err := NewStore("file::memory:", false)
+	s, err := NewStore("file::memory:", libPath, false)
 	require.Nil(t, err)
 	return s
 }
@@ -50,11 +55,8 @@ func TestMain(m *testing.M) {
 
 	// Make an example db in tests/data/tanuki.db which
 	// can be read by the IDE for linting etc.
-	err := os.Remove("../../tests/data/tanuki.db")
-	if err != nil {
-		panic(err)
-	}
-	_, err = NewStore("../../tests/data/tanuki.db", true)
+	os.Remove(dbPath)
+	_, err := NewStore(dbPath, libPath, true)
 	if err != nil {
 		panic(err)
 	}

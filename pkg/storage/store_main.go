@@ -11,6 +11,7 @@ import (
 	"github.com/fiwippi/tanuki/pkg/human"
 )
 
+// TODO: remove the cgo dependency
 // TODO is there a way to reduce similar code, e.g. code used to get covers or thumbnails
 // TODO all functions which don't mutate a pointer (not just in storage, should pass by value)
 // TODO: string representation of the DB

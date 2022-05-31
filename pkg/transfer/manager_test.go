@@ -14,7 +14,7 @@ import (
 )
 
 func mustOpenStoreMem(t *testing.T) *storage.Store {
-	s, err := storage.NewStore("file::memory:", false)
+	s, err := storage.NewStore("file::memory:", ".", false)
 	require.Nil(t, err)
 	return s
 }

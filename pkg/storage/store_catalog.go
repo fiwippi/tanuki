@@ -71,28 +71,34 @@ func (s *Store) GetCatalog() ([]*manga.Series, error) {
 	return ctl, nil
 }
 
-func (s *Store) GenerateThumbnails(tx *sqlx.Tx, overwrite bool) error {
+func (s *Store) GenerateThumbnails(overwrite bool) error {
 	var errs errors.Errors
-	var sids []string
-	tx.Select(&sids, `SELECT sid FROM series`)
 
-	for _, sid := range sids {
-		_, err := s.generateSeriesThumbnail(tx, sid, overwrite)
-		if err != nil {
-			errs.Add(err)
-			continue
-		}
+	fn := func(tx *sqlx.Tx) error {
+		var sids []string
+		tx.Select(&sids, `SELECT sid FROM series`)
 
-		var eids []string
-		tx.Select(&eids, `SELECT eid FROM entries WHERE sid = ?`, sid)
-
-		for _, eid := range eids {
-			_, err := s.generateEntryThumbnail(tx, sid, eid, overwrite)
+		for _, sid := range sids {
+			_, err := s.generateSeriesThumbnail(tx, sid, overwrite)
 			if err != nil {
 				errs.Add(err)
+				continue
+			}
+
+			var eids []string
+			tx.Select(&eids, `SELECT eid FROM entries WHERE sid = ?`, sid)
+
+			for _, eid := range eids {
+				_, err := s.generateEntryThumbnail(tx, sid, eid, overwrite)
+				if err != nil {
+					errs.Add(err)
+				}
 			}
 		}
+
+		return nil
 	}
+	s.tx(fn)
 
 	return errs.Ret()
 }
@@ -119,8 +125,6 @@ func (s *Store) processMissingItems(tx *sqlx.Tx, del bool) ([]MissingItem, error
 					return nil, err
 				}
 			}
-
-			continue
 		}
 
 		entries, err := s.getEntries(tx, series.SID)
@@ -148,7 +152,7 @@ func (s *Store) processMissingItems(tx *sqlx.Tx, del bool) ([]MissingItem, error
 	return missing, nil
 }
 
-func (s *Store) GrocessMissingItems() ([]MissingItem, error) {
+func (s *Store) GetMissingItems() ([]MissingItem, error) {
 	var missing []MissingItem
 	fn := func(tx *sqlx.Tx) error {
 		var err error

@@ -2,7 +2,6 @@ package manga
 
 import (
 	"context"
-	"encoding/json"
 	"io/fs"
 	"io/ioutil"
 	"os"
@@ -38,40 +37,32 @@ type Series struct {
 	// TODO test the manager works with subscriptions
 }
 
-func folderID(dir string) (xid.ID, error) {
-	f, err := os.Create(filepath.Join(dir, "info.tanuki"))
+func folderID(dir string) (string, error) {
+	f, err := os.OpenFile(filepath.Join(dir, "info.tanuki"), os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
-		return xid.NilID(), err
+		return "", err
 	}
 	defer f.Close()
 
 	data, err := ioutil.ReadAll(f)
 	if err != nil {
-		return xid.NilID(), err
+		return "", err
 	}
 
 	// If the file is empty then generate an ID
 	if len(data) == 0 {
-		id := xid.New()
+		id := xid.New().String()
 
-		data, err := json.Marshal(id)
+		_, err := f.WriteString(id)
 		if err != nil {
-			return xid.NilID(), err
-		}
-		_, err = f.Write(data)
-		if err != nil {
-			return xid.NilID(), err
+			return "", err
 		}
 
 		return id, nil
 	}
 
-	// Otherwise unmarshal it from the file
-	var id xid.ID
-	if err := json.Unmarshal(data, &id); err != nil {
-		return xid.NilID(), err
-	}
-	return id, nil
+	// Otherwise return it from the file
+	return string(data), nil
 }
 
 func ParseSeries(ctx context.Context, dir string) (*Series, []*Entry, error) {
@@ -81,7 +72,7 @@ func ParseSeries(ctx context.Context, dir string) (*Series, []*Entry, error) {
 	}
 
 	s := &Series{
-		SID:         id.String(),
+		SID:         id,
 		FolderTitle: fse.Filename(dir),
 		ModTime:     dbutil.Time{},
 	}

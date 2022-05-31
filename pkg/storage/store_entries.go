@@ -86,8 +86,8 @@ func (s *Store) getEntries(tx *sqlx.Tx, sid string) ([]*manga.Entry, error) {
 
 func (s *Store) GetEntries(sid string) ([]*manga.Entry, error) {
 	var e []*manga.Entry
-	var err error
 	fn := func(tx *sqlx.Tx) error {
+		var err error
 		e, err = s.getEntries(tx, sid)
 		return err
 	}
