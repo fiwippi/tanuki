@@ -1,8 +1,5 @@
 package dbutil
 
-// TODO change package name
-// TODO explain this code
-
 import (
 	"database/sql/driver"
 	"encoding/json"

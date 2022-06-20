@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/fiwippi/tanuki/internal/platform/dbutil"
+	"github.com/fiwippi/tanuki/internal/platform/image"
 	"github.com/fiwippi/tanuki/pkg/manga"
 )
 
@@ -117,23 +118,26 @@ func testGetDeleteSeriesCover(t *testing.T) {
 	require.Nil(t, s.AddSeries(series, entries))
 
 	// Get the normal cover
-	coverA, err := s.GetSeriesCover(series.SID)
+	coverA, aType, err := s.GetSeriesCover(series.SID)
 	require.Nil(t, err)
 	require.True(t, len(coverA) > 0)
+	require.Equal(t, image.JPEG, aType)
 
 	// Get custom cover works if it exists
-	require.Nil(t, s.SetSeriesCover(series.SID, customCover))
-	coverB, err := s.GetSeriesCover(series.SID)
+	require.Nil(t, s.SetSeriesCover(series.SID, "c.png", customCover))
+	coverB, bType, err := s.GetSeriesCover(series.SID)
 	require.Nil(t, err)
 	require.True(t, len(coverB) > 0)
 	require.NotEqual(t, coverA, coverB)
+	require.Equal(t, image.PNG, bType)
 
 	// Delete the cover we should have the normal series cover
 	require.Nil(t, s.DeleteSeriesCustomCover(series.SID))
-	coverC, err := s.GetSeriesCover(series.SID)
+	coverC, cType, err := s.GetSeriesCover(series.SID)
 	require.Nil(t, err)
 	require.True(t, len(coverC) > 0)
 	require.Equal(t, coverA, coverC)
+	require.Equal(t, aType, cType)
 
 	mustCloseStore(t, s)
 }
@@ -145,41 +149,46 @@ func testGetSeriesCoverThumbnail(t *testing.T) {
 	require.Nil(t, s.AddSeries(series, parsedData[0].e))
 
 	// Keep track of the thumbnail of the original cover
-	thumbA, err := s.GetSeriesThumbnail(series.SID)
+	thumbA, it, err := s.GetSeriesThumbnail(series.SID)
 	require.Nil(t, err)
 	require.True(t, len(thumbA) > 0)
+	require.Equal(t, image.JPEG, it)
 
 	// Cannot set a nil cover
-	err = s.SetSeriesCover(series.SID, nil)
+	err = s.SetSeriesCover(series.SID, "c.png", nil)
 	require.NotNil(t, err)
 	require.ErrorIs(t, ErrInvalidCover, err)
 
 	// Can set a custom cover
-	require.Nil(t, s.SetSeriesCover(series.SID, customCover))
-	cover, err := s.GetSeriesCover(series.SID)
+	require.Nil(t, s.SetSeriesCover(series.SID, "c.png", customCover))
+	cover, it, err := s.GetSeriesCover(series.SID)
 	require.Nil(t, err)
 	require.True(t, len(cover) > 0)
 	require.Equal(t, customCover, cover)
+	require.Equal(t, image.PNG, it)
 
 	// Thumbnail of the cover should not be of the normal cover
-	thumbB, err := s.GetSeriesThumbnail(series.SID)
+	thumbB, it, err := s.GetSeriesThumbnail(series.SID)
 	require.Nil(t, err)
 	require.True(t, len(thumbB) > 0)
 	require.NotEqual(t, thumbA, thumbB)
+	require.Equal(t, image.JPEG, it)
 
 	// If we access the thumbnail again it persists
-	thumbC, err := s.GetSeriesThumbnail(series.SID)
+	thumbC, it, err := s.GetSeriesThumbnail(series.SID)
 	require.Nil(t, err)
 	require.True(t, len(thumbC) > 0)
 	require.Equal(t, thumbB, thumbC)
+	require.Equal(t, image.JPEG, it)
 
 	// Once the custom cover gets deleted thumbnail goes back to normal
 	require.Nil(t, s.DeleteSeriesCustomCover(series.SID))
-	thumbD, err := s.GetSeriesThumbnail(series.SID)
+	thumbD, it, err := s.GetSeriesThumbnail(series.SID)
 	require.Nil(t, err)
 	require.True(t, len(thumbD) > 0)
 	require.Equal(t, thumbA, thumbD)
 	require.NotEqual(t, thumbB, thumbD)
+	require.Equal(t, image.JPEG, it)
 
 	mustCloseStore(t, s)
 }

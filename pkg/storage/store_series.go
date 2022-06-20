@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"bytes"
+	"errors"
 	"io/ioutil"
 
 	"github.com/jmoiron/sqlx"
@@ -103,52 +105,65 @@ func (s *Store) DeleteSeries(sid string) error {
 
 // Cover / Thumbnail
 
-func (s *Store) getSeriesCover(tx *sqlx.Tx, sid string) ([]byte, error) {
+func (s *Store) getSeriesCover(tx *sqlx.Tx, sid string) ([]byte, image.Type, error) {
 	e, err := s.getFirstEntry(tx, sid)
 	if err != nil {
-		return nil, err
+		return nil, image.Invalid, err
 	}
 
 	// Check if the custom cover exists
 	var data []byte
 	tx.Get(&data, "SELECT custom_cover FROM series WHERE sid = ?", sid)
 	if len(data) > 0 {
-		return data, nil
+		var it = image.Invalid
+		tx.Get(&it, "SELECT custom_cover_type FROM series WHERE sid = ?", sid)
+		if it == image.Invalid {
+			return nil, it, errors.New("thumbnail is an invalid image")
+		}
+		return data, it, nil
 	}
 
 	// If it doesn't then get the first page from the archive
-	r, _, err := s.getPage(tx, sid, e.EID, 1)
+	r, _, it, err := s.getPage(tx, sid, e.EID, 1)
 	if err != nil {
-		return nil, err
+		return nil, image.Invalid, err
 	}
 	data, err = ioutil.ReadAll(r)
 	if err != nil {
-		return nil, err
+		return nil, image.Invalid, err
 	}
-	return data, nil
+	return data, it, nil
 }
 
-func (s *Store) GetSeriesCover(sid string) ([]byte, error) {
+func (s *Store) GetSeriesCover(sid string) ([]byte, image.Type, error) {
 	var data []byte
-	var err error
+	var it image.Type
 	fn := func(tx *sqlx.Tx) error {
-		data, err = s.getSeriesCover(tx, sid)
+		var err error
+		data, it, err = s.getSeriesCover(tx, sid)
 		return err
 	}
 
 	if err := s.tx(fn); err != nil {
-		return nil, err
+		return nil, image.Invalid, err
 	}
-	return data, nil
+	return data, it, nil
 }
 
-func (s *Store) SetSeriesCover(sid string, data []byte) error {
+// TODO: test what happens if invalid images are given, also for setentrycover
+
+func (s *Store) SetSeriesCover(sid, name string, data []byte) error {
 	if len(data) == 0 {
 		return ErrInvalidCover
 	}
 
+	it, err := image.InferType(name)
+	if err != nil {
+		return err
+	}
+
 	fn := func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`UPDATE series SET custom_cover = ? WHERE sid = ?`, data, sid)
+		_, err := tx.Exec(`UPDATE series SET custom_cover = ?, custom_cover_type = ? WHERE sid = ?`, data, it, sid)
 		if err != nil {
 			return err
 		}
@@ -162,6 +177,7 @@ func (s *Store) SetSeriesCover(sid string, data []byte) error {
 func (s *Store) DeleteSeriesCustomCover(sid string) error {
 	stmt := `
 		UPDATE series SET custom_cover = NULL WHERE sid = ?;
+		UPDATE series SET custom_cover_type = NULL WHERE sid = ?;
 		UPDATE series SET thumbnail = NULL WHERE sid = ?;
 	`
 	_, err := s.pool.Exec(stmt, sid, sid)
@@ -175,11 +191,11 @@ func (s *Store) generateSeriesThumbnail(tx *sqlx.Tx, sid string, overwrite bool)
 		return data, nil
 	}
 
-	cover, err := s.getSeriesCover(tx, sid)
+	cover, it, err := s.getSeriesCover(tx, sid)
 	if err != nil {
 		return nil, err
 	}
-	thumb, err := image.EncodeThumbnail(cover)
+	thumb, err := it.EncodeThumbnail(bytes.NewReader(cover))
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +207,7 @@ func (s *Store) generateSeriesThumbnail(tx *sqlx.Tx, sid string, overwrite bool)
 	return thumb, nil
 }
 
-func (s *Store) GetSeriesThumbnail(sid string) ([]byte, error) {
+func (s *Store) GetSeriesThumbnail(sid string) ([]byte, image.Type, error) {
 	var data []byte
 	fn := func(tx *sqlx.Tx) error {
 		var err error
@@ -200,15 +216,15 @@ func (s *Store) GetSeriesThumbnail(sid string) ([]byte, error) {
 	}
 
 	if err := s.tx(fn); err != nil {
-		return nil, err
+		return nil, image.Invalid, err
 	}
-	return data, nil
+	return data, image.JPEG, nil
 }
 
 // Tags / Metadata
 
-// TODO test that modtime change on the archive deletes the custom metadata for entries
-// TODO can we make tags only values and not pointers
+// TODO: test that modtime change on the archive deletes the custom metadata for entries
+// TODO: can we make tags only values and not pointers
 
 func (s *Store) SetSeriesTags(sid string, tags *manga.Tags) error {
 	_, err := s.pool.Exec("UPDATE series SET tags = ? WHERE sid = ?", tags, sid)

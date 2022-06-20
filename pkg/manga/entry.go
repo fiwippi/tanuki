@@ -64,12 +64,15 @@ func ParseEntry(ctx context.Context, fp string) (*Entry, error) {
 	// Iterate through the files in the archive
 	err = a.Walk(ctx, func(ctx context.Context, f archiver.File) error {
 		if !f.IsDir() && !strings.HasPrefix(f.Name(), ".") {
-			_, err := image.InferType(f.Name())
+			it, err := image.InferType(f.Name())
 			if err != nil {
 				return err
 			}
 
-			e.Pages = append(e.Pages, f.NameInArchive)
+			e.Pages = append(e.Pages, Page{
+				Path: f.NameInArchive,
+				Type: it,
+			})
 		}
 		return nil
 	})
@@ -84,8 +87,8 @@ func ParseEntry(ctx context.Context, fp string) (*Entry, error) {
 
 	// Walker does not walk the archive in archived order so we need to sort the pages
 	sort.SliceStable(e.Pages, func(i, j int) bool {
-		a := strings.TrimSuffix(e.Pages[i], filepath.Ext(e.Pages[i]))
-		b := strings.TrimSuffix(e.Pages[j], filepath.Ext(e.Pages[j]))
+		a := strings.TrimSuffix(e.Pages[i].Path, filepath.Ext(e.Pages[i].Path))
+		b := strings.TrimSuffix(e.Pages[j].Path, filepath.Ext(e.Pages[j].Path))
 		return fse.SortNatural(a, b)
 	})
 

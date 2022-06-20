@@ -1,12 +1,22 @@
 package image
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"image"
+	"image/gif"
+	"image/jpeg"
+	"image/png"
+	"io"
 	"path/filepath"
 	"strings"
-)
 
-// TODO remove all these types and only have a function which checks for valid images
+	"github.com/nfnt/resize"
+	"golang.org/x/image/bmp"
+	"golang.org/x/image/tiff"
+	"golang.org/x/image/webp"
+)
 
 // Type represents an image format
 type Type int
@@ -18,6 +28,8 @@ const (
 	WEBP
 	TIFF
 	BMP
+
+	Invalid Type = -1
 )
 
 // MimeType returns the image mimetype, used for sending the image over the web
@@ -29,7 +41,57 @@ func (t Type) String() string {
 	return [...]string{"png", "jpg", "gif", "webp", "tiff", "bmp"}[t]
 }
 
-// TODO switch this func to just validate the extension and dont return the type
+// Decode decodes an image given its type
+func (t Type) decode(r io.Reader) (image.Image, error) {
+	switch t {
+	case PNG, JPEG, GIF, WEBP, TIFF, BMP:
+		// Try generic decoding first because even if the
+		// file extension is .png for example, the actual
+		// image might not be
+		img, _, err := image.Decode(r)
+		if err == nil {
+			return img, err
+		}
+
+		// Generic decoding doesn't always work so if the
+		// image format is unrecognised we know we try again
+		// with specific encoding
+		switch t {
+		case PNG:
+			return png.Decode(r)
+		case JPEG:
+			return jpeg.Decode(r)
+		case GIF:
+			return gif.Decode(r)
+		case WEBP:
+			return webp.Decode(r)
+		case TIFF:
+			return tiff.Decode(r)
+		case BMP:
+			return bmp.Decode(r)
+		}
+	case Invalid:
+		return nil, errors.New("cannot decode invalid image")
+	}
+
+	panic(fmt.Sprintf("invalid image type: '%d'", t))
+}
+
+func (t Type) EncodeThumbnail(r io.Reader) ([]byte, error) {
+	img, err := t.decode(r)
+	if err != nil {
+		return nil, err
+	}
+
+	thumb := resize.Thumbnail(300, 300, img, resize.Bicubic)
+	buf := bytes.NewBuffer(nil)
+	err = jpeg.Encode(buf, thumb, &jpeg.Options{Quality: 70})
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
 // InferType attempts to guess a files image type based
 // on its filepath and fails if not possible
 func InferType(fp string) (Type, error) {

@@ -76,8 +76,9 @@ func NewStore(dbPath, libraryPath string, recreate bool) (*Store, error) {
 		tags         TEXT,
 		
 		-- Custom metadata
-		display_title TEXT,
-		custom_cover  BLOB,
+		display_title     TEXT,
+		custom_cover      BLOB,
+		custom_cover_type INTEGER,
 		
 		-- Subscription data
 		mangadex_uuid              TEXT,
@@ -86,6 +87,9 @@ func NewStore(dbPath, libraryPath string, recreate bool) (*Store, error) {
 	if _, err := s.pool.Exec(stmt); err != nil {
 		return nil, err
 	}
+
+	// TODO: test cannot set invalid cover type for series or entries
+	// TODO: tests to ensure the custom cover type is set correctly
 
 	// Create the entries table
 	stmt = `CREATE TABLE IF NOT EXISTS entries (
@@ -99,9 +103,10 @@ func NewStore(dbPath, libraryPath string, recreate bool) (*Store, error) {
 		thumbnail BLOB,
 		
 		-- Custom metadata
-		display_title TEXT,
-		custom_cover  BLOB,
-		
+		display_title     TEXT,
+		custom_cover      BLOB,
+		custom_cover_type INTEGER,
+
 		-- Relationships
 		PRIMARY KEY (sid, eid),
 		FOREIGN KEY (sid) 

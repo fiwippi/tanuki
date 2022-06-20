@@ -18,7 +18,7 @@ const (
 var (
 	c      = &http.Client{}
 	rl     = rate.NewLimiter(5, 1)
-	homeRl = rate.NewLimiter(0.7, 1)
+	homeRl = rate.NewLimiter(0.55, 1)
 )
 
 func get(ctx context.Context, endpoint string, query url.Values) (*http.Response, error) {

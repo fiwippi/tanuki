@@ -42,26 +42,22 @@ func Middleware() gin.HandlerFunc {
 		var event *zerolog.Event
 		switch {
 		case statusCode >= 400 && statusCode < 500:
-			event = Warn().Str("method", method).Str("path", path).Str("resp_time", latency).
-				Int("status", statusCode).Str("client_ip", clientIP).Str("sid", sid).
-				Str("eid", eid).Str("uid", uid).Bool("admin", admin)
+			event = Warn()
 		case statusCode >= 500:
-			event = Error().Str("method", method).Str("path", path).Str("resp_time", latency).
-				Int("status", statusCode).Str("client_ip", clientIP).Str("sid", sid).
-				Str("eid", eid).Str("uid", uid).Bool("admin", admin)
+			event = Error()
 		default:
 			if strings.HasPrefix(path, "/static") {
-				event = Trace().Str("method", method).Str("path", path).Str("resp_time", latency).
-					Int("status", statusCode).Str("client_ip", clientIP).Str("sid", sid).
-					Str("eid", eid).Str("uid", uid).Bool("admin", admin)
+				event = Trace()
 			} else {
-				event = Info().Str("method", method).Str("path", path).Str("resp_time", latency).
-					Int("status", statusCode).Str("client_ip", clientIP).Str("sid", sid).
-					Str("eid", eid).Str("uid", uid).Bool("admin", admin)
+				event = Info()
 			}
 		}
 
 		if event != nil {
+			event.Str("method", method).Str("path", path).Str("resp_time", latency).
+				Int("status", statusCode).Str("client_ip", clientIP).Str("sid", sid).
+				Str("eid", eid).Str("uid", uid).Bool("admin", admin)
+
 			if len(errorMsg.Error()) > 0 {
 				event.Err(errorMsg)
 			}

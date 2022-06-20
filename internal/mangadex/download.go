@@ -47,7 +47,7 @@ func (d *Download) Run(ctx context.Context, libraryPath string) error {
 	d.Status = DownloadStarted
 	start := time.Now()
 	defer func() {
-		d.TimeTaken = pretty.Duration(time.Now().Sub(start))
+		d.TimeTaken = pretty.Duration(time.Since(start))
 	}()
 
 	// If the download already exists then finish and exit

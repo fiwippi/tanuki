@@ -5,9 +5,15 @@ import (
 	"encoding/json"
 
 	"github.com/fiwippi/tanuki/internal/platform/dbutil"
+	"github.com/fiwippi/tanuki/internal/platform/image"
 )
 
-type Pages []string
+type Page struct {
+	Path string     `json:"path"`
+	Type image.Type `json:"type"`
+}
+
+type Pages []Page
 
 func (p Pages) Total() int {
 	return len(p)

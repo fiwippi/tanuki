@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/fiwippi/tanuki/internal/platform/dbutil"
+	"github.com/fiwippi/tanuki/internal/platform/image"
 	"github.com/fiwippi/tanuki/pkg/manga"
 )
 
@@ -195,23 +196,26 @@ func testGetDeleteEntryCover(t *testing.T) {
 
 	for _, e := range entries {
 		// Get the normal cover
-		coverA, err := s.GetEntryCover(series.SID, e.EID)
+		coverA, it, err := s.GetEntryCover(series.SID, e.EID)
 		require.Nil(t, err)
 		require.True(t, len(coverA) > 0)
+		require.NotEqual(t, image.Invalid, it)
 
 		// Get custom cover works if it exists
-		require.Nil(t, s.SetEntryCover(series.SID, e.EID, customCover))
-		coverB, err := s.GetEntryCover(series.SID, e.EID)
+		require.Nil(t, s.SetEntryCover(series.SID, e.EID, "c.png", customCover))
+		coverB, it, err := s.GetEntryCover(series.SID, e.EID)
 		require.Nil(t, err)
 		require.True(t, len(coverB) > 0)
 		require.NotEqual(t, coverA, coverB)
+		require.Equal(t, image.PNG, it)
 
 		// Delete the cover we should have the normal series cover
 		require.Nil(t, s.DeleteEntryCustomCover(series.SID, e.EID))
-		coverC, err := s.GetEntryCover(series.SID, e.EID)
+		coverC, it, err := s.GetEntryCover(series.SID, e.EID)
 		require.Nil(t, err)
 		require.True(t, len(coverC) > 0)
 		require.Equal(t, coverA, coverC)
+		require.NotEqual(t, image.Invalid, it)
 	}
 
 	mustCloseStore(t, s)
@@ -225,41 +229,46 @@ func testGetEntryCoverThumbnail(t *testing.T) {
 
 	for _, e := range parsedData[0].e {
 		// Keep track of the thumbnail of the original cover
-		thumbA, err := s.GetEntryThumbnail(series.SID, e.EID)
+		thumbA, it, err := s.GetEntryThumbnail(series.SID, e.EID)
 		require.Nil(t, err)
 		require.True(t, len(thumbA) > 0)
+		require.Equal(t, image.JPEG, it)
 
 		// Cannot set a nil cover
-		err = s.SetEntryCover(series.SID, e.EID, nil)
+		err = s.SetEntryCover(series.SID, e.EID, "c.png", nil)
 		require.NotNil(t, err)
 		require.ErrorIs(t, ErrInvalidCover, err)
 
 		// Can set a custom cover
-		require.Nil(t, s.SetEntryCover(series.SID, e.EID, customCover))
-		cover, err := s.GetEntryCover(series.SID, e.EID)
+		require.Nil(t, s.SetEntryCover(series.SID, e.EID, "c.png", customCover))
+		cover, it, err := s.GetEntryCover(series.SID, e.EID)
 		require.Nil(t, err)
 		require.True(t, len(cover) > 0)
 		require.Equal(t, customCover, cover)
+		require.Equal(t, image.PNG, it)
 
 		// Thumbnail of the cover should not be of the normal cover
-		thumbB, err := s.GetEntryThumbnail(series.SID, e.EID)
+		thumbB, it, err := s.GetEntryThumbnail(series.SID, e.EID)
 		require.Nil(t, err)
 		require.True(t, len(thumbB) > 0)
 		require.NotEqual(t, thumbA, thumbB)
+		require.Equal(t, image.JPEG, it)
 
 		// If we access the thumbnail again it persists
-		thumbC, err := s.GetEntryThumbnail(series.SID, e.EID)
+		thumbC, it, err := s.GetEntryThumbnail(series.SID, e.EID)
 		require.Nil(t, err)
 		require.True(t, len(thumbC) > 0)
 		require.Equal(t, thumbB, thumbC)
+		require.Equal(t, image.JPEG, it)
 
 		// Once the custom cover gets deleted thumbnail goes back to normal
 		require.Nil(t, s.DeleteEntryCustomCover(series.SID, e.EID))
-		thumbD, err := s.GetEntryThumbnail(series.SID, e.EID)
+		thumbD, it, err := s.GetEntryThumbnail(series.SID, e.EID)
 		require.Nil(t, err)
 		require.True(t, len(thumbD) > 0)
 		require.Equal(t, thumbA, thumbD)
 		require.NotEqual(t, thumbB, thumbD)
+		require.Equal(t, image.JPEG, it)
 	}
 
 	mustCloseStore(t, s)
@@ -290,7 +299,7 @@ func TestStore_GetPage(t *testing.T) {
 		for _, e := range d.e {
 			for i, p := range e.Pages {
 				// Get the page from the archive file
-				r, size, err := e.Archive.ReaderForFile(p)
+				r, size, err := e.Archive.ReaderForFile(p.Path)
 				require.Nil(t, err)
 				require.True(t, size > 0)
 				originalData, err := ioutil.ReadAll(r)
@@ -298,22 +307,24 @@ func TestStore_GetPage(t *testing.T) {
 				require.True(t, len(originalData) > 0)
 
 				// Get the 0-indexed page from the store
-				r, size, err = s.GetPage(d.s.SID, e.EID, i, true)
+				r, size, it, err := s.GetPage(d.s.SID, e.EID, i, true)
 				require.Nil(t, err)
 				require.True(t, size > 0)
 				zeroData, err := ioutil.ReadAll(r)
 				require.Nil(t, err)
 				require.True(t, len(zeroData) > 0)
 				require.Equal(t, originalData, zeroData)
+				require.NotEqual(t, image.Invalid, it)
 
 				// Get the 1-indexed page from the store
-				r, size, err = s.GetPage(d.s.SID, e.EID, i+1, false)
+				r, size, it, err = s.GetPage(d.s.SID, e.EID, i+1, false)
 				require.Nil(t, err)
 				require.True(t, size > 0)
 				oneData, err := ioutil.ReadAll(r)
 				require.Nil(t, err)
 				require.True(t, len(oneData) > 0)
 				require.Equal(t, originalData, oneData)
+				require.NotEqual(t, image.Invalid, it)
 			}
 		}
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/fiwippi/tanuki/internal/platform/archive"
 	"github.com/fiwippi/tanuki/internal/platform/dbutil"
 	"github.com/fiwippi/tanuki/internal/platform/hash"
+	"github.com/fiwippi/tanuki/internal/platform/image"
 	"github.com/fiwippi/tanuki/pkg/manga"
 	"github.com/stretchr/testify/require"
 )
@@ -107,7 +108,10 @@ func testGetDeleteMissingEntries(t *testing.T) {
 			EID:     hash.SHA1("b"),
 			Title:   "b",
 			Archive: manga.Archive{Type: archive.Zip, Path: "./b"},
-			Pages:   manga.Pages{"1.jpg", "2.jpg"},
+			Pages: manga.Pages{
+				{Path: "1.jpg", Type: image.JPEG},
+				{Path: "2.jpg", Type: image.JPEG},
+			},
 			ModTime: dbutil.Time(time.Now()),
 		},
 	}

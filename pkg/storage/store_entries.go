@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"bytes"
+	"errors"
 	"io"
 	"io/ioutil"
 
@@ -137,52 +139,63 @@ func (s *Store) deleteEntry(tx *sqlx.Tx, sid, eid string) error {
 
 // Cover / Thumbnail / Page
 
-func (s *Store) getEntryCover(tx *sqlx.Tx, sid, eid string) ([]byte, error) {
+func (s *Store) getEntryCover(tx *sqlx.Tx, sid, eid string) ([]byte, image.Type, error) {
 	e, err := s.getEntry(tx, sid, eid)
 	if err != nil {
-		return nil, err
+		return nil, image.Invalid, err
 	}
 
 	// Check if the custom cover exists
 	var data []byte
 	tx.Get(&data, "SELECT custom_cover FROM entries WHERE sid = ? AND eid = ?", sid, eid)
 	if len(data) > 0 {
-		return data, nil
+		var it = image.Invalid
+		tx.Get(&it, "SELECT custom_cover_type FROM entries WHERE sid = ? AND eid = ?", sid, eid)
+		if it == image.Invalid {
+			return nil, it, errors.New("thumbnail is an invalid image")
+		}
+		return data, it, nil
 	}
 
 	// If it doesn't then get the first page from the archive
-	r, _, err := s.getPage(tx, sid, e.EID, 1)
+	r, _, it, err := s.getPage(tx, sid, e.EID, 1)
 	if err != nil {
-		return nil, err
+		return nil, image.Invalid, err
 	}
 	data, err = ioutil.ReadAll(r)
 	if err != nil {
-		return nil, err
+		return nil, image.Invalid, err
 	}
-	return data, nil
+	return data, it, nil
 }
 
-func (s *Store) GetEntryCover(sid, eid string) ([]byte, error) {
+func (s *Store) GetEntryCover(sid, eid string) ([]byte, image.Type, error) {
 	var data []byte
-	var err error
+	var it image.Type
 	fn := func(tx *sqlx.Tx) error {
-		data, err = s.getEntryCover(tx, sid, eid)
+		var err error
+		data, it, err = s.getEntryCover(tx, sid, eid)
 		return err
 	}
 
 	if err := s.tx(fn); err != nil {
-		return nil, err
+		return nil, image.Invalid, err
 	}
-	return data, nil
+	return data, it, nil
 }
 
-func (s *Store) SetEntryCover(sid, eid string, data []byte) error {
+func (s *Store) SetEntryCover(sid, eid, name string, data []byte) error {
 	if len(data) == 0 {
 		return ErrInvalidCover
 	}
 
+	it, err := image.InferType(name)
+	if err != nil {
+		return err
+	}
+
 	fn := func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`UPDATE entries SET custom_cover = ? WHERE sid = ? AND eid = ?`, data, sid, eid)
+		_, err := tx.Exec(`UPDATE entries SET custom_cover = ?, custom_cover_type = ? WHERE sid = ? AND eid = ?`, data, it, sid, eid)
 		if err != nil {
 			return err
 		}
@@ -196,6 +209,7 @@ func (s *Store) SetEntryCover(sid, eid string, data []byte) error {
 func (s *Store) DeleteEntryCustomCover(sid, eid string) error {
 	stmt := `
 		UPDATE entries SET custom_cover = NULL WHERE sid = ? AND eid = ?;
+		UPDATE entries SET custom_cover_type = NULL WHERE sid = ? AND eid = ?;
 		UPDATE entries SET thumbnail = NULL WHERE sid = ? AND eid = ?;
 	`
 	_, err := s.pool.Exec(stmt, sid, eid, sid, eid)
@@ -209,11 +223,11 @@ func (s *Store) generateEntryThumbnail(tx *sqlx.Tx, sid, eid string, overwrite b
 		return data, nil
 	}
 
-	cover, err := s.getEntryCover(tx, sid, eid)
+	cover, it, err := s.getEntryCover(tx, sid, eid)
 	if err != nil {
 		return nil, err
 	}
-	thumb, err := image.EncodeThumbnail(cover)
+	thumb, err := it.EncodeThumbnail(bytes.NewReader(cover))
 	if err != nil {
 		return nil, err
 	}
@@ -227,7 +241,7 @@ func (s *Store) generateEntryThumbnail(tx *sqlx.Tx, sid, eid string, overwrite b
 
 }
 
-func (s *Store) GetEntryThumbnail(sid, eid string) ([]byte, error) {
+func (s *Store) GetEntryThumbnail(sid, eid string) ([]byte, image.Type, error) {
 	var data []byte
 	fn := func(tx *sqlx.Tx) error {
 		var err error
@@ -236,44 +250,50 @@ func (s *Store) GetEntryThumbnail(sid, eid string) ([]byte, error) {
 	}
 
 	if err := s.tx(fn); err != nil {
-		return nil, err
+		return nil, image.Invalid, err
 	}
-	return data, nil
+	return data, image.JPEG, nil
 }
 
-func (s *Store) getPage(tx *sqlx.Tx, sid, eid string, page int) (io.Reader, int64, error) {
+func (s *Store) getPage(tx *sqlx.Tx, sid, eid string, pageNum int) (io.Reader, int64, image.Type, error) {
 	var a manga.Archive
 	err := tx.Get(&a, "SELECT archive FROM entries WHERE sid = ? AND eid = ?", sid, eid)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, image.Invalid, err
 	}
 	var p manga.Pages
 	err = tx.Get(&p, "SELECT pages FROM entries WHERE sid = ? AND eid = ?", sid, eid)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, image.Invalid, err
 	}
 
 	// Pages are 1-indexed
-	return a.ReaderForFile(p[page-1])
+	page := p[pageNum-1]
+	r, size, err := a.ReaderForFile(page.Path)
+	if err != nil {
+		return nil, 0, image.Invalid, err
+	}
+	return r, size, page.Type, nil
 }
 
-func (s *Store) GetPage(sid, eid string, page int, zeroBased bool) (io.Reader, int64, error) {
+func (s *Store) GetPage(sid, eid string, page int, zeroBased bool) (io.Reader, int64, image.Type, error) {
 	if zeroBased {
 		page += 1
 	}
 
 	var r io.Reader
 	var size int64
-	var err error
+	var it image.Type
 	fn := func(tx *sqlx.Tx) error {
-		r, size, err = s.getPage(tx, sid, eid, page)
+		var err error
+		r, size, it, err = s.getPage(tx, sid, eid, page)
 		return err
 	}
 
 	if err := s.tx(fn); err != nil {
-		return nil, 0, err
+		return nil, 0, image.Invalid, err
 	}
-	return r, size, nil
+	return r, size, it, nil
 }
 
 // Metadata
