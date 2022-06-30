@@ -11,16 +11,14 @@ import (
 	"github.com/fiwippi/tanuki/pkg/human"
 )
 
-// TODO: remove the cgo dependency
 // TODO is there a way to reduce similar code, e.g. code used to get covers or thumbnails
 // TODO all functions which don't mutate a pointer (not just in storage, should pass by value)
 // TODO: string representation of the DB
-// TODO: test stuff like user's progress being deleted if the user is deleted
 // TODO: SQL VACCUUM MODE
 
 type Store struct {
-	libraryPath string
 	pool        *sqlx.DB
+	libraryPath string
 }
 
 func NewStore(dbPath, libraryPath string, recreate bool) (*Store, error) {
@@ -72,6 +70,7 @@ func NewStore(dbPath, libraryPath string, recreate bool) (*Store, error) {
 		num_entries  INTEGER NOT NULL,
 		num_pages    INTEGER NOT NULL,
 		mod_time     TEXT    NOT NULL,
+		position     INTEGER,
 		thumbnail    BLOB,
 		tags         TEXT,
 		
@@ -87,9 +86,6 @@ func NewStore(dbPath, libraryPath string, recreate bool) (*Store, error) {
 	if _, err := s.pool.Exec(stmt); err != nil {
 		return nil, err
 	}
-
-	// TODO: test cannot set invalid cover type for series or entries
-	// TODO: tests to ensure the custom cover type is set correctly
 
 	// Create the entries table
 	stmt = `CREATE TABLE IF NOT EXISTS entries (

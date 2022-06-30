@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"github.com/jmoiron/sqlx"
 
@@ -13,6 +14,12 @@ import (
 )
 
 // TODO benchmark populate catalog and generate thumbnails
+
+type MissingItem struct {
+	Type  string `json:"type"`
+	Title string `json:"title"`
+	Path  string `json:"path"`
+}
 
 func (s *Store) PopulateCatalog() error {
 	items, err := os.ReadDir(s.libraryPath)
@@ -44,15 +51,23 @@ func (s *Store) PopulateCatalog() error {
 
 func (s *Store) getCatalog(tx *sqlx.Tx) ([]*manga.Series, error) {
 	var v []*manga.Series
-	stmt := `
-		SELECT 
-			sid, folder_title, num_entries, num_pages, mod_time, 
-			display_title, tags, mangadex_uuid, mangadex_last_published_at 
-		FROM series ORDER BY ROWID ASC`
-	err := tx.Select(&v, stmt)
+	err := tx.Select(&v, getSeriesStmt)
 	if err != nil {
 		return nil, err
 	}
+
+	sort.Slice(v, func(i, j int) bool {
+		a := v[i].FolderTitle
+		if v[i].DisplayTile != "" {
+			a = string(v[i].DisplayTile)
+		}
+		b := v[j].FolderTitle
+		if v[j].DisplayTile != "" {
+			b = string(v[j].DisplayTile)
+		}
+
+		return fse.SortNatural(a, b)
+	})
 
 	return v, nil
 }

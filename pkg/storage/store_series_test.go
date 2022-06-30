@@ -10,14 +10,11 @@ import (
 	"github.com/fiwippi/tanuki/pkg/manga"
 )
 
-// TODO if series is removed and then added it should be at the start when getting it
-//      from the db like in the entries test
-
 func equalSeries(t *testing.T, s1, s2 *manga.Series) {
 	require.NotNil(t, s1)
 	require.NotNil(t, s2)
-	require.Equal(t, s1.SID, s2.SID)
 	require.Equal(t, s1.FolderTitle, s2.FolderTitle)
+	require.Equal(t, s1.SID, s2.SID)
 	require.Equal(t, s1.NumEntries, s2.NumEntries)
 	require.Equal(t, s1.NumPages, s2.NumPages)
 	require.Equal(t, s1.DisplayTile, s2.DisplayTile)
@@ -83,22 +80,47 @@ func TestStore_AddSeries(t *testing.T) {
 }
 
 func TestStore_GetSeries(t *testing.T) {
-	s := mustOpenStoreMem(t)
+	t.Run("GetSingleSeries", func(t *testing.T) {
+		s := mustOpenStoreMem(t)
+		defer mustCloseStore(t, s)
 
-	require.Nil(t, s.AddSeries(parsedData[0].s, parsedData[0].e))
-	dbSeries, err := s.GetSeries(parsedData[0].s.SID)
-	require.Nil(t, err)
-	equalSeries(t, parsedData[0].s, dbSeries)
+		require.Nil(t, s.AddSeries(parsedData[0].s, parsedData[0].e))
+		dbSeries, err := s.GetSeries(parsedData[0].s.SID)
+		require.Nil(t, err)
+		equalSeries(t, parsedData[0].s, dbSeries)
+	})
 
-	mustCloseStore(t, s)
+	t.Run("PreserveSeriesOrderAfterDelete", func(t *testing.T) {
+		s := mustOpenStoreMem(t)
+		defer mustCloseStore(t, s)
+
+		for _, d := range parsedData {
+			require.Nil(t, s.AddSeries(d.s, d.e))
+		}
+
+		require.Nil(t, s.DeleteSeries(parsedData[0].s.SID))
+		require.Nil(t, s.DeleteSeries(parsedData[2].s.SID))
+		require.Nil(t, s.AddSeries(parsedData[0].s, parsedData[0].e))
+		require.Nil(t, s.DeleteSeries(parsedData[1].s.SID))
+		require.Nil(t, s.AddSeries(parsedData[2].s, parsedData[2].e))
+		require.Nil(t, s.AddSeries(parsedData[1].s, parsedData[1].e))
+
+		ctl, err := s.GetCatalog()
+		require.Nil(t, err)
+		require.Equal(t, 3, len(ctl))
+
+		equalSeries(t, parsedData[0].s, ctl[0])
+		equalSeries(t, parsedData[1].s, ctl[1])
+		equalSeries(t, parsedData[2].s, ctl[2])
+	})
 }
 
 func TestStore_DeleteSeries(t *testing.T) {
 	s := mustOpenStoreMem(t)
 
-	for i := range parsedData {
-		require.Nil(t, s.AddSeries(parsedData[i].s, parsedData[i].e))
-		require.Nil(t, s.DeleteSeries(parsedData[i].s.SID))
+	for _, d := range parsedData {
+		require.Nil(t, s.AddSeries(d.s, d.e))
+		require.Nil(t, s.DeleteSeries(d.s.SID))
 	}
 
 	ctl, err := s.GetCatalog()
@@ -110,7 +132,7 @@ func TestStore_DeleteSeries(t *testing.T) {
 
 // Cover / Thumbnail
 
-func testGetDeleteSeriesCover(t *testing.T) {
+func testGetSetDeleteSeriesCover(t *testing.T) {
 	s := mustOpenStoreMem(t)
 
 	series := parsedData[0].s
@@ -122,6 +144,10 @@ func testGetDeleteSeriesCover(t *testing.T) {
 	require.Nil(t, err)
 	require.True(t, len(coverA) > 0)
 	require.Equal(t, image.JPEG, aType)
+
+	// Cannot set invalid custom cover
+	require.ErrorIs(t, s.SetSeriesCover(series.SID, "c.png", nil), ErrInvalidCover)
+	require.ErrorIs(t, s.SetSeriesCover(series.SID, "c.aaa", customCover), ErrInvalidCover)
 
 	// Get custom cover works if it exists
 	require.Nil(t, s.SetSeriesCover(series.SID, "c.png", customCover))
@@ -194,7 +220,7 @@ func testGetSeriesCoverThumbnail(t *testing.T) {
 }
 
 func TestStore_GetSeriesCover(t *testing.T) {
-	testGetDeleteSeriesCover(t)
+	testGetSetDeleteSeriesCover(t)
 }
 
 func TestStore_SetSeriesCover(t *testing.T) {
@@ -202,7 +228,7 @@ func TestStore_SetSeriesCover(t *testing.T) {
 }
 
 func TestStore_DeleteSeriesCustomCover(t *testing.T) {
-	testGetDeleteSeriesCover(t)
+	testGetSetDeleteSeriesCover(t)
 }
 
 func TestStore_GetSeriesThumbnail(t *testing.T) {

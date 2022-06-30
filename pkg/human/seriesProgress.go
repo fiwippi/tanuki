@@ -25,8 +25,6 @@ func (sp *SeriesProgress) Get(eid string) (EntryProgress, error) {
 	return ep, nil
 }
 
-// TODO Tests for marshalling series progress
-
 func (sp SeriesProgress) MarshalJSON() ([]byte, error) {
 	return json.Marshal(sp.m)
 }

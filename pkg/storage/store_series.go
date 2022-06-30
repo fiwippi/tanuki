@@ -37,15 +37,11 @@ func (s *Store) HasSeries(sid string) (bool, error) {
 
 func (s *Store) getSeries(tx *sqlx.Tx, sid string) (*manga.Series, error) {
 	var v manga.Series
-	stmt := `
-		SELECT 
-			sid, folder_title, num_entries, num_pages, mod_time, 
-			display_title, tags, mangadex_uuid, mangadex_last_published_at 
-		FROM series WHERE sid = ?`
-	err := tx.Get(&v, stmt, sid)
+	err := tx.Get(&v, getSeriesStmt, sid)
 	if err != nil {
 		return nil, err
 	}
+
 	return &v, nil
 
 }
@@ -118,7 +114,7 @@ func (s *Store) getSeriesCover(tx *sqlx.Tx, sid string) ([]byte, image.Type, err
 		var it = image.Invalid
 		tx.Get(&it, "SELECT custom_cover_type FROM series WHERE sid = ?", sid)
 		if it == image.Invalid {
-			return nil, it, errors.New("thumbnail is an invalid image")
+			return nil, it, errors.New("custom cover is an invalid image")
 		}
 		return data, it, nil
 	}
@@ -150,16 +146,13 @@ func (s *Store) GetSeriesCover(sid string) ([]byte, image.Type, error) {
 	return data, it, nil
 }
 
-// TODO: test what happens if invalid images are given, also for setentrycover
-
 func (s *Store) SetSeriesCover(sid, name string, data []byte) error {
 	if len(data) == 0 {
 		return ErrInvalidCover
 	}
-
 	it, err := image.InferType(name)
 	if err != nil {
-		return err
+		return ErrInvalidCover
 	}
 
 	fn := func(tx *sqlx.Tx) error {
@@ -223,7 +216,6 @@ func (s *Store) GetSeriesThumbnail(sid string) ([]byte, image.Type, error) {
 
 // Tags / Metadata
 
-// TODO: test that modtime change on the archive deletes the custom metadata for entries
 // TODO: can we make tags only values and not pointers
 
 func (s *Store) SetSeriesTags(sid string, tags *manga.Tags) error {

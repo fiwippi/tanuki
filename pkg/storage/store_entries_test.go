@@ -3,6 +3,7 @@ package storage
 import (
 	"io/ioutil"
 	"testing"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
@@ -129,37 +130,117 @@ func TestStore_getFirstEntry(t *testing.T) {
 }
 
 func TestStore_GetEntries(t *testing.T) {
-	s := mustOpenStoreMem(t)
+	t.Run("GetSingleEntry", func(t *testing.T) {
+		s := mustOpenStoreMem(t)
+		defer mustCloseStore(t, s)
 
-	series := parsedData[0].s
-	entries := parsedData[0].e
-	require.Nil(t, s.AddSeries(series, entries))
-	dbEntries, err := s.GetEntries(series.SID)
-	require.Nil(t, err)
-	require.Equal(t, entries, dbEntries)
+		series := parsedData[0].s
+		entries := parsedData[0].e
+		require.Nil(t, s.AddSeries(series, entries))
+		dbEntries, err := s.GetEntries(series.SID)
+		require.Nil(t, err)
+		require.Equal(t, entries, dbEntries)
+	})
 
-	mustCloseStore(t, s)
+	t.Run("PreserveEntriesOrderAfterDelete", func(t *testing.T) {
+		s := mustOpenStoreMem(t)
+		defer mustCloseStore(t, s)
+
+		series := parsedData[0].s
+		entries := parsedData[0].e
+		require.Nil(t, s.AddSeries(series, entries))
+
+		require.Nil(t, s.tx(func(tx *sqlx.Tx) error {
+			return s.deleteEntry(tx, series.SID, entries[0].EID)
+		}))
+		require.Nil(t, s.tx(func(tx *sqlx.Tx) error {
+			return s.addEntry(tx, entries[0], 1)
+		}))
+
+		dbEntry, err := s.GetEntry(parsedData[0].s.SID, entries[0].EID)
+		require.Nil(t, err)
+		require.Equal(t, entries[0], dbEntry)
+
+		dbEntry, err = s.GetEntry(parsedData[0].s.SID, entries[1].EID)
+		require.Nil(t, err)
+		require.Equal(t, entries[1], dbEntry)
+	})
 }
 
 func TestStore_addEntry(t *testing.T) {
-	s := mustOpenStoreMem(t)
+	t.Run("AddingEntries", func(t *testing.T) {
+		s := mustOpenStoreMem(t)
+		defer mustCloseStore(t, s)
 
-	for _, d := range parsedData {
-		require.Nil(t, s.AddSeries(d.s, nil))
+		for _, d := range parsedData {
+			require.Nil(t, s.AddSeries(d.s, nil))
 
-		for i, e := range d.e {
-			fn := func(tx *sqlx.Tx) error {
-				return s.addEntry(tx, e, i+1)
+			for i, e := range d.e {
+				fn := func(tx *sqlx.Tx) error {
+					return s.addEntry(tx, e, i+1)
+				}
+				require.Nil(t, s.tx(fn))
+
+				has, err := s.HasEntry(d.s.SID, e.EID)
+				require.Nil(t, err)
+				require.True(t, has)
 			}
-			require.Nil(t, s.tx(fn))
-
-			has, err := s.HasEntry(d.s.SID, e.EID)
-			require.Nil(t, err)
-			require.True(t, has)
 		}
-	}
+	})
 
-	mustCloseStore(t, s)
+	t.Run("EntryDeletedOnModtimeChange", func(t *testing.T) {
+		s := mustOpenStoreMem(t)
+		defer mustCloseStore(t, s)
+
+		for _, d := range parsedData {
+			require.Nil(t, s.AddSeries(d.s, nil))
+
+			for i := range d.e {
+				eOriginal := *d.e[i]
+				eOriginal.Title = "Before"
+
+				eChangedModTime := *d.e[i]
+				eChangedModTime.Title = "After"
+				eChangedModTime.ModTime = dbutil.Time(time.Now())
+
+				require.NotEqual(t, eOriginal.ModTime, eChangedModTime.ModTime)
+
+				// Add the original entry
+				fnBef := func(tx *sqlx.Tx) error {
+					return s.addEntry(tx, &eOriginal, i+1)
+				}
+				require.Nil(t, s.tx(fnBef))
+				e, err := s.GetEntry(d.s.SID, eOriginal.EID)
+				require.Nil(t, err)
+				require.Equal(t, e.Title, "Before")
+
+				// Add progress for the original entry
+				require.Nil(t, s.SetEntryProgressRead(d.s.SID, eOriginal.EID, defaultUID))
+
+				// Ensure the progress is set successfully
+				p, err := s.GetEntryProgress(d.s.SID, eOriginal.EID, defaultUID)
+				require.Nil(t, err)
+				require.NotZero(t, p.Current)
+				require.Equal(t, p.Current, p.Total)
+
+				// Add the entry with the changed mod time
+				fnAft := func(tx *sqlx.Tx) error {
+					return s.addEntry(tx, &eChangedModTime, i+1)
+				}
+				require.Nil(t, s.tx(fnAft))
+				e, err = s.GetEntry(d.s.SID, eOriginal.EID)
+				require.Nil(t, err)
+				require.Equal(t, e.Title, "After")
+
+				// Check progress for said entry is now deleted
+				// Ensure the progress is set successfully
+				p, err = s.GetEntryProgress(d.s.SID, eOriginal.EID, defaultUID)
+				require.Nil(t, err)
+				require.Zero(t, p.Current)
+				require.NotEqual(t, p.Current, p.Total)
+			}
+		}
+	})
 }
 
 func TestStore_deleteEntry(t *testing.T) {
@@ -187,7 +268,7 @@ func TestStore_deleteEntry(t *testing.T) {
 
 // Cover / Thumbnail / Page
 
-func testGetDeleteEntryCover(t *testing.T) {
+func testGetSetDeleteEntryCover(t *testing.T) {
 	s := mustOpenStoreMem(t)
 
 	series := parsedData[0].s
@@ -200,6 +281,10 @@ func testGetDeleteEntryCover(t *testing.T) {
 		require.Nil(t, err)
 		require.True(t, len(coverA) > 0)
 		require.NotEqual(t, image.Invalid, it)
+
+		// Cannot set invalid custom cover
+		require.ErrorIs(t, s.SetEntryCover(series.SID, e.EID, "c.png", nil), ErrInvalidCover)
+		require.ErrorIs(t, s.SetEntryCover(series.SID, e.EID, "c.aaa", customCover), ErrInvalidCover)
 
 		// Get custom cover works if it exists
 		require.Nil(t, s.SetEntryCover(series.SID, e.EID, "c.png", customCover))
@@ -275,7 +360,7 @@ func testGetEntryCoverThumbnail(t *testing.T) {
 }
 
 func TestStore_GetEntryCover(t *testing.T) {
-	testGetDeleteEntryCover(t)
+	testGetSetDeleteEntryCover(t)
 }
 
 func TestStore_SetEntryCover(t *testing.T) {
@@ -283,7 +368,7 @@ func TestStore_SetEntryCover(t *testing.T) {
 }
 
 func TestStore_DeleteEntryCustomCover(t *testing.T) {
-	testGetDeleteEntryCover(t)
+	testGetSetDeleteEntryCover(t)
 }
 
 func TestStore_GetEntryThumbnail(t *testing.T) {

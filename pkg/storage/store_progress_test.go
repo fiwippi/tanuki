@@ -221,43 +221,53 @@ func TestStore_GetSeriesProgress(t *testing.T) {
 func TestStore_ProgressDeletedOnCascade(t *testing.T) {
 	t.Run("DeletedOnUserDelete", func(t *testing.T) {
 		s := mustOpenStoreMem(t)
+		defer mustCloseStore(t, s)
+
 		u := human.NewUser("a", "a", human.Standard)
 		require.Nil(t, s.AddUser(u, true))
-		defer mustCloseStore(t, s)
 
 		for _, d := range parsedData {
 			require.Nil(t, s.AddSeries(d.s, d.e))
 			require.Nil(t, s.SetSeriesProgressUnread(d.s.SID, u.UID))
 		}
 
+		var exists bool
+
+		require.Nil(t, s.pool.Get(&exists, `SELECT COUNT(*) > 0 FROM progress`))
+		require.True(t, exists)
+
 		require.Nil(t, s.DeleteUser(u.UID))
 		has, err := s.HasUser(u.UID)
 		require.Nil(t, err)
 		require.False(t, has)
 
-		var exists bool
 		require.Nil(t, s.pool.Get(&exists, `SELECT COUNT(*) > 0 FROM progress`))
 		require.False(t, exists)
 	})
 
 	t.Run("DeletedOnEntryDelete", func(t *testing.T) {
 		s := mustOpenStoreMem(t)
+		defer mustCloseStore(t, s)
+
 		u := human.NewUser("a", "a", human.Standard)
 		require.Nil(t, s.AddUser(u, true))
-		defer mustCloseStore(t, s)
 
 		for _, d := range parsedData {
 			require.Nil(t, s.AddSeries(d.s, d.e))
 			require.Nil(t, s.SetSeriesProgressUnread(d.s.SID, u.UID))
 
 			for _, e := range d.e {
+				var exists bool
+				stmt := `SELECT COUNT(*) > 0 FROM progress WHERE sid = ? AND eid = ?`
+
+				require.Nil(t, s.pool.Get(&exists, stmt, d.s.SID, e.EID))
+				require.True(t, exists)
+
 				fn := func(tx *sqlx.Tx) error {
 					return s.deleteEntry(tx, d.s.SID, e.EID)
 				}
 				require.Nil(t, s.tx(fn))
 
-				var exists bool
-				stmt := `SELECT COUNT(*) > 0 FROM progress WHERE sid = ? AND eid = ?`
 				require.Nil(t, s.pool.Get(&exists, stmt, d.s.SID, e.EID))
 				require.False(t, exists)
 			}
@@ -266,13 +276,22 @@ func TestStore_ProgressDeletedOnCascade(t *testing.T) {
 
 	t.Run("DeletedOnSeriesDelete", func(t *testing.T) {
 		s := mustOpenStoreMem(t)
+		defer mustCloseStore(t, s)
+
 		u := human.NewUser("a", "a", human.Standard)
 		require.Nil(t, s.AddUser(u, true))
-		defer mustCloseStore(t, s)
 
 		for _, d := range parsedData {
 			require.Nil(t, s.AddSeries(d.s, d.e))
 			require.Nil(t, s.SetSeriesProgressUnread(d.s.SID, u.UID))
+
+			var exists bool
+			stmt := `SELECT COUNT(*) > 0 FROM progress WHERE sid = ? AND eid = ?`
+
+			for _, e := range d.e {
+				require.Nil(t, s.pool.Get(&exists, stmt, d.s.SID, e.EID))
+				require.True(t, exists)
+			}
 
 			fn := func(tx *sqlx.Tx) error {
 				return s.deleteSeries(tx, d.s.SID)
@@ -280,8 +299,6 @@ func TestStore_ProgressDeletedOnCascade(t *testing.T) {
 			require.Nil(t, s.tx(fn))
 
 			for _, e := range d.e {
-				var exists bool
-				stmt := `SELECT COUNT(*) > 0 FROM progress WHERE sid = ? AND eid = ?`
 				require.Nil(t, s.pool.Get(&exists, stmt, d.s.SID, e.EID))
 				require.False(t, exists)
 			}

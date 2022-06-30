@@ -5,12 +5,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/fiwippi/tanuki/internal/platform/archive"
 	"github.com/fiwippi/tanuki/internal/platform/dbutil"
 	"github.com/fiwippi/tanuki/internal/platform/hash"
 	"github.com/fiwippi/tanuki/internal/platform/image"
 	"github.com/fiwippi/tanuki/pkg/manga"
-	"github.com/stretchr/testify/require"
 )
 
 func testPopulateGetCatalog(t *testing.T) {
@@ -141,7 +142,7 @@ func testGetDeleteMissingEntries(t *testing.T) {
 	// Delete the missing items
 	require.Nil(t, s.DeleteMissingItems())
 
-	// Check they dont exist in DB
+	// Check they don't exist in DB
 	dbSeries, err = s.GetSeries(series.SID)
 	require.NotNil(t, err)
 	require.Nil(t, dbSeries)
@@ -149,7 +150,7 @@ func testGetDeleteMissingEntries(t *testing.T) {
 	require.Nil(t, err)
 	require.True(t, len(dbEntries) == 0)
 
-	// Check they dont return as missing items
+	// Check they don't return as missing items
 	missingItems, err = s.GetMissingItems()
 	require.Nil(t, err)
 	require.True(t, len(missingItems) == 0)

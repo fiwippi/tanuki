@@ -11,7 +11,7 @@ require (
 	github.com/rs/zerolog v1.23.0
 	github.com/stretchr/testify v1.7.1
 	golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d
-	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306
 	modernc.org/sqlite v1.17.3
 )
@@ -42,12 +42,11 @@ require (
 	github.com/therootcompany/xz v1.0.1 // indirect
 	github.com/ugorji/go/codec v1.1.7 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9 // indirect
-	golang.org/x/mod v0.3.0 // indirect
-	golang.org/x/sys v0.0.0-20211007075335-d3039528d8ac // indirect
+	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
+	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
+	golang.org/x/sys v0.0.0-20211019181941-9d821ace8654 // indirect
 	golang.org/x/text v0.3.7 // indirect
-	golang.org/x/tools v0.1.0 // indirect
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
+	golang.org/x/tools v0.1.11 // indirect
 	gopkg.in/yaml.v2 v2.2.8 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 	lukechampine.com/uint128 v1.1.1 // indirect

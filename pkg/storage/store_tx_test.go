@@ -24,5 +24,13 @@ func TestStore_tx(t *testing.T) {
 	}
 	require.Nil(t, s.tx(fn))
 
+	// Retrieving something which does't exist
+	// should return the item not exit error
+	fn = func(tx *sqlx.Tx) error {
+		_, err := s.getSeries(tx, "")
+		return err
+	}
+	require.ErrorIs(t, s.tx(fn), ErrItemNotExist)
+
 	mustCloseStore(t, s)
 }

@@ -8,11 +8,6 @@ import (
 	"github.com/fiwippi/tanuki/pkg/human"
 )
 
-// TODO test for stuff not existing and it should return proper not exists error instead of sql.row not exists
-// TODO if an entry or series was deleted its accompanying progress should be deleted as well
-// TODO what error does get entry return if an entry does not exist
-// TODO test that when creating series progress, all relevant progress entries are created in the table
-
 var ErrUserNotExist = errors.New("user does not exist")
 var ErrInvalidProgressAmount = errors.New("progress amount is invalid (below zero or above total number of pages)")
 

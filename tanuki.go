@@ -11,10 +11,8 @@ package main
 //  7. Implement metadata?
 //	8. Benchmark how long it takes for the full library to scan compared to mango
 //
-// TODO
-//  - How does Mango solve the problems like catalog metadata and series metadata?
-//  - Store metadata like what chapter the manga links to in a physical json file so it can be copied around
-//    since otherwise every time a new series is scanned, the metadata is wiped out
+// TODO benchmark memory usage, i.e. https://wagslane.dev/posts/go-struct-ordering/
+// TODO use field alignment to reduce struct size
 
 //
 //import (

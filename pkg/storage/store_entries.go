@@ -12,8 +12,6 @@ import (
 	"github.com/fiwippi/tanuki/pkg/manga"
 )
 
-// TODO test modtime changing causes entry metadata to be deleted
-
 func (s *Store) hasEntry(tx *sqlx.Tx, sid, eid string) bool {
 	var exists bool
 	tx.Get(&exists, "SELECT COUNT(sid) > 0 FROM entries WHERE sid = ? AND eid = ?", sid, eid)
@@ -128,7 +126,7 @@ func (s *Store) addEntry(tx *sqlx.Tx, e *manga.Entry, position int) error {
 		return err
 	}
 
-	_, err = tx.Exec("UPDATE entries SET position = ? WHERE sid = ? AND  eid = ?", position, e.SID, e.EID)
+	_, err = tx.Exec("UPDATE entries SET position = ? WHERE sid = ? AND eid = ?", position, e.SID, e.EID)
 	return err
 }
 
@@ -188,10 +186,9 @@ func (s *Store) SetEntryCover(sid, eid, name string, data []byte) error {
 	if len(data) == 0 {
 		return ErrInvalidCover
 	}
-
 	it, err := image.InferType(name)
 	if err != nil {
-		return err
+		return ErrInvalidCover
 	}
 
 	fn := func(tx *sqlx.Tx) error {

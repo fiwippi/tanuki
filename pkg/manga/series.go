@@ -17,8 +17,6 @@ import (
 )
 
 // TODO test returning series as struct and values and as poitners
-// TODO function to look for missing progress/entries/series/whatever
-// TODO if an entry gets deleted on the filesystem instead of through the db, does the progress for it get delted as well
 
 type Series struct {
 	SID         string      `json:"sid" db:"sid"`
