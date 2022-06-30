@@ -2,6 +2,8 @@ package storage
 
 import (
 	"fmt"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/jmoiron/sqlx"
 	_ "modernc.org/sqlite"
@@ -13,7 +15,6 @@ import (
 
 // TODO is there a way to reduce similar code, e.g. code used to get covers or thumbnails
 // TODO all functions which don't mutate a pointer (not just in storage, should pass by value)
-// TODO: string representation of the DB
 // TODO: SQL VACCUUM MODE
 
 type Store struct {
@@ -158,4 +159,43 @@ func NewStore(dbPath, libraryPath string, recreate bool) (*Store, error) {
 
 func (s *Store) Close() error {
 	return s.pool.Close()
+}
+
+func (s *Store) Dump() (string, error) {
+	dump := ""
+	fn := func(tx *sqlx.Tx) error {
+		var names []string
+		err := tx.Select(&names, `SELECT name FROM sqlite_master WHERE type = 'table'`)
+		if err != nil {
+			return err
+		}
+
+		for _, name := range names {
+			dump += fmt.Sprintf("%s\n%s\n", name, strings.Repeat("-", utf8.RuneCountInString(name)))
+			rows, err := tx.Queryx(fmt.Sprintf("SELECT * FROM %s", name))
+			if err != nil {
+				return err
+			}
+
+			i := 1
+			for rows.Next() {
+				results := make(map[string]interface{})
+				err = rows.MapScan(results)
+				if err != nil {
+					return err
+				}
+
+				dump += fmt.Sprintf("%d. %s\n", i, results)
+				i++
+			}
+			dump += "\n\n"
+		}
+
+		return nil
+	}
+
+	if err := s.tx(fn); err != nil {
+		return "", err
+	}
+	return dump, nil
 }

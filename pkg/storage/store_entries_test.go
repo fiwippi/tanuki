@@ -13,8 +13,6 @@ import (
 	"github.com/fiwippi/tanuki/pkg/manga"
 )
 
-// TODO use prepared statements to deduplicate code
-
 // Core
 
 func TestStore_HasEntry(t *testing.T) {

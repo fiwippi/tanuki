@@ -19,6 +19,8 @@ const (
 	libPath = "../../tests/lib"
 )
 
+// TODO remove ROWID from some rows
+
 var tempFiles = make([]string, 0)
 var defaultUID = hash.SHA1("default")
 var parsedData []struct {

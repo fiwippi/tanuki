@@ -16,7 +16,7 @@ import (
 	"github.com/fiwippi/tanuki/internal/platform/fse"
 )
 
-// TODO test returning series as struct and values and as poitners
+// TODO test returning series as struct and values and as poitners, check the size of the struct to see wheter it should be a pointer or a value
 
 type Series struct {
 	SID         string      `json:"sid" db:"sid"`
