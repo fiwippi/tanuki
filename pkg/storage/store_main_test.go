@@ -2,13 +2,18 @@ package storage
 
 import (
 	"context"
+	"math"
 	"os"
+	"strings"
 	"testing"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
 	_ "modernc.org/sqlite"
 
 	"github.com/fiwippi/tanuki/internal/log"
+	"github.com/fiwippi/tanuki/internal/platform/dbutil"
+	"github.com/fiwippi/tanuki/internal/platform/fse"
 	"github.com/fiwippi/tanuki/internal/platform/hash"
 	"github.com/fiwippi/tanuki/pkg/human"
 	"github.com/fiwippi/tanuki/pkg/manga"
@@ -130,4 +135,79 @@ func TestNewStore(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, oldPass, u.Pass)
 	mustCloseStore(t, s)
+}
+
+// TODO provide a tanuki command line utility where u can vacuum it, ensure a backup is create if the vacuum is cancelled
+
+func TestVacuum(t *testing.T) {
+	s, tf := mustOpenStoreFile(t, nil, false)
+	defer mustCloseStore(t, s)
+
+	// Add large amount of data
+	require.Nil(t, s.AddSeries(parsedData[0].s, nil))
+	for i := 1; i <= 500; i++ {
+		if i == 1 || i%100 == 0 {
+			t.Log("Adding:", i)
+		}
+
+		sid := parsedData[0].s.SID
+		eid := strings.Repeat("-", i)
+
+		fn := func(tx *sqlx.Tx) error {
+			err := s.addEntry(tx, &manga.Entry{
+				SID:         sid,
+				EID:         eid,
+				Title:       eid,
+				Archive:     manga.Archive{},
+				Pages:       nil,
+				ModTime:     dbutil.Time{},
+				DisplayTile: "",
+			}, i)
+			return err
+		}
+		require.Nil(t, s.tx(fn))
+		require.Nil(t, s.SetEntryCover(sid, eid, "cover.jpg", customCover))
+	}
+
+	// Check size of file
+	fi, err := tf.Stat()
+	require.Nil(t, err)
+	t.Log("Size: ", math.Round(fse.Filesize(fi.Size())), "MiB")
+
+	// Delete the entries
+	for i := 1; i <= 500; i++ {
+		if i == 1 || i%100 == 0 {
+			t.Log("Deleting:", i)
+		}
+
+		sid := parsedData[0].s.SID
+		eid := strings.Repeat("-", i)
+
+		fn := func(tx *sqlx.Tx) error {
+			err := s.deleteEntry(tx, sid, eid)
+			return err
+		}
+		require.Nil(t, s.tx(fn))
+	}
+
+	// Check size of DB
+	fi, err = tf.Stat()
+	require.Nil(t, err)
+	sizeBef := math.Round(fse.Filesize(fi.Size()))
+	t.Log("Size: ", sizeBef, "MiB")
+
+	// Run Vacuum
+	t.Log("Vacuuming...")
+	require.Nil(t, s.Vacuum())
+
+	// Check size of DB
+	fi, err = tf.Stat()
+	require.Nil(t, err)
+	sizeAft := math.Round(fse.Filesize(fi.Size()))
+	t.Log("Size: ", sizeAft, "MiB")
+
+	// Size after should be less than size before
+	require.Less(t, sizeAft, sizeBef)
+
+	require.Nil(t, tf.Close())
 }

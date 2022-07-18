@@ -15,7 +15,7 @@ import (
 
 // TODO is there a way to reduce similar code, e.g. code used to get covers or thumbnails
 // TODO all functions which don't mutate a pointer (not just in storage, should pass by value)
-// TODO: SQL VACCUUM MODE
+// TODO SQL VACCUUM MODE
 
 type Store struct {
 	pool        *sqlx.DB
@@ -198,4 +198,9 @@ func (s *Store) Dump() (string, error) {
 		return "", err
 	}
 	return dump, nil
+}
+
+func (s *Store) Vacuum() error {
+	_, err := s.pool.Exec("VACUUM")
+	return err
 }
