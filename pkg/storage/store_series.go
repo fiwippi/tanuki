@@ -219,8 +219,6 @@ func (s *Store) GetSeriesThumbnail(sid string) ([]byte, image.Type, error) {
 
 // Tags / Metadata
 
-// TODO: can we make tags only values and not pointers
-
 func (s *Store) SetSeriesTags(sid string, tags *manga.Tags) error {
 	_, err := s.pool.Exec("UPDATE series SET tags = ? WHERE sid = ?", tags, sid)
 	return err

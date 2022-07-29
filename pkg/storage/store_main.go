@@ -24,7 +24,7 @@ type Store struct {
 func NewStore(dbPath, libraryPath string, recreate bool) (*Store, error) {
 	s := &Store{
 		libraryPath: libraryPath,
-		pool:        sqlx.MustConnect("sqlite", dbPath+"?_pragma=foreign_keys(on)"),
+		pool:        sqlx.MustConnect("sqlite", dbPath+"?_pragma=journal_mode(WAL)&_pragma=foreign_keys(on)"),
 	}
 
 	// Drop if recreating
@@ -208,5 +208,9 @@ func (s *Store) Dump() (string, error) {
 
 func (s *Store) Vacuum() error {
 	_, err := s.pool.Exec("VACUUM")
+	if err != nil {
+		return err
+	}
+	_, err = s.pool.Exec("PRAGMA wal_checkpoint(TRUNCATE);")
 	return err
 }

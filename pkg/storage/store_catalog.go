@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 
@@ -12,8 +13,6 @@ import (
 	"github.com/fiwippi/tanuki/internal/platform/fse"
 	"github.com/fiwippi/tanuki/pkg/manga"
 )
-
-// TODO benchmark populate catalog and generate thumbnails
 
 type MissingItem struct {
 	Type  string `json:"type"`
@@ -93,31 +92,40 @@ func (s *Store) GetCatalog() ([]*manga.Series, error) {
 func (s *Store) GenerateThumbnails(overwrite bool) error {
 	var errs errors.Errors
 
-	fn := func(tx *sqlx.Tx) error {
-		var sids []string
-		tx.Select(&sids, `SELECT sid FROM series`)
+	// Get all sids
+	var sids []string
+	s.pool.Select(&sids, `SELECT sid FROM series`)
 
-		for _, sid := range sids {
+	// Generate thumbnails for each series
+	for _, sid := range sids {
+		time.Sleep(500 * time.Millisecond)
+
+		fn := func(tx *sqlx.Tx) error {
 			_, err := s.generateSeriesThumbnail(tx, sid, overwrite)
-			if err != nil {
-				errs.Add(err)
-				continue
-			}
-
-			var eids []string
-			tx.Select(&eids, `SELECT eid FROM entries WHERE sid = ?`, sid)
-
-			for _, eid := range eids {
-				_, err := s.generateEntryThumbnail(tx, sid, eid, overwrite)
-				if err != nil {
-					errs.Add(err)
-				}
-			}
+			return err
+		}
+		if err := s.tx(fn); err != nil {
+			errs.Add(err)
+			continue
 		}
 
-		return nil
+		// Get entry thumbnails
+		var eids []string
+		s.pool.Select(&eids, `SELECT eid FROM entries WHERE sid = ?`, sid)
+
+		// Generate thumbnails for each series
+		for _, eid := range eids {
+			time.Sleep(500 * time.Millisecond)
+
+			fn := func(tx *sqlx.Tx) error {
+				_, err := s.generateEntryThumbnail(tx, sid, eid, overwrite)
+				return err
+			}
+			if err := s.tx(fn); err != nil {
+				errs.Add(err)
+			}
+		}
 	}
-	s.tx(fn)
 
 	return errs.Ret()
 }

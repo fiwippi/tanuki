@@ -1,7 +1,10 @@
 package storage
 
 import (
+	"context"
+	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -9,10 +12,13 @@ import (
 
 	"github.com/fiwippi/tanuki/internal/platform/archive"
 	"github.com/fiwippi/tanuki/internal/platform/dbutil"
+	"github.com/fiwippi/tanuki/internal/platform/fse"
 	"github.com/fiwippi/tanuki/internal/platform/hash"
 	"github.com/fiwippi/tanuki/internal/platform/image"
 	"github.com/fiwippi/tanuki/pkg/manga"
 )
+
+// TODO check the memory footprint of the current system
 
 func testPopulateGetCatalog(t *testing.T) {
 	t.Run("CatalogWithEntries", func(t *testing.T) {
@@ -178,4 +184,54 @@ func TestStore_GetMissingEntries(t *testing.T) {
 
 func TestStore_DeleteMissingEntries(t *testing.T) {
 	testGetDeleteMissingEntries(t)
+}
+
+func TestStore_GenerateThumbnailsDoesNotBlockExcessively(t *testing.T) {
+	dir := os.Getenv("TANUKI_CUSTOM_LIB_DIR")
+	if dir == "" {
+		dir = libPath
+	}
+	require.NotEqual(t, "", dir)
+	require.True(t, fse.Exists(dir))
+
+	s, tf := mustOpenStoreFile(t, nil, false)
+	defer tf.Close()
+	defer mustCloseStore(t, s)
+	s.libraryPath = dir
+
+	require.Nil(t, s.PopulateCatalog())
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func() {
+		require.Nil(t, s.GenerateThumbnails(true))
+	}()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	doneChan := make(chan struct{})
+	go func() {
+		defer wg.Done()
+
+		var err error
+
+		select {
+		case <-ctx.Done():
+			err = ctx.Err()
+		case <-doneChan:
+			err = nil
+		}
+
+		require.Nil(t, err)
+	}()
+
+	go func() {
+		t.Log("Populating catalog")
+		require.Nil(t, s.PopulateCatalog())
+		doneChan <- struct{}{}
+		t.Log("Populated catalog")
+	}()
+
+	wg.Wait()
 }

@@ -5,7 +5,9 @@ import (
 	"math"
 	"os"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
@@ -34,7 +36,7 @@ var parsedData []struct {
 }
 var customCover []byte
 
-func mustOpenStoreFile(t *testing.T, f *os.File, recreate bool) (*Store, *os.File) {
+func mustOpenStoreFile(t require.TestingT, f *os.File, recreate bool) (*Store, *os.File) {
 	var err error
 	if f == nil {
 		f, err = os.CreateTemp("", "tanuki-store-test")
@@ -47,13 +49,13 @@ func mustOpenStoreFile(t *testing.T, f *os.File, recreate bool) (*Store, *os.Fil
 	return s, f
 }
 
-func mustOpenStoreMem(t *testing.T) *Store {
+func mustOpenStoreMem(t require.TestingT) *Store {
 	s, err := NewStore("file::memory:", libPath, false)
 	require.Nil(t, err)
 	return s
 }
 
-func mustCloseStore(t *testing.T, s *Store) {
+func mustCloseStore(t require.TestingT, s *Store) {
 	require.Nil(t, s.Close())
 }
 
@@ -210,4 +212,67 @@ func TestVacuum(t *testing.T) {
 	require.Less(t, sizeAft, sizeBef)
 
 	require.Nil(t, tf.Close())
+}
+
+func TestStore_CanReadConcurrently(t *testing.T) {
+	// Files are used when testing concurrency
+	s, tf := mustOpenStoreFile(t, nil, false)
+	defer tf.Close()
+	defer mustCloseStore(t, s)
+
+	require.Nil(t, s.PopulateCatalog())
+
+	var wg sync.WaitGroup
+	wg.Add(3)
+	for i := 0; i < 3; i++ {
+		go func() {
+			defer wg.Done()
+			for i := 0; i < 100000; i++ {
+				_, err := s.GetCatalog()
+				require.Nil(t, err)
+			}
+		}()
+	}
+	wg.Wait()
+}
+
+func TestStore_CanReadAndWriteConcurrently(t *testing.T) {
+	// Files are used when testing concurrency
+	s, tf := mustOpenStoreFile(t, nil, false)
+	defer tf.Close()
+	defer mustCloseStore(t, s)
+
+	require.Nil(t, s.PopulateCatalog())
+
+	go func() {
+		time.Sleep(1 * time.Second)
+
+		t.Log("Getting catalog...")
+		for i := 0; i < 8000; i++ {
+			_, err := s.GetCatalog()
+			require.Nil(t, err)
+		}
+		t.Log("Got catalog")
+	}()
+
+	t.Log("Writing...")
+	start := time.Now()
+	fn := func(tx *sqlx.Tx) error {
+		var sids []string
+		tx.Select(&sids, `SELECT sid FROM series`)
+		require.NotZero(t, len(sids))
+
+		for i := 0; i < 1250; i++ {
+			for _, sid := range sids {
+				_, err := s.generateSeriesThumbnail(tx, sid, true)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		return nil
+	}
+	require.Nil(t, s.tx(fn))
+	t.Log("Done writing...", time.Since(start).String())
 }
