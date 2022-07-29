@@ -10,9 +10,10 @@ import (
 
 func TestClient(t *testing.T) {
 	// SearchManga
-	ls, err := SearchManga(context.TODO(), "hori", 2)
+	ls, err := SearchManga(context.TODO(), "Hori-san to Miyamura", 2)
 	require.Nil(t, err)
 	require.NotZero(t, len(ls))
+	require.Contains(t, ls[0].Title, "Hori")
 
 	// ListChapters
 	chs, err := ls[0].ListChapters(context.Background())

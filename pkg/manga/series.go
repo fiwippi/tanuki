@@ -16,6 +16,8 @@ import (
 	"github.com/fiwippi/tanuki/internal/platform/fse"
 )
 
+// TODO pad the fields correctly
+// TODO calculate struct sizes and decide which ones should be pointers
 // TODO test returning series as struct and values and as poitners, check the size of the struct to see wheter it should be a pointer or a value
 
 type Series struct {
@@ -28,14 +30,11 @@ type Series struct {
 	// Below are fields which aren't picked up by
 	// the scan and shouldn't overwrite current
 	// values that could exist
-	Tags                *Tags             `json:"tags" db:"tags"`
-	DisplayTile         dbutil.NullString `json:"display_title" db:"display_title"`
-	MdexUUID            dbutil.NullString `json:"mangadex_uuid" db:"mangadex_uuid"`
-	MdexLastPublishedAt dbutil.Time       `json:"mangadex_last_published_at" db:"mangadex_last_published_at"`
-	// TODO test the manager works with subscriptions
+	Tags         *Tags             `json:"tags" db:"tags"`
+	DisplayTitle dbutil.NullString `json:"display_title" db:"display_title"`
 }
 
-func folderID(dir string) (string, error) {
+func FolderID(dir string) (string, error) {
 	f, err := os.OpenFile(filepath.Join(dir, "info.tanuki"), os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
 		return "", err
@@ -64,7 +63,7 @@ func folderID(dir string) (string, error) {
 }
 
 func ParseSeries(ctx context.Context, dir string) (*Series, []*Entry, error) {
-	id, err := folderID(dir)
+	id, err := FolderID(dir)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -84,7 +83,8 @@ func ParseSeries(ctx context.Context, dir string) (*Series, []*Entry, error) {
 		}
 
 		if d != nil && !d.IsDir() {
-			// We want to avoid parsing non-archive files like cover images
+			// We want to avoid parsing non-archive files which may exist
+			// in the folder
 			_, err = archive.InferType(path)
 			if err != nil {
 				// We continue processing the folder if the file is not an archive
@@ -118,7 +118,8 @@ func ParseSeries(ctx context.Context, dir string) (*Series, []*Entry, error) {
 
 	s.NumEntries = len(en)
 
-	// Sort the entries list and add the correct order for each one
+	// Sort the entries list
+	// TODO where does the sorting by display title happen?
 	sort.SliceStable(en, func(i, j int) bool {
 		return fse.SortNatural(en[i].Archive.Title, en[j].Archive.Title)
 	})

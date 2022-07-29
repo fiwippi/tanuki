@@ -51,19 +51,23 @@ func (s *Store) PopulateCatalog() error {
 
 func (s *Store) getCatalog(tx *sqlx.Tx) ([]*manga.Series, error) {
 	var v []*manga.Series
-	err := tx.Select(&v, getSeriesStmt)
+	stmt := `
+		SELECT 
+		    sid, folder_title, num_entries, num_pages, mod_time, tags, display_title
+		FROM series ORDER BY ROWID DESC`
+	err := tx.Select(&v, stmt)
 	if err != nil {
 		return nil, err
 	}
 
 	sort.Slice(v, func(i, j int) bool {
 		a := v[i].FolderTitle
-		if v[i].DisplayTile != "" {
-			a = string(v[i].DisplayTile)
+		if v[i].DisplayTitle != "" {
+			a = string(v[i].DisplayTitle)
 		}
 		b := v[j].FolderTitle
-		if v[j].DisplayTile != "" {
-			b = string(v[j].DisplayTile)
+		if v[j].DisplayTitle != "" {
+			b = string(v[j].DisplayTitle)
 		}
 
 		return fse.SortNatural(a, b)

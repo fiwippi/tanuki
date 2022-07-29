@@ -16,7 +16,6 @@ type Listing struct {
 	CoverURL      string
 	SmallCoverURL string
 	Year          int
-	QueryTime     time.Time
 }
 
 func (l Listing) ListChapters(ctx context.Context) ([]Chapter, error) {
@@ -86,6 +85,7 @@ func NewChapters(ctx context.Context, id string, since time.Time) ([]Chapter, er
 
 		ch := Chapter{
 			ID:              d.ID,
+			SeriesID:        id,
 			Title:           d.Attributes.Title,
 			ScanlationGroup: scanG,
 			PublishedAt:     dbutil.Time(d.Attributes.PublishedAt),

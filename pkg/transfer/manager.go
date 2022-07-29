@@ -2,16 +2,16 @@ package transfer
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/fiwippi/tanuki/internal/log"
 	"github.com/fiwippi/tanuki/internal/mangadex"
+	"github.com/fiwippi/tanuki/internal/platform/dbutil"
+	"github.com/fiwippi/tanuki/internal/platform/fse"
+	"github.com/fiwippi/tanuki/pkg/manga"
 	"github.com/fiwippi/tanuki/pkg/storage"
 )
-
-// TODO:
-//     1. ability to bind a listing uuid to a specific folder
-//     2. ability to download a listing and create a subscription for it
-//        if one doesn't exist already
 
 var downloadsPool = NewPool()
 
@@ -24,7 +24,9 @@ type Manager struct {
 	doneFunc        func() error
 }
 
-func NewManager(libraryPath string, workers int, store *storage.Store, done func() error) *Manager {
+// TODO add sbInterval to the config
+
+func NewManager(libraryPath string, workers int, store *storage.Store, done func() error, sbInterval time.Duration) *Manager {
 	m := &Manager{
 		store:           store,
 		controller:      newController(),
@@ -37,6 +39,7 @@ func NewManager(libraryPath string, workers int, store *storage.Store, done func
 	for id := 0; id < workers; id++ {
 		go m.worker(id)
 	}
+	go m.checkSubscriptions(sbInterval)
 
 	return m
 }
@@ -54,11 +57,30 @@ func (m *Manager) worker(id int) {
 		// Process the download
 		if m.activeDownloads.Has(d) {
 			err := d.Run(context.Background(), m.libraryPath)
+
+			// Log the download's success
 			l := log.Info()
 			if err != nil {
 				l = log.Error()
 			}
 			l.Str("dl", d.String()).Err(err).Str("status", string(d.Status)).Int("wid", id).Msg("download finished")
+
+			// If the download was successful and user wants to subscribe
+			// to the series then add the series' uuid to the database
+			if d.Subscribe && err == nil {
+				// Get the SID of the download
+				folderPath := fmt.Sprintf("%s/%s", m.libraryPath, fse.Sanitise(d.MangaTitle))
+				sid, err := manga.FolderID(folderPath)
+				if err != nil {
+					log.Error().Err(err).Str("dl", d.String()).Int("wid", id).Msg("failed to get sid for finished dl")
+				}
+
+				// If successful then update the last published in the subscriptions db
+				err = m.store.SetSubscriptionWithTime(sid, d.MangaTitle, dbutil.NullString(d.Chapter.SeriesID), d.Chapter.PublishedAt, true)
+				if err != nil {
+					log.Error().Err(err).Str("dl", d.String()).Int("wid", id).Msg("failed to set dl subscription in db")
+				}
+			}
 		}
 
 		// Remove it from the active downloads
@@ -69,9 +91,6 @@ func (m *Manager) worker(id int) {
 		if err != nil {
 			log.Debug().Err(err).Int("wid", id).Str("dl", d.String()).Msg("could not save dl to store")
 		}
-
-		// TODO: manager updates the last published at of the subscription here if possible
-		//       by checking if the download folder has an info.tanuki
 
 		// If no more downloads left then call the doneFunc
 		if len(m.activeDownloads.l) == 0 {
@@ -88,8 +107,8 @@ func (m *Manager) worker(id int) {
 
 // Downloading
 
-func (m *Manager) Queue(mangaTitle string, ch mangadex.Chapter) {
-	d := ch.CreateDownload(mangaTitle)
+func (m *Manager) Queue(mangaTitle string, ch mangadex.Chapter, createSubscription bool) {
+	d := ch.CreateDownload(mangaTitle, createSubscription)
 	m.activeDownloads.Add(d)
 	m.queue <- d
 }
@@ -135,4 +154,60 @@ func (m *Manager) RetryFailedDownloads() error {
 	}()
 
 	return nil
+}
+
+// Subscriptions
+
+func (m *Manager) checkSubscriptions(interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			log.Info().Msg("checking subscriptions for new chapters")
+
+			// Get all subscriptions
+			sbs, err := m.store.GetAllSubscriptions()
+			if err != nil {
+				log.Error().Err(err).Msg("manager failed to get subscriptions to check for new chapters")
+				continue
+			}
+
+			// Download each subscription
+			for _, sb := range sbs {
+				// Get all new chapters for the subscription
+				ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+				chs, err := mangadex.NewChapters(ctx, string(sb.MdexUUID), sb.MdexLastPublishedAt.Time())
+				cancel()
+				if err != nil {
+					log.Error().Err(err).Str("sid", sb.SID).Str("mangadex_uuid", string(sb.MdexUUID)).
+						Str("mangadex_last_published_at", sb.MdexLastPublishedAt.String()).
+						Msg("manager failed to get new chapters for subscription")
+					continue
+				}
+
+				fmt.Println("chapters", len(chs), sb.MdexLastPublishedAt)
+				for _, ch := range chs {
+					fmt.Println(ch.VolumeNo, ch.ChapterNo, ch.PublishedAt)
+				}
+
+				// If we already have any of these chapters, i.e. an SID already exists
+				// we try to find the series folder title since it might be different
+				// to the manga title, otherwise we just use the title field from the
+				// subscription struct to decide what folder to download the chapters
+				// into
+				title := sb.Title
+				series, err := m.store.GetSeries(sb.SID)
+				if err == nil {
+					title = series.FolderTitle
+				}
+
+				// Queue the new chapter for downloading
+				for _, ch := range chs {
+					m.Queue(title, ch, true)
+				}
+			}
+		}
+	}
 }

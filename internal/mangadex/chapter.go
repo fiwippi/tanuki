@@ -13,6 +13,7 @@ import (
 
 type Chapter struct {
 	ID              string      `json:"id"`
+	SeriesID        string      `json:"series_id"`
 	Title           string      `json:"title"`
 	ScanlationGroup string      `json:"scanlation_group"`
 	PublishedAt     dbutil.Time `json:"published_at"`
@@ -91,13 +92,14 @@ func (ch Chapter) downloadZip(ctx context.Context, progress chan<- int) (*archiv
 	return z, nil
 }
 
-func (ch Chapter) CreateDownload(mangaTitle string) *Download {
+func (ch Chapter) CreateDownload(mangaTitle string, createSubscription bool) *Download {
 	return &Download{
 		MangaTitle:  mangaTitle,
 		Chapter:     ch,
 		Status:      DownloadQueued,
 		CurrentPage: 0,
 		TotalPages:  ch.Pages,
+		Subscribe:   createSubscription,
 	}
 }
 

@@ -17,10 +17,8 @@ func equalSeries(t *testing.T, s1, s2 *manga.Series) {
 	require.Equal(t, s1.SID, s2.SID)
 	require.Equal(t, s1.NumEntries, s2.NumEntries)
 	require.Equal(t, s1.NumPages, s2.NumPages)
-	require.Equal(t, s1.DisplayTile, s2.DisplayTile)
+	require.Equal(t, s1.DisplayTitle, s2.DisplayTitle)
 	require.Equal(t, s1.Tags, s2.Tags)
-	require.Equal(t, s1.MdexUUID, s2.MdexUUID)
-	require.Equal(t, s1.MdexLastPublishedAt, s2.MdexLastPublishedAt)
 	require.True(t, s1.ModTime.Equal(s2.ModTime))
 }
 
@@ -315,12 +313,12 @@ func TestStore_SetSeriesDisplayTitle(t *testing.T) {
 	require.Nil(t, s.SetSeriesDisplayTitle(series.SID, "HUH"))
 	dbSeries, err := s.GetSeries(series.SID)
 	require.Nil(t, err)
-	require.Equal(t, dbutil.NullString("HUH"), dbSeries.DisplayTile)
+	require.Equal(t, dbutil.NullString("HUH"), dbSeries.DisplayTitle)
 
 	require.Nil(t, s.SetSeriesDisplayTitle(series.SID, ""))
 	dbSeries, err = s.GetSeries(series.SID)
 	require.Nil(t, err)
-	require.Equal(t, dbutil.NullString(""), dbSeries.DisplayTile)
+	require.Equal(t, dbutil.NullString(""), dbSeries.DisplayTitle)
 
 	mustCloseStore(t, s)
 }

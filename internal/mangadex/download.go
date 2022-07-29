@@ -19,6 +19,7 @@ type Download struct {
 	CurrentPage int            `json:"current_page" db:"current_page"`
 	TotalPages  int            `json:"total_pages" db:"total_pages"`
 	TimeTaken   string         `json:"time_taken" db:"time_taken"`
+	Subscribe   bool           `json:"subscribe"`
 }
 
 func (d Download) String() string {

@@ -16,7 +16,7 @@ func (t Time) After(u Time) bool {
 func (t Time) Equal(u Time) bool {
 	a := time.Time(t).Round(time.Second)
 	b := time.Time(u).Round(time.Second)
-	return a.Equal(b)
+	return a.Equal(b) || a.Sub(b) <= 500*time.Millisecond
 }
 
 func (t Time) Time() time.Time {

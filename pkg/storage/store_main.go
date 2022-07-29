@@ -15,7 +15,6 @@ import (
 
 // TODO is there a way to reduce similar code, e.g. code used to get covers or thumbnails
 // TODO all functions which don't mutate a pointer (not just in storage, should pass by value)
-// TODO SQL VACCUUM MODE
 
 type Store struct {
 	pool        *sqlx.DB
@@ -33,7 +32,7 @@ func NewStore(dbPath, libraryPath string, recreate bool) (*Store, error) {
 		// We have to delete the tables which depend on other tables first
 		// and work our way back to tables which don't depend on anything
 		// to satisfy the foreign keys constraint
-		for _, t := range []string{"progress", "entries", "series", "users", "downloads"} {
+		for _, t := range []string{"progress", "entries", "subscriptions", "series", "users", "downloads"} {
 			if _, err := s.pool.Exec(fmt.Sprintf(`DROP TABLE IF EXISTS %s`, t)); err != nil {
 				return nil, err
 			}
@@ -78,11 +77,18 @@ func NewStore(dbPath, libraryPath string, recreate bool) (*Store, error) {
 		-- Custom metadata
 		display_title     TEXT,
 		custom_cover      BLOB,
-		custom_cover_type INTEGER,
-		
-		-- Subscription data
-		mangadex_uuid              TEXT,
-		mangadex_last_published_at TEXT
+		custom_cover_type INTEGER
+	);`
+	if _, err := s.pool.Exec(stmt); err != nil {
+		return nil, err
+	}
+
+	// Create the subscriptions table
+	stmt = `CREATE TABLE IF NOT EXISTS subscriptions (
+		sid                        TEXT PRIMARY KEY UNIQUE,
+		title                      TEXT NOT NULL,
+		mangadex_uuid              TEXT NOT NULL,
+		mangadex_last_published_at TEXT NOT NULL
 	);`
 	if _, err := s.pool.Exec(stmt); err != nil {
 		return nil, err

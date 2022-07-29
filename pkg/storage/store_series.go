@@ -11,7 +11,6 @@ import (
 	"github.com/fiwippi/tanuki/pkg/manga"
 )
 
-// TODO methods for subscriptions
 // TODO will long operations like populating the catalog and thumbnails block other operations
 
 // Core
@@ -37,7 +36,11 @@ func (s *Store) HasSeries(sid string) (bool, error) {
 
 func (s *Store) getSeries(tx *sqlx.Tx, sid string) (*manga.Series, error) {
 	var v manga.Series
-	err := tx.Get(&v, getSeriesStmt, sid)
+	stmt := `
+		SELECT 
+		    sid, folder_title, num_entries, num_pages, mod_time, tags, display_title
+		FROM series WHERE sid = ? ORDER BY ROWID DESC`
+	err := tx.Get(&v, stmt, sid)
 	if err != nil {
 		return nil, err
 	}

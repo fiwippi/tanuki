@@ -66,16 +66,14 @@ func SearchManga(ctx context.Context, title string, limit int) ([]Listing, error
 			}
 		}
 
-		l := Listing{
+		listings = append(listings, Listing{
 			ID:            d.ID,
 			Title:         d.Attributes.Title.English,
 			Description:   d.Attributes.Description.English,
 			CoverURL:      coverURL,
 			SmallCoverURL: coverURL + ".256.jpg",
 			Year:          d.Attributes.Year,
-		}
-
-		listings = append(listings, l)
+		})
 	}
 
 	return listings, nil
