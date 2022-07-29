@@ -122,6 +122,12 @@ func testGetDeleteMissingEntries(t *testing.T) {
 		Path:  "./b",
 	}
 
+	missingSubscription := MissingItem{
+		Type:  "Subscription",
+		Title: "c",
+		Path:  "c",
+	}
+
 	// Add the fake series and confirm they've been added
 	require.Nil(t, s.AddSeries(series, entries))
 	dbSeries, err := s.GetSeries(series.SID)
@@ -131,13 +137,18 @@ func testGetDeleteMissingEntries(t *testing.T) {
 	dbEntries, err := s.GetEntries(series.SID)
 	require.Nil(t, err)
 	require.True(t, len(dbEntries) == 1)
+	require.Nil(t, s.SetSubscription("c", "c", "c", false))
+	dbSubscription, err := s.GetSubscription("c")
+	require.Nil(t, err)
+	require.NotEqual(t, manga.Subscription{}, dbSubscription)
 
 	// Check they exist as missing entries
 	missingItems, err := s.GetMissingItems()
 	require.Nil(t, err)
-	require.Len(t, missingItems, 2)
+	require.Len(t, missingItems, 3)
 	require.Equal(t, missingSeries, missingItems[0])
 	require.Equal(t, missingEntry, missingItems[1])
+	require.Equal(t, missingSubscription, missingItems[2])
 
 	// Delete the missing items
 	require.Nil(t, s.DeleteMissingItems())
@@ -149,6 +160,9 @@ func testGetDeleteMissingEntries(t *testing.T) {
 	dbEntries, err = s.GetEntries(series.SID)
 	require.Nil(t, err)
 	require.True(t, len(dbEntries) == 0)
+	dbSubscriptions, err := s.GetAllSubscriptions()
+	require.Nil(t, err)
+	require.Zero(t, len(dbSubscriptions))
 
 	// Check they don't return as missing items
 	missingItems, err = s.GetMissingItems()

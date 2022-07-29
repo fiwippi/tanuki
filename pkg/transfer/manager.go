@@ -176,6 +176,14 @@ func (m *Manager) checkSubscriptions(interval time.Duration) {
 
 			// Download each subscription
 			for _, sb := range sbs {
+				series, err := m.store.GetSeries(sb.SID)
+				if err != nil {
+					log.Error().Err(err).Str("sid", sb.SID).Str("mangadex_uuid", string(sb.MdexUUID)).
+						Str("mangadex_last_published_at", sb.MdexLastPublishedAt.String()).
+						Msg("series does not exist for subscription")
+					continue
+				}
+
 				// Get all new chapters for the subscription
 				ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 				chs, err := mangadex.NewChapters(ctx, string(sb.MdexUUID), sb.MdexLastPublishedAt.Time())
@@ -187,25 +195,9 @@ func (m *Manager) checkSubscriptions(interval time.Duration) {
 					continue
 				}
 
-				fmt.Println("chapters", len(chs), sb.MdexLastPublishedAt)
-				for _, ch := range chs {
-					fmt.Println(ch.VolumeNo, ch.ChapterNo, ch.PublishedAt)
-				}
-
-				// If we already have any of these chapters, i.e. an SID already exists
-				// we try to find the series folder title since it might be different
-				// to the manga title, otherwise we just use the title field from the
-				// subscription struct to decide what folder to download the chapters
-				// into
-				title := sb.Title
-				series, err := m.store.GetSeries(sb.SID)
-				if err == nil {
-					title = series.FolderTitle
-				}
-
 				// Queue the new chapter for downloading
 				for _, ch := range chs {
-					m.Queue(title, ch, true)
+					m.Queue(series.FolderTitle, ch, true)
 				}
 			}
 		}

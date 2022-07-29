@@ -145,7 +145,7 @@ func TestVacuum(t *testing.T) {
 
 	// Add large amount of data
 	require.Nil(t, s.AddSeries(parsedData[0].s, nil))
-	for i := 1; i <= 300; i++ {
+	for i := 1; i <= 200; i++ {
 		if i == 1 || i%100 == 0 {
 			t.Log("Adding:", i)
 		}
@@ -175,7 +175,7 @@ func TestVacuum(t *testing.T) {
 	t.Log("Size: ", math.Round(fse.Filesize(fi.Size())), "MiB")
 
 	// Delete the entries
-	for i := 1; i <= 300; i++ {
+	for i := 1; i <= 200; i++ {
 		if i == 1 || i%100 == 0 {
 			t.Log("Deleting:", i)
 		}

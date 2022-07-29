@@ -7,7 +7,6 @@ import (
 	"github.com/fiwippi/tanuki/pkg/manga"
 )
 
-// TODO test this
 func (s *Store) setSubscriptionWithTime(tx *sqlx.Tx, sid, title string, uuid dbutil.NullString, t dbutil.Time, ensureNewest bool) error {
 	sb, err := s.getSubscription(tx, sid)
 
@@ -31,8 +30,8 @@ func (s *Store) setSubscriptionWithTime(tx *sqlx.Tx, sid, title string, uuid dbu
 	return nil
 }
 
-func (s *Store) SetSubscription(sid, title string, uuid dbutil.NullString, override bool) error {
-	return s.SetSubscriptionWithTime(sid, title, uuid, dbutil.Time{}, override)
+func (s *Store) SetSubscription(sid, title string, uuid dbutil.NullString, ensureNewest bool) error {
+	return s.SetSubscriptionWithTime(sid, title, uuid, dbutil.Time{}, ensureNewest)
 }
 
 func (s *Store) SetSubscriptionWithTime(sid, title string, uuid dbutil.NullString, t dbutil.Time, ensureNewest bool) error {
@@ -68,15 +67,40 @@ func (s *Store) GetSubscription(sid string) (manga.Subscription, error) {
 	return sb, nil
 }
 
-func (s *Store) GetAllSubscriptions() ([]manga.Subscription, error) {
+func (s *Store) getAllSubscriptions(tx *sqlx.Tx) ([]manga.Subscription, error) {
 	var sb []manga.Subscription
-	if err := s.pool.Select(&sb, `SELECT * FROM subscriptions`); err != nil {
+	if err := tx.Select(&sb, `SELECT * FROM subscriptions`); err != nil {
 		return nil, err
 	}
 	return sb, nil
 }
 
-func (s *Store) DeleteSubscription(sid string) error {
-	_, err := s.pool.Exec(`DELETE FROM subscriptions WHERE sid = ?`, sid)
+func (s *Store) GetAllSubscriptions() ([]manga.Subscription, error) {
+	var sb []manga.Subscription
+	fn := func(tx *sqlx.Tx) error {
+		var err error
+		sb, err = s.getAllSubscriptions(tx)
+		return err
+	}
+
+	if err := s.tx(fn); err != nil {
+		return nil, err
+	}
+	return sb, nil
+}
+
+func (s *Store) deleteSubscription(tx *sqlx.Tx, sid string) error {
+	_, err := tx.Exec(`DELETE FROM subscriptions WHERE sid = ?`, sid)
 	return err
+}
+
+func (s *Store) DeleteSubscription(sid string) error {
+	fn := func(tx *sqlx.Tx) error {
+		return s.deleteSubscription(tx, sid)
+	}
+
+	if err := s.tx(fn); err != nil {
+		return err
+	}
+	return nil
 }

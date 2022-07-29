@@ -129,7 +129,6 @@ func (s *Store) processMissingItems(tx *sqlx.Tx, del bool) ([]MissingItem, error
 	if err != nil {
 		return nil, err
 	}
-
 	for _, series := range catalog {
 		fp := filepath.Join(s.libraryPath, series.FolderTitle)
 		if !fse.Exists(fp) {
@@ -166,6 +165,28 @@ func (s *Store) processMissingItems(tx *sqlx.Tx, del bool) ([]MissingItem, error
 				}
 			}
 		}
+	}
+
+	sbs, err := s.getAllSubscriptions(tx)
+	if err != nil {
+		return nil, err
+	}
+	for _, sb := range sbs {
+		_, err := s.getSeries(tx, sb.SID)
+		if err != nil {
+			missing = append(missing, MissingItem{
+				Type:  "Subscription",
+				Title: sb.Title,
+				Path:  string(sb.MdexUUID),
+			})
+
+			if del {
+				if err := s.deleteSubscription(tx, sb.SID); err != nil {
+					return nil, err
+				}
+			}
+		}
+
 	}
 
 	return missing, nil
