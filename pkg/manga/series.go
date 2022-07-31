@@ -16,10 +16,6 @@ import (
 	"github.com/fiwippi/tanuki/internal/platform/fse"
 )
 
-// TODO pad the fields correctly
-// TODO calculate struct sizes and decide which ones should be pointers
-// TODO test returning series as struct and values and as poitners, check the size of the struct to see wheter it should be a pointer or a value
-
 type Series struct {
 	SID         string      `json:"sid" db:"sid"`
 	FolderTitle string      `json:"folder_title" db:"folder_title"`
@@ -62,18 +58,18 @@ func FolderID(dir string) (string, error) {
 	return string(data), nil
 }
 
-func ParseSeries(ctx context.Context, dir string) (*Series, []*Entry, error) {
+func ParseSeries(ctx context.Context, dir string) (Series, []Entry, error) {
 	id, err := FolderID(dir)
 	if err != nil {
-		return nil, nil, err
+		return Series{}, nil, err
 	}
 
-	s := &Series{
+	s := Series{
 		SID:         id,
 		FolderTitle: fse.Filename(dir),
 		ModTime:     dbutil.Time{},
 	}
-	en := make([]*Entry, 0)
+	en := make([]Entry, 0)
 
 	g, ctx := errgroup.WithContext(ctx)
 
@@ -113,7 +109,7 @@ func ParseSeries(ctx context.Context, dir string) (*Series, []*Entry, error) {
 		return nil
 	})
 	if err := g.Wait(); err != nil {
-		return nil, nil, err
+		return Series{}, nil, err
 	}
 
 	s.NumEntries = len(en)

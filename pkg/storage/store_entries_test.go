@@ -56,7 +56,7 @@ func TestStore_getFirstEntry(t *testing.T) {
 		firstEntry := d.e[0]
 
 		var err error
-		var dbFirstEntry *manga.Entry
+		var dbFirstEntry manga.Entry
 		fn := func(tx *sqlx.Tx) error {
 			dbFirstEntry, err = s.getFirstEntry(tx, d.s.SID)
 			return err
@@ -81,7 +81,7 @@ func TestStore_getFirstEntry(t *testing.T) {
 		require.Nil(t, s.tx(fn))
 
 		var err error
-		var dbFirstEntry *manga.Entry
+		var dbFirstEntry manga.Entry
 		fn = func(tx *sqlx.Tx) error {
 			dbFirstEntry, err = s.getFirstEntry(tx, d.s.SID)
 			return err
@@ -115,7 +115,7 @@ func TestStore_getFirstEntry(t *testing.T) {
 		// Second entry is most recent and both have position
 		// zero so second entry should be returned
 		var err error
-		var returnedEntry *manga.Entry
+		var returnedEntry manga.Entry
 		fn = func(tx *sqlx.Tx) error {
 			returnedEntry, err = s.getFirstEntry(tx, d.s.SID)
 			return err
@@ -194,10 +194,10 @@ func TestStore_addEntry(t *testing.T) {
 			require.Nil(t, s.AddSeries(d.s, nil))
 
 			for i := range d.e {
-				eOriginal := *d.e[i]
+				eOriginal := d.e[i]
 				eOriginal.Title = "Before"
 
-				eChangedModTime := *d.e[i]
+				eChangedModTime := d.e[i]
 				eChangedModTime.Title = "After"
 				eChangedModTime.ModTime = dbutil.Time(time.Now())
 
@@ -205,7 +205,7 @@ func TestStore_addEntry(t *testing.T) {
 
 				// Add the original entry
 				fnBef := func(tx *sqlx.Tx) error {
-					return s.addEntry(tx, &eOriginal, i+1)
+					return s.addEntry(tx, eOriginal, i+1)
 				}
 				require.Nil(t, s.tx(fnBef))
 				e, err := s.GetEntry(d.s.SID, eOriginal.EID)
@@ -223,7 +223,7 @@ func TestStore_addEntry(t *testing.T) {
 
 				// Add the entry with the changed mod time
 				fnAft := func(tx *sqlx.Tx) error {
-					return s.addEntry(tx, &eChangedModTime, i+1)
+					return s.addEntry(tx, eChangedModTime, i+1)
 				}
 				require.Nil(t, s.tx(fnAft))
 				e, err = s.GetEntry(d.s.SID, eOriginal.EID)

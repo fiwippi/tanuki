@@ -18,8 +18,6 @@ import (
 	"github.com/fiwippi/tanuki/pkg/manga"
 )
 
-// TODO check the memory footprint of the current system
-
 func testPopulateGetCatalog(t *testing.T) {
 	t.Run("CatalogWithEntries", func(t *testing.T) {
 		s := mustOpenStoreMem(t)
@@ -96,7 +94,7 @@ func TestStore_GenerateThumbnails(t *testing.T) {
 func testGetDeleteMissingEntries(t *testing.T) {
 	s := mustOpenStoreMem(t)
 
-	series := &manga.Series{
+	series := manga.Series{
 		SID:         hash.SHA1("a"),
 		FolderTitle: "a",
 		NumEntries:  1,
@@ -109,7 +107,7 @@ func testGetDeleteMissingEntries(t *testing.T) {
 		Path:  filepath.Join(s.libraryPath, "a"),
 	}
 
-	entries := []*manga.Entry{
+	entries := []manga.Entry{
 		{
 			SID:     hash.SHA1("a"),
 			EID:     hash.SHA1("b"),
@@ -162,7 +160,7 @@ func testGetDeleteMissingEntries(t *testing.T) {
 	// Check they don't exist in DB
 	dbSeries, err = s.GetSeries(series.SID)
 	require.NotNil(t, err)
-	require.Nil(t, dbSeries)
+	require.Equal(t, manga.Series{}, dbSeries)
 	dbEntries, err = s.GetEntries(series.SID)
 	require.Nil(t, err)
 	require.True(t, len(dbEntries) == 0)
@@ -202,9 +200,10 @@ func TestStore_GenerateThumbnailsDoesNotBlockExcessively(t *testing.T) {
 	require.Nil(t, s.PopulateCatalog())
 
 	var wg sync.WaitGroup
-	wg.Add(1)
+	wg.Add(2)
 
 	go func() {
+		defer wg.Done()
 		require.Nil(t, s.GenerateThumbnails(true))
 	}()
 

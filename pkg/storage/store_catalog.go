@@ -48,8 +48,8 @@ func (s *Store) PopulateCatalog() error {
 	return errs.Ret()
 }
 
-func (s *Store) getCatalog(tx *sqlx.Tx) ([]*manga.Series, error) {
-	var v []*manga.Series
+func (s *Store) getCatalog(tx *sqlx.Tx) ([]manga.Series, error) {
+	var v []manga.Series
 	stmt := `
 		SELECT 
 		    sid, folder_title, num_entries, num_pages, mod_time, tags, display_title
@@ -75,8 +75,8 @@ func (s *Store) getCatalog(tx *sqlx.Tx) ([]*manga.Series, error) {
 	return v, nil
 }
 
-func (s *Store) GetCatalog() ([]*manga.Series, error) {
-	var ctl []*manga.Series
+func (s *Store) GetCatalog() ([]manga.Series, error) {
+	var ctl []manga.Series
 	fn := func(tx *sqlx.Tx) error {
 		var err error
 		ctl, err = s.getCatalog(tx)

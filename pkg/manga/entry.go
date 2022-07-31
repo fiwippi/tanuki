@@ -29,21 +29,21 @@ type Entry struct {
 	DisplayTile dbutil.NullString `json:"display_title" db:"display_title"`
 }
 
-func ParseEntry(ctx context.Context, fp string) (*Entry, error) {
+func ParseEntry(ctx context.Context, fp string) (Entry, error) {
 	// Ensure valid archive
 	at, err := archive.InferType(fp)
 	if err != nil {
-		return nil, err
+		return Entry{}, err
 	}
 
 	// Create the archive
 	absFp, err := filepath.Abs(fp)
 	if err != nil {
-		return nil, err
+		return Entry{}, err
 	}
 	aStats, err := os.Stat(absFp)
 	if err != nil {
-		return nil, err
+		return Entry{}, err
 	}
 	a := Archive{
 		Path:  absFp,
@@ -53,7 +53,7 @@ func ParseEntry(ctx context.Context, fp string) (*Entry, error) {
 
 	// Create the entry
 	title := fse.Filename(a.Path)
-	e := &Entry{
+	e := Entry{
 		Archive: a,
 		EID:     hash.SHA1(title),
 		Title:   title,
@@ -77,12 +77,12 @@ func ParseEntry(ctx context.Context, fp string) (*Entry, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return Entry{}, err
 	}
 
 	// Archive should contain images
 	if len(e.Pages) == 0 {
-		return nil, fmt.Errorf("archive has no pages")
+		return Entry{}, fmt.Errorf("archive has no pages")
 	}
 
 	// Walker does not walk the archive in archived order so we need to sort the pages

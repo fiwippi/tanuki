@@ -31,7 +31,7 @@ func (s *Store) HasEntry(sid, eid string) (bool, error) {
 	return exists, nil
 }
 
-func (s *Store) getEntry(tx *sqlx.Tx, sid, eid string) (*manga.Entry, error) {
+func (s *Store) getEntry(tx *sqlx.Tx, sid, eid string) (manga.Entry, error) {
 	var e manga.Entry
 	stmt := `
 		SELECT 
@@ -39,13 +39,13 @@ func (s *Store) getEntry(tx *sqlx.Tx, sid, eid string) (*manga.Entry, error) {
 		FROM entries WHERE sid = ? AND eid = ?`
 	err := tx.Get(&e, stmt, sid, eid)
 	if err != nil {
-		return nil, err
+		return manga.Entry{}, err
 	}
-	return &e, nil
+	return e, nil
 }
 
-func (s *Store) GetEntry(sid, eid string) (*manga.Entry, error) {
-	var e *manga.Entry
+func (s *Store) GetEntry(sid, eid string) (manga.Entry, error) {
+	var e manga.Entry
 	var err error
 	fn := func(tx *sqlx.Tx) error {
 		e, err = s.getEntry(tx, sid, eid)
@@ -53,12 +53,12 @@ func (s *Store) GetEntry(sid, eid string) (*manga.Entry, error) {
 	}
 
 	if err := s.tx(fn); err != nil {
-		return nil, err
+		return manga.Entry{}, err
 	}
 	return e, nil
 }
 
-func (s *Store) getFirstEntry(tx *sqlx.Tx, sid string) (*manga.Entry, error) {
+func (s *Store) getFirstEntry(tx *sqlx.Tx, sid string) (manga.Entry, error) {
 	var e manga.Entry
 	stmt := `
 		SELECT 
@@ -66,13 +66,13 @@ func (s *Store) getFirstEntry(tx *sqlx.Tx, sid string) (*manga.Entry, error) {
 		FROM entries WHERE sid = ? ORDER BY position ASC, ROWID DESC LIMIT 1`
 	err := tx.Get(&e, stmt, sid)
 	if err != nil {
-		return nil, err
+		return manga.Entry{}, err
 	}
-	return &e, nil
+	return e, nil
 }
 
-func (s *Store) getEntries(tx *sqlx.Tx, sid string) ([]*manga.Entry, error) {
-	var e []*manga.Entry
+func (s *Store) getEntries(tx *sqlx.Tx, sid string) ([]manga.Entry, error) {
+	var e []manga.Entry
 	stmt := `
 	SELECT 
 	    sid, eid, title, archive, pages, mod_time, display_title
@@ -84,8 +84,8 @@ func (s *Store) getEntries(tx *sqlx.Tx, sid string) ([]*manga.Entry, error) {
 	return e, nil
 }
 
-func (s *Store) GetEntries(sid string) ([]*manga.Entry, error) {
-	var e []*manga.Entry
+func (s *Store) GetEntries(sid string) ([]manga.Entry, error) {
+	var e []manga.Entry
 	fn := func(tx *sqlx.Tx) error {
 		var err error
 		e, err = s.getEntries(tx, sid)
@@ -98,7 +98,7 @@ func (s *Store) GetEntries(sid string) ([]*manga.Entry, error) {
 	return e, nil
 }
 
-func (s *Store) addEntry(tx *sqlx.Tx, e *manga.Entry, position int) error {
+func (s *Store) addEntry(tx *sqlx.Tx, e manga.Entry, position int) error {
 	// If the entries modtimes are different, then the file
 	// itself has changed which means we want to delete it
 	// and then recreate it so data associated with it gets

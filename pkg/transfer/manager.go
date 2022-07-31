@@ -176,12 +176,10 @@ func (m *Manager) checkSubscriptions(interval time.Duration) {
 
 			// Download each subscription
 			for _, sb := range sbs {
+				title := sb.Title
 				series, err := m.store.GetSeries(sb.SID)
-				if err != nil {
-					log.Error().Err(err).Str("sid", sb.SID).Str("mangadex_uuid", string(sb.MdexUUID)).
-						Str("mangadex_last_published_at", sb.MdexLastPublishedAt.String()).
-						Msg("series does not exist for subscription")
-					continue
+				if err == nil {
+					title = series.FolderTitle
 				}
 
 				// Get all new chapters for the subscription
@@ -197,7 +195,7 @@ func (m *Manager) checkSubscriptions(interval time.Duration) {
 
 				// Queue the new chapter for downloading
 				for _, ch := range chs {
-					m.Queue(series.FolderTitle, ch, true)
+					m.Queue(title, ch, true)
 				}
 			}
 		}

@@ -13,9 +13,6 @@ import (
 	"github.com/fiwippi/tanuki/pkg/human"
 )
 
-// TODO is there a way to reduce similar code, e.g. code used to get covers or thumbnails
-// TODO all functions which don't mutate a pointer (not just in storage, should pass by value)
-
 type Store struct {
 	pool        *sqlx.DB
 	libraryPath string

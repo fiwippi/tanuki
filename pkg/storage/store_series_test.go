@@ -10,7 +10,7 @@ import (
 	"github.com/fiwippi/tanuki/pkg/manga"
 )
 
-func equalSeries(t *testing.T, s1, s2 *manga.Series) {
+func equalSeries(t *testing.T, s1, s2 manga.Series) {
 	require.NotNil(t, s1)
 	require.NotNil(t, s2)
 	require.Equal(t, s1.FolderTitle, s2.FolderTitle)
@@ -22,7 +22,7 @@ func equalSeries(t *testing.T, s1, s2 *manga.Series) {
 	require.True(t, s1.ModTime.Equal(s2.ModTime))
 }
 
-func equalEntries(t *testing.T, e1, e2 []*manga.Entry) {
+func equalEntries(t *testing.T, e1, e2 []manga.Entry) {
 	require.NotNil(t, e1)
 	require.NotNil(t, e2)
 	require.Equal(t, len(e1), len(e2))
@@ -117,8 +117,16 @@ func TestStore_DeleteSeries(t *testing.T) {
 	s := mustOpenStoreMem(t)
 
 	for _, d := range parsedData {
+		// Add series and subscription for series
 		require.Nil(t, s.AddSeries(d.s, d.e))
+		require.Nil(t, s.SetSubscription(d.s.SID, "a", "a", false))
+
+		// Delete series and ensure it and its subscription is deleted
 		require.Nil(t, s.DeleteSeries(d.s.SID))
+		_, err := s.GetSeries(d.s.SID)
+		require.ErrorIs(t, err, ErrItemNotExist)
+		_, err = s.GetSubscription(d.s.SID)
+		require.ErrorIs(t, err, ErrItemNotExist)
 	}
 
 	ctl, err := s.GetCatalog()

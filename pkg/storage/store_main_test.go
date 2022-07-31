@@ -26,13 +26,11 @@ const (
 	libPath = "../../tests/lib"
 )
 
-// TODO remove ROWID from some rows
-
 var tempFiles = make([]string, 0)
 var defaultUID = hash.SHA1("default")
 var parsedData []struct {
-	s *manga.Series
-	e []*manga.Entry
+	s manga.Series
+	e []manga.Entry
 }
 var customCover []byte
 
@@ -78,8 +76,8 @@ func TestMain(m *testing.M) {
 			panic(err)
 		}
 		parsedData = append(parsedData, struct {
-			s *manga.Series
-			e []*manga.Entry
+			s manga.Series
+			e []manga.Entry
 		}{s: series, e: entries})
 	}
 
@@ -139,8 +137,6 @@ func TestNewStore(t *testing.T) {
 	mustCloseStore(t, s)
 }
 
-// TODO provide a tanuki command line utility where u can vacuum it, ensure a backup is create if the vacuum is cancelled
-
 func TestVacuum(t *testing.T) {
 	s, tf := mustOpenStoreFile(t, nil, false)
 	defer mustCloseStore(t, s)
@@ -156,7 +152,7 @@ func TestVacuum(t *testing.T) {
 		eid := strings.Repeat("-", i)
 
 		fn := func(tx *sqlx.Tx) error {
-			err := s.addEntry(tx, &manga.Entry{
+			err := s.addEntry(tx, manga.Entry{
 				SID:         sid,
 				EID:         eid,
 				Title:       eid,

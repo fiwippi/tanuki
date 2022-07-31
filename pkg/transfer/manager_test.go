@@ -84,7 +84,16 @@ func TestManager(t *testing.T) {
 	// Wait for the subscription checker to start running
 	// and then ensure the newly downloaded chapter is
 	// published after the first chapter
+	ctx, cancel := context.WithTimeout(context.Background(), 21*time.Second)
+	defer cancel()
+
 	for len(m.activeDownloads.l) == 0 {
+		select {
+		case <-ctx.Done():
+			require.Nil(t, ctx.Err())
+		default:
+		}
+
 		t.Log("Waiting for subscription...")
 		time.Sleep(3 * time.Second)
 	}

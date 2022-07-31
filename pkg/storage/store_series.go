@@ -32,7 +32,7 @@ func (s *Store) HasSeries(sid string) (bool, error) {
 	return exists, nil
 }
 
-func (s *Store) getSeries(tx *sqlx.Tx, sid string) (*manga.Series, error) {
+func (s *Store) getSeries(tx *sqlx.Tx, sid string) (manga.Series, error) {
 	var v manga.Series
 	stmt := `
 		SELECT 
@@ -40,15 +40,15 @@ func (s *Store) getSeries(tx *sqlx.Tx, sid string) (*manga.Series, error) {
 		FROM series WHERE sid = ? ORDER BY ROWID DESC`
 	err := tx.Get(&v, stmt, sid)
 	if err != nil {
-		return nil, err
+		return manga.Series{}, err
 	}
 
-	return &v, nil
+	return v, nil
 
 }
 
-func (s *Store) GetSeries(sid string) (*manga.Series, error) {
-	var v *manga.Series
+func (s *Store) GetSeries(sid string) (manga.Series, error) {
+	var v manga.Series
 	var err error
 	fn := func(tx *sqlx.Tx) error {
 		v, err = s.getSeries(tx, sid)
@@ -56,12 +56,12 @@ func (s *Store) GetSeries(sid string) (*manga.Series, error) {
 	}
 
 	if err := s.tx(fn); err != nil {
-		return nil, err
+		return manga.Series{}, err
 	}
 	return v, nil
 }
 
-func (s *Store) AddSeries(series *manga.Series, entries []*manga.Entry) error {
+func (s *Store) AddSeries(series manga.Series, entries []manga.Entry) error {
 	fn := func(tx *sqlx.Tx) error {
 		// Insert the series data
 		stmt := `
@@ -89,7 +89,10 @@ func (s *Store) AddSeries(series *manga.Series, entries []*manga.Entry) error {
 
 func (s *Store) deleteSeries(tx *sqlx.Tx, sid string) error {
 	_, err := tx.Exec(`DELETE FROM series WHERE sid = ?`, sid)
-	return err
+	if err != nil {
+		return err
+	}
+	return s.deleteSubscription(tx, sid)
 }
 
 func (s *Store) DeleteSeries(sid string) error {
@@ -222,13 +225,13 @@ func (s *Store) SetSeriesTags(sid string, tags *manga.Tags) error {
 	return err
 }
 
-func (s *Store) GetSeriesWithTag(t string) ([]*manga.Series, error) {
+func (s *Store) GetSeriesWithTag(t string) ([]manga.Series, error) {
 	ctl, err := s.GetCatalog()
 	if err != nil {
 		return nil, err
 	}
 
-	filtered := make([]*manga.Series, 0)
+	filtered := make([]manga.Series, 0)
 	for _, series := range ctl {
 		if series.Tags != nil && series.Tags.Has(t) {
 			filtered = append(filtered, series)

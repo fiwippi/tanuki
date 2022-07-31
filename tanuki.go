@@ -10,9 +10,6 @@ package main
 //  6. Touch up frontend (e.g. more swirly loading icons in places)
 //  7. Implement metadata?
 //	8. Benchmark how long it takes for the full library to scan compared to mango
-//
-// TODO benchmark memory usage, i.e. https://wagslane.dev/posts/go-struct-ordering/
-// TODO use field alignment to reduce struct size
 
 //
 //import (
