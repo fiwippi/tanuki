@@ -7,8 +7,8 @@ import "sync"
 // goroutines should check if they should pause using the WaitIfPaused()
 // method.
 type controller struct {
-	paused bool
 	cond   *sync.Cond
+	paused bool
 }
 
 // newController returns a new controller to synchronise goroutines.

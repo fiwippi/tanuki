@@ -17,11 +17,11 @@ var downloadsPool = NewPool()
 
 type Manager struct {
 	*controller
-	libraryPath     string
 	activeDownloads *DownloadList
 	queue           chan *mangadex.Download
 	store           *storage.Store
 	doneFunc        func() error
+	libraryPath     string
 }
 
 // TODO add sbInterval to the config

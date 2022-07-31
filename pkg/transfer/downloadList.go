@@ -9,8 +9,8 @@ import (
 // DownloadList keeps track of the queued and active
 // downloads in the download manager
 type DownloadList struct {
-	l []*mangadex.Download // Downloads list
 	m *sync.Mutex          // Mutex
+	l []*mangadex.Download // Downloads list
 }
 
 func NewDownloadList() *DownloadList {
