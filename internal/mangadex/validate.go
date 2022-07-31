@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 )
 
-// TODO do validation when the user tries to add a uuid and not the system
-
 func ValidateManga(ctx context.Context, uuid string) (bool, error) {
 	resp, err := get(ctx, "manga/"+uuid, nil)
 	if err != nil {

@@ -119,7 +119,6 @@ func ParseSeries(ctx context.Context, dir string) (*Series, []*Entry, error) {
 	s.NumEntries = len(en)
 
 	// Sort the entries list
-	// TODO where does the sorting by display title happen?
 	sort.SliceStable(en, func(i, j int) bool {
 		return fse.SortNatural(en[i].Archive.Title, en[j].Archive.Title)
 	})

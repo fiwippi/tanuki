@@ -11,8 +11,6 @@ import (
 	"github.com/fiwippi/tanuki/pkg/manga"
 )
 
-// TODO will long operations like populating the catalog and thumbnails block other operations
-
 // Core
 
 func (s *Store) hasSeries(tx *sqlx.Tx, sid string) bool {
