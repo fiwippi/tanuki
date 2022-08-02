@@ -153,13 +153,13 @@ func TestVacuum(t *testing.T) {
 
 		fn := func(tx *sqlx.Tx) error {
 			err := s.addEntry(tx, manga.Entry{
-				SID:         sid,
-				EID:         eid,
-				Title:       eid,
-				Archive:     manga.Archive{},
-				Pages:       nil,
-				ModTime:     dbutil.Time{},
-				DisplayTile: "",
+				SID:          sid,
+				EID:          eid,
+				FileTitle:    eid,
+				Archive:      manga.Archive{},
+				Pages:        nil,
+				ModTime:      dbutil.Time{},
+				DisplayTitle: "",
 			}, i)
 			return err
 		}

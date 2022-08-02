@@ -5,9 +5,9 @@ run:
 		./bin/tanuki
 
 minify:
-		CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/minify minify.go
-		bin/minify -input-dir files/unminified -output-dir files/minified
-		rm -f bin/minify
+#		CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/minify minify.go
+#		bin/minify -input-dir files/unminified -output-dir files/minified
+#		rm -f bin/minify
 
 clean:
 		go clean

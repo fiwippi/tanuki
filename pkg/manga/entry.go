@@ -20,13 +20,20 @@ import (
 
 // Entry represents an entry which you read, i.e. an archive file
 type Entry struct {
-	SID         string            `json:"sid" db:"sid"`
-	EID         string            `json:"eid" db:"eid"`
-	Title       string            `json:"title" db:"title"`
-	Archive     Archive           `json:"archive" db:"archive"`
-	Pages       Pages             `json:"pages" db:"pages"`
-	ModTime     dbutil.Time       `json:"mod_time" db:"mod_time"`
-	DisplayTile dbutil.NullString `json:"display_title" db:"display_title"`
+	SID          string            `json:"sid" db:"sid"`
+	EID          string            `json:"eid" db:"eid"`
+	FileTitle    string            `json:"title" db:"title"`
+	Archive      Archive           `json:"archive" db:"archive"`
+	Pages        Pages             `json:"pages" db:"pages"`
+	ModTime      dbutil.Time       `json:"mod_time" db:"mod_time"`
+	DisplayTitle dbutil.NullString `json:"display_title" db:"display_title"`
+}
+
+func (e Entry) Title() string {
+	if e.DisplayTitle != "" {
+		return string(e.DisplayTitle)
+	}
+	return e.FileTitle
 }
 
 func ParseEntry(ctx context.Context, fp string) (Entry, error) {
@@ -54,11 +61,11 @@ func ParseEntry(ctx context.Context, fp string) (Entry, error) {
 	// Create the entry
 	title := fse.Filename(a.Path)
 	e := Entry{
-		Archive: a,
-		EID:     hash.SHA1(title),
-		Title:   title,
-		Pages:   make(Pages, 0),
-		ModTime: dbutil.Time(aStats.ModTime().Round(time.Second)),
+		Archive:   a,
+		EID:       hash.SHA1(title),
+		FileTitle: title,
+		Pages:     make(Pages, 0),
+		ModTime:   dbutil.Time(aStats.ModTime().Round(time.Second)),
 	}
 
 	// Iterate through the files in the archive

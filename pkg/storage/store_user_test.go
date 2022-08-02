@@ -184,8 +184,7 @@ func TestStore_HasUsers(t *testing.T) {
 
 func TestStore_IsAdmin(t *testing.T) {
 	s := mustOpenStoreMem(t)
-	isAdmin, err := s.IsAdmin(defaultUID)
-	require.Nil(t, err)
+	isAdmin := s.IsAdmin(defaultUID)
 	require.True(t, isAdmin)
 	mustCloseStore(t, s)
 }
@@ -193,8 +192,7 @@ func TestStore_IsAdmin(t *testing.T) {
 func TestStore_ValidateLogin(t *testing.T) {
 	s := mustOpenStoreMem(t)
 	require.Nil(t, s.AddUser(human.NewUser("a", "b", human.Admin), true))
-	valid, err := s.ValidateLogin("a", "b")
-	require.Nil(t, err)
+	valid := s.ValidateLogin("a", "b")
 	require.True(t, valid)
 	mustCloseStore(t, s)
 }

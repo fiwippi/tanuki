@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"io"
+	"os"
 
 	"github.com/mholt/archiver/v4"
 
@@ -19,6 +21,10 @@ type Archive struct {
 	Type  archive.Type `json:"type"`  // File format i.e. ZIP/RAR
 }
 
+func (a *Archive) FilenameWithExt() string {
+	return fmt.Sprintf("%s.%s", a.Title, a.Type.String())
+}
+
 func (a *Archive) Exists() bool {
 	return fse.Exists(a.Path)
 }
@@ -30,6 +36,14 @@ func (a *Archive) Walk(ctx context.Context, fh archiver.FileHandler) error {
 func (a *Archive) ReaderForFile(fp string) (io.Reader, int64, error) {
 	r, size, err := a.Type.Extract(context.Background(), a.Path, fp)
 	return r, size, err
+}
+
+func (a *Archive) Filesize() float64 {
+	fi, err := os.Stat(a.Path)
+	if err != nil {
+		return 0
+	}
+	return fse.Filesize(fi.Size())
 }
 
 func (a Archive) Value() (driver.Value, error) {

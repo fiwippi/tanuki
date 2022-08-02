@@ -195,10 +195,10 @@ func TestStore_addEntry(t *testing.T) {
 
 			for i := range d.e {
 				eOriginal := d.e[i]
-				eOriginal.Title = "Before"
+				eOriginal.FileTitle = "Before"
 
 				eChangedModTime := d.e[i]
-				eChangedModTime.Title = "After"
+				eChangedModTime.FileTitle = "After"
 				eChangedModTime.ModTime = dbutil.Time(time.Now())
 
 				require.NotEqual(t, eOriginal.ModTime, eChangedModTime.ModTime)
@@ -210,7 +210,7 @@ func TestStore_addEntry(t *testing.T) {
 				require.Nil(t, s.tx(fnBef))
 				e, err := s.GetEntry(d.s.SID, eOriginal.EID)
 				require.Nil(t, err)
-				require.Equal(t, e.Title, "Before")
+				require.Equal(t, e.FileTitle, "Before")
 
 				// Add progress for the original entry
 				require.Nil(t, s.SetEntryProgressRead(d.s.SID, eOriginal.EID, defaultUID))
@@ -228,7 +228,7 @@ func TestStore_addEntry(t *testing.T) {
 				require.Nil(t, s.tx(fnAft))
 				e, err = s.GetEntry(d.s.SID, eOriginal.EID)
 				require.Nil(t, err)
-				require.Equal(t, e.Title, "After")
+				require.Equal(t, e.FileTitle, "After")
 
 				// Check progress for said entry is now deleted
 				// Ensure the progress is set successfully
@@ -427,12 +427,12 @@ func TestStore_SetEntryDisplayTitle(t *testing.T) {
 		require.Nil(t, s.SetEntryDisplayTitle(series.SID, e.EID, "HUH"))
 		dbEntry, err := s.GetEntry(series.SID, e.EID)
 		require.Nil(t, err)
-		require.Equal(t, dbutil.NullString("HUH"), dbEntry.DisplayTile)
+		require.Equal(t, dbutil.NullString("HUH"), dbEntry.DisplayTitle)
 
 		require.Nil(t, s.SetEntryDisplayTitle(series.SID, e.EID, ""))
 		dbEntry, err = s.GetEntry(series.SID, e.EID)
 		require.Nil(t, err)
-		require.Equal(t, dbutil.NullString(""), dbEntry.DisplayTile)
+		require.Equal(t, dbutil.NullString(""), dbEntry.DisplayTitle)
 	}
 
 	mustCloseStore(t, s)

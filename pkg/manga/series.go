@@ -30,6 +30,13 @@ type Series struct {
 	DisplayTitle dbutil.NullString `json:"display_title" db:"display_title"`
 }
 
+func (s Series) Title() string {
+	if s.DisplayTitle != "" {
+		return string(s.DisplayTitle)
+	}
+	return s.FolderTitle
+}
+
 func FolderID(dir string) (string, error) {
 	f, err := os.OpenFile(filepath.Join(dir, "info.tanuki"), os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {

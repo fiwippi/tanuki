@@ -22,7 +22,7 @@ func testSeries(t *testing.T, path, name string, pageCount int, entries []string
 	require.Equal(t, pageCount, s.NumPages)
 	names := make([]string, 0)
 	for _, e := range en {
-		names = append(names, e.Title)
+		names = append(names, e.FileTitle)
 	}
 	require.Equal(t, entries, names)
 }

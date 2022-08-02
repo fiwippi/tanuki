@@ -29,10 +29,10 @@ func equalEntries(t *testing.T, e1, e2 []manga.Entry) {
 	for i := range e1 {
 		require.Equal(t, e1[i].SID, e2[i].SID)
 		require.Equal(t, e1[i].EID, e2[i].EID)
-		require.Equal(t, e1[i].Title, e2[i].Title)
+		require.Equal(t, e1[i].FileTitle, e2[i].FileTitle)
 		require.Equal(t, e1[i].Archive, e2[i].Archive)
 		require.Equal(t, e1[i].Pages, e2[i].Pages)
-		require.Equal(t, e1[i].DisplayTile, e2[i].DisplayTile)
+		require.Equal(t, e1[i].DisplayTitle, e2[i].DisplayTitle)
 		require.True(t, e1[i].ModTime.Equal(e2[i].ModTime))
 	}
 }

@@ -109,10 +109,10 @@ func testGetDeleteMissingEntries(t *testing.T) {
 
 	entries := []manga.Entry{
 		{
-			SID:     hash.SHA1("a"),
-			EID:     hash.SHA1("b"),
-			Title:   "b",
-			Archive: manga.Archive{Type: archive.Zip, Path: "./b"},
+			SID:       hash.SHA1("a"),
+			EID:       hash.SHA1("b"),
+			FileTitle: "b",
+			Archive:   manga.Archive{Type: archive.Zip, Path: "./b"},
 			Pages: manga.Pages{
 				{Path: "1.jpg", Type: image.JPEG},
 				{Path: "2.jpg", Type: image.JPEG},

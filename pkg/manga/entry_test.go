@@ -4,14 +4,15 @@ import (
 	"context"
 	"testing"
 
-	"github.com/fiwippi/tanuki/internal/platform/image"
 	"github.com/stretchr/testify/require"
+
+	"github.com/fiwippi/tanuki/internal/platform/image"
 )
 
 func testArchive(t *testing.T, path, name string, pageCount int, pages Pages) {
 	a, err := ParseEntry(context.TODO(), path)
 	require.Nil(t, err)
-	require.Equal(t, name, a.Title)
+	require.Equal(t, name, a.FileTitle)
 	require.Equal(t, pageCount, len(a.Pages))
 	require.Equal(t, pages, a.Pages)
 	require.Equal(t, a.Archive.Exists(), true)

@@ -18,6 +18,14 @@ type Store struct {
 	libraryPath string
 }
 
+func MustCreateNewStore(dbPath, libraryPath string, recreate bool) *Store {
+	s, err := NewStore(dbPath, libraryPath, recreate)
+	if err != nil {
+		panic(err)
+	}
+	return s
+}
+
 func NewStore(dbPath, libraryPath string, recreate bool) (*Store, error) {
 	s := &Store{
 		libraryPath: libraryPath,

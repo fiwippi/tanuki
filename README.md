@@ -87,7 +87,7 @@ If you supply tanuki with RAR archives (`.rar`, `.cbr`), their unarchive time to
 - [x] Viewing library
 - [x] Downloading archive
 - [x] Getting cover/thumbnail of archive
-- [x] Search
+- [] Search
 - [x] Page streaming
 
 ## License

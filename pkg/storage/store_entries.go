@@ -182,6 +182,19 @@ func (s *Store) GetEntryCover(sid, eid string) ([]byte, image.Type, error) {
 	return data, it, nil
 }
 
+func (s *Store) GetEntryCoverType(sid, eid string) (image.Type, error) {
+	it := image.Invalid
+	fn := func(tx *sqlx.Tx) error {
+		tx.Get(&it, "SELECT custom_cover_type FROM entries WHERE sid = ? AND eid = ?", sid, eid)
+		return nil
+	}
+
+	if err := s.tx(fn); err != nil {
+		return image.Invalid, err
+	}
+	return it, nil
+}
+
 func (s *Store) SetEntryCover(sid, eid, name string, data []byte) error {
 	if len(data) == 0 {
 		return ErrInvalidCover

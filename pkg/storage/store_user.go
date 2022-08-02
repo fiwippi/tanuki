@@ -177,20 +177,20 @@ func (s *Store) validUserTypeChange(tx *sqlx.Tx, uid string, t human.Type) (bool
 
 // Utility
 
-func (s *Store) IsAdmin(uid string) (bool, error) {
+func (s *Store) IsAdmin(uid string) bool {
 	var admin bool
 	err := s.pool.Get(&admin, `SELECT type = 'admin' FROM users WHERE uid = ?`, uid)
 	if err != nil {
-		return false, err
+		return false
 	}
-	return admin, nil
+	return admin
 }
 
-func (s *Store) ValidateLogin(name, pass string) (bool, error) {
+func (s *Store) ValidateLogin(name, pass string) bool {
 	var valid bool
 	err := s.pool.Get(&valid, `SELECT pass = ? FROM users WHERE uid = ?`, hash.SHA256(pass), hash.SHA1(name))
 	if err != nil {
-		return false, err
+		return false
 	}
-	return valid, nil
+	return valid
 }

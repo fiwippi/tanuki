@@ -162,7 +162,7 @@ func (s *Store) processMissingItems(tx *sqlx.Tx, del bool) ([]MissingItem, error
 			if !e.Archive.Exists() {
 				missing = append(missing, MissingItem{
 					Type:  "Entry",
-					Title: e.Title,
+					Title: e.Title(),
 					Path:  e.Archive.Path,
 				})
 

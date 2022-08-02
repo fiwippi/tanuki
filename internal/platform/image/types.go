@@ -34,10 +34,16 @@ const (
 
 // MimeType returns the image mimetype, used for sending the image over the web
 func (t Type) MimeType() string {
+	if t == -1 {
+		return ""
+	}
 	return [...]string{"image/png", "image/jpeg", "image/gif", "image/webp", "image/tiff", "image/bmp"}[t]
 }
 
 func (t Type) String() string {
+	if t == -1 {
+		return "invalid"
+	}
 	return [...]string{"png", "jpg", "gif", "webp", "tiff", "bmp"}[t]
 }
 

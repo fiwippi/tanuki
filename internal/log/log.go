@@ -9,9 +9,7 @@ var logger zerolog.Logger
 
 func init() {
 	// Create the default logger
-	logger = logger.Level(zerolog.InfoLevel)
-	logger = log.Output(createCW()).
-		Level(zerolog.InfoLevel)
+	logger = log.Output(createCW()).Level(zerolog.InfoLevel)
 }
 
 func Error() *zerolog.Event {
@@ -26,6 +24,10 @@ func Fatal() *zerolog.Event {
 	return logger.Fatal()
 }
 
+func Panic() *zerolog.Event {
+	return logger.Panic()
+}
+
 func Info() *zerolog.Event {
 	return logger.Info()
 }
@@ -38,6 +40,10 @@ func Trace() *zerolog.Event {
 	return logger.Trace()
 }
 
-func With() zerolog.Context {
-	return logger.With()
+func Disable() {
+	logger = logger.Level(zerolog.Disabled)
+}
+
+func Copy() zerolog.Logger {
+	return logger.With().Logger()
 }
