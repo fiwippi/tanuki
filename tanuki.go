@@ -23,6 +23,7 @@ import (
 	"github.com/fiwippi/tanuki/internal/log"
 	"github.com/fiwippi/tanuki/pkg/auth"
 	"github.com/fiwippi/tanuki/pkg/config"
+	"github.com/fiwippi/tanuki/pkg/favicon"
 	"github.com/fiwippi/tanuki/pkg/opds"
 	"github.com/fiwippi/tanuki/pkg/server"
 	"github.com/fiwippi/tanuki/pkg/storage"
@@ -54,6 +55,7 @@ func main() {
 	s := server.NewInstance(conf, store, session)
 
 	// Routes
+	favicon.NewService(s, efs, "files/minified/static/icon/favicon.ico")
 	opds.NewService(s)
 
 	log.Info().Str("host", conf.Host).Str("port", conf.Port).Str("log_level", conf.Logging.Level.String()).
