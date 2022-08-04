@@ -3,7 +3,6 @@ package basic
 import (
 	"encoding/base64"
 	"errors"
-	"net/http"
 	"strconv"
 	"strings"
 
@@ -29,7 +28,7 @@ func Auth(realm string, store *storage.Store) gin.HandlerFunc {
 		if err != nil {
 			log.Debug().Err(err).Msg("failed to parse auth credentials")
 			c.Header("WWW-Authenticate", realm)
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatus(401)
 			return
 		}
 
@@ -37,7 +36,7 @@ func Auth(realm string, store *storage.Store) gin.HandlerFunc {
 		if !valid {
 			log.Debug().Err(err).Msg("failed to validate auth credentials")
 			c.Header("WWW-Authenticate", realm)
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatus(401)
 			return
 		}
 

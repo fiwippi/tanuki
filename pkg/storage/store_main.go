@@ -195,7 +195,9 @@ func (s *Store) Dump() (string, error) {
 				if err != nil {
 					return err
 				}
-
+				delete(results, "thumbnail")
+				delete(results, "custom_cover")
+				delete(results, "pages")
 				dump += fmt.Sprintf("%d. %s\n", i, results)
 				i++
 			}

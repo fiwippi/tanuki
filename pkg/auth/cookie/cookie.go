@@ -1,7 +1,6 @@
 package cookie
 
 import (
-	"net/http"
 	"net/url"
 
 	"github.com/gin-gonic/gin"
@@ -13,7 +12,7 @@ import (
 var RedirectCookie = "tanuki-redirect"
 
 // Auth middleware which ensures the user is authorised
-func Auth(s *server.Instance, action Action, login string) gin.HandlerFunc {
+func Auth(s *server.Instance, action Action) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		uid, err := s.Session.Get(c)
 		if err != nil {
@@ -21,9 +20,9 @@ func Auth(s *server.Instance, action Action, login string) gin.HandlerFunc {
 			switch action {
 			case Redirect:
 				createRedirectCookie(c)
-				c.Redirect(http.StatusFound, login)
+				c.Redirect(302, "/login")
 			case Abort:
-				c.AbortWithError(http.StatusUnauthorized, err)
+				c.AbortWithError(401, err)
 			}
 			return
 		}
@@ -54,7 +53,7 @@ func Auth(s *server.Instance, action Action, login string) gin.HandlerFunc {
 			}
 			u.RawQuery = ""
 			deleteRedirectCookie(c)
-			c.Redirect(http.StatusFound, u.String())
+			c.Redirect(302, u.String())
 		}
 	}
 }
@@ -66,7 +65,7 @@ func SkipIfAuthed(session *auth.Session, home string) gin.HandlerFunc {
 		_, err := session.Get(c)
 		if err == nil {
 			createRedirectCookie(c)
-			c.Redirect(http.StatusFound, home)
+			c.Redirect(302, home)
 			c.Abort()
 			return
 		}
@@ -81,7 +80,7 @@ func Admin(home string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		admin := c.GetBool("admin")
 		if !admin {
-			c.Redirect(http.StatusFound, home)
+			c.Redirect(302, home)
 			c.Abort()
 			return
 		}

@@ -39,6 +39,10 @@ export class Images {
     }
 }
 
+export function Sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export class Animate {
     static DotDotDot(text, func) {
         func(`${text}...`)

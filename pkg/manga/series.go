@@ -123,7 +123,10 @@ func ParseSeries(ctx context.Context, dir string) (Series, []Entry, error) {
 
 	// Sort the entries list
 	sort.SliceStable(en, func(i, j int) bool {
-		return fse.SortNatural(en[i].Archive.Title, en[j].Archive.Title)
+		if len(en) > 0 {
+			return fse.SortNatural(en[i].Archive.Title, en[j].Archive.Title)
+		}
+		return false
 	})
 
 	return s, en, nil

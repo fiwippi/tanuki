@@ -13,6 +13,13 @@ func isDigit(s string) bool {
 }
 
 func SortNatural(a, b string) bool {
+	if len(a) == 0 {
+		return true
+	}
+	if len(b) == 0 {
+		return false
+	}
+
 	aFirst := rune(a[0])
 	bFirst := rune(b[0])
 

@@ -1,7 +1,6 @@
 package opds
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -14,7 +13,7 @@ func GetCatalog(s *server.Instance) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctl, err := s.Store.GetCatalog()
 		if err != nil {
-			c.AbortWithError(http.StatusInternalServerError, err)
+			c.AbortWithError(500, err)
 			return
 		}
 

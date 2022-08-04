@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/render"
 
 	"github.com/fiwippi/tanuki/internal/log"
 	"github.com/fiwippi/tanuki/internal/platform/pretty"
@@ -24,14 +25,13 @@ func NewInstance(c *config.Config, store *storage.Store, session *auth.Session) 
 	r := gin.New()
 	r.Use(log.Middleware())
 	r.Use(gin.Recovery())
+	r.MaxMultipartMemory = int64(c.MaxUploadedFileSizeMiB) << 20
 
 	if !c.DebugMode {
 		gin.SetMode(gin.ReleaseMode)
 	} else {
 		gin.SetMode(gin.DebugMode)
 	}
-
-	r.MaxMultipartMemory = int64(c.MaxUploadedFileSizeMiB) << 20
 
 	return &Instance{
 		Store:   store,
@@ -46,6 +46,10 @@ func (i *Instance) Group(relativePath string) *RouterGroup {
 		RouterGroup: i.Router.Group(relativePath),
 		Server:      i,
 	}
+}
+
+func (i *Instance) SetHTMLRenderer(r render.HTMLRender) {
+	i.Router.HTMLRender = r
 }
 
 func (i *Instance) Start() error {

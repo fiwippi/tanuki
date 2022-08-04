@@ -1,8 +1,6 @@
 package opds
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 
 	"github.com/fiwippi/tanuki/internal/platform/image"
@@ -25,10 +23,10 @@ func GetCover(s *server.Instance) gin.HandlerFunc {
 		}
 
 		if err != nil {
-			c.AbortWithError(http.StatusInternalServerError, err)
+			c.AbortWithError(500, err)
 			return
 		}
 
-		c.Data(http.StatusOK, img.MimeType(), data)
+		c.Data(200, img.MimeType(), data)
 	}
 }

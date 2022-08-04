@@ -3,6 +3,7 @@
 {{ define "scripts" }}
 <script type="module">
     import * as API from {{ versioning "/static/js/api.js" }}
+    import * as Util from {{ versioning "/static/js/util.js" }}
 
     document.addEventListener('alpine:init', () => {
         Alpine.data('user_create', () => ({
@@ -11,17 +12,24 @@
             admin: false,
             showModal: false,
             modalText: "",
+            successText: 'SUCCESS, redirecting...',
 
             async create() {
                 let type = this.admin ? 'admin': 'standard'
                 await API.Admin.CreateUser(this.username, this.password, type)
                     .then(() => {
-                        this.modalText = 'SUCCESS'
+                        this.modalText = this.successText
                     })
-                    .catch(() => {
+                    .catch(async (e) => {
                         this.modalText = 'ERROR ENCOUNTERED'
+                        if (e.message != "" && e.message != undefined && e.message != null)
+                            this.modalText += ", " + e.message
                     })
                 this.showModal = true
+                if (this.modalText == this.successText) {
+                    await Util.Sleep(1500)
+                    window.location.replace('/admin/users')
+                }
             }
         }))
     })

@@ -4,8 +4,8 @@
 <script type="module">
     import createCatalog from {{versioning "/static/js/components/catalog.js"}}
 
-    const _entries = {{ catalog }}
-    const _progress = {{ catalogProgress . }}
+    {{/*const _entries = {{ catalog }}*/}}
+    {{/*const _progress = {{ catalogProgress . }}*/}}
 
     document.addEventListener('alpine:init', () => {
         Alpine.data('catalog', () => { return createCatalog(_entries, _progress) })

@@ -1,8 +1,6 @@
 package opds
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 
 	"github.com/fiwippi/tanuki/internal/feed"
@@ -16,7 +14,7 @@ func GetEntries(s *server.Instance) gin.HandlerFunc {
 
 		series, err := s.Store.GetSeries(sid)
 		if err != nil {
-			c.AbortWithStatus(http.StatusNotFound)
+			c.AbortWithStatus(404)
 			return
 		}
 
@@ -26,7 +24,7 @@ func GetEntries(s *server.Instance) gin.HandlerFunc {
 
 		entries, err := s.Store.GetEntries(sid)
 		if err != nil {
-			c.AbortWithStatus(http.StatusInternalServerError)
+			c.AbortWithStatus(500)
 			return
 		}
 		for _, e := range entries {
@@ -37,7 +35,7 @@ func GetEntries(s *server.Instance) gin.HandlerFunc {
 			}
 			ct, err := s.Store.GetEntryCoverType(sid, e.EID)
 			if err != nil {
-				c.AbortWithError(http.StatusInternalServerError, err)
+				c.AbortWithError(500, err)
 				return
 			}
 			if ct == image.Invalid {

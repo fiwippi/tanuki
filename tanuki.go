@@ -9,11 +9,14 @@ package main
 //  5. Implement frontend
 //  6. Touch up frontend (e.g. more swirly loading icons in places)
 //  7. Implement metadata?
-//	8. Benchmark how long it takes for the full library to scan compared to mango
+
+// TODO go over all github issues to make sure they all covered
+// TODO test on mobile after docker build made
 
 import (
 	"embed"
 	"flag"
+	"io/fs"
 	"net/http"
 	"time"
 
@@ -21,12 +24,15 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/fiwippi/tanuki/internal/log"
+	"github.com/fiwippi/tanuki/pkg/api"
 	"github.com/fiwippi/tanuki/pkg/auth"
 	"github.com/fiwippi/tanuki/pkg/config"
 	"github.com/fiwippi/tanuki/pkg/favicon"
+	"github.com/fiwippi/tanuki/pkg/frontend"
 	"github.com/fiwippi/tanuki/pkg/opds"
 	"github.com/fiwippi/tanuki/pkg/server"
 	"github.com/fiwippi/tanuki/pkg/storage"
+	"github.com/fiwippi/tanuki/pkg/templates"
 )
 
 //go:embed files/minified*
@@ -54,8 +60,25 @@ func main() {
 	store := storage.MustCreateNewStore(conf.Paths.DB, conf.Paths.Library, *recreate)
 	s := server.NewInstance(conf, store, session)
 
-	// Routes
+	// Serve static files
+	files := "files/minified"
+	staticFp := files + "/static"
+	templatesFp := files + "/templates"
+
+	staticFS, err := fs.Sub(efs, staticFp)
+	if err != nil {
+		log.Fatal().Err(err).Msg("unable to create static filesystem")
+	}
+	s.Router.StaticFS("/static", http.FS(staticFS))
+
+	// Setup the template renderer
+	templates.CreateRenderer(s, efs, conf.DebugMode, templatesFp)
+	log.Info().Msg("templates loaded")
+
+	// Register routes
 	favicon.NewService(s, efs, "files/minified/static/icon/favicon.ico")
+	api.NewService(s)
+	frontend.NewService(s)
 	opds.NewService(s)
 
 	log.Info().Str("host", conf.Host).Str("port", conf.Port).Str("log_level", conf.Logging.Level.String()).

@@ -1,7 +1,6 @@
 package opds
 
 import (
-	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -17,7 +16,7 @@ func GetPage(s *server.Instance) gin.HandlerFunc {
 
 		num, err := strconv.Atoi(numStr)
 		if err != nil {
-			c.AbortWithError(http.StatusBadRequest, err)
+			c.AbortWithError(400, err)
 			return
 		}
 
@@ -26,16 +25,16 @@ func GetPage(s *server.Instance) gin.HandlerFunc {
 		if len(zbQuery) > 0 {
 			zb, err = strconv.ParseBool(zbQuery)
 			if err != nil {
-				c.AbortWithError(http.StatusBadRequest, err)
+				c.AbortWithError(400, err)
 				return
 			}
 		}
 
 		r, size, im, err := s.Store.GetPage(sid, eid, num, zb)
 		if err != nil {
-			c.AbortWithError(http.StatusInternalServerError, err)
+			c.AbortWithError(500, err)
 			return
 		}
-		c.DataFromReader(http.StatusOK, size, im.MimeType(), r, nil)
+		c.DataFromReader(200, size, im.MimeType(), r, nil)
 	}
 }
