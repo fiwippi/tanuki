@@ -1,0 +1,198 @@
+{{ define "title" }}Reader{{ end }}
+
+{{ define "styles" }}
+<style>
+    /* Container styles -------------------------------------------------*/
+    .container {
+        overflow: visible;
+        grid-template-columns: auto minmax(450px, 900px) auto;
+    }
+
+    /* Extra attributes added to .container for paged viewer */
+    .pagedContainerExtra {
+        grid-template-rows: 3vh 1fr 3vh;
+        grid-template-areas:
+                "lblank header rblank"
+                "lblank main rblank"
+                "lblank footer rblank";
+        padding-bottom: 0;
+        margin: 0;
+    }
+    /* Extra attributes added to .body for paged viewer */
+    .pagedBodyExtra {
+        padding-bottom: 0;
+        margin: 0;
+    }
+
+    .pagedContainer {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        height: 94vh;
+    }
+
+    .scrollContainer {
+        display: flex;
+        flex-direction: column;
+        row-gap: 40px;
+    }
+
+    /* Color styles -------------------------------------------------*/
+    body, .container {
+        background: white !important
+    }
+    .dark body, .dark .container {
+        background: black !important
+    }
+
+    /* Image styles -------------------------------------------------*/
+    .scrollImg {
+        width: auto;
+        height: auto;
+        max-width: 100%;
+        max-height: 100%;
+    }
+
+    .pagedImg {
+        width: auto;
+        height: auto;
+        max-width: 100%;
+        max-height: 100%;
+    }
+
+    img {
+        background: white;
+        user-select: none;
+    }
+
+    .unloaded {
+        border: 3px solid black;
+        aspect-ratio: 2/3;
+    }
+
+    .webtoon {
+        row-gap: 0;
+    }
+
+    /* Mobile styles -------------------------------------------------*/
+    @media only screen
+    and (max-device-width: 820px) {
+        .container {
+            overflow: visible;
+            grid-template-columns: auto 1fr auto;
+        }
+
+        .pagedImg {
+            width: 95%;
+            height: auto;
+        }
+    }
+</style>
+{{ end }}
+
+{{ define "scripts" }}
+<script defer src='{{versioning "/static/js/intersect.js"}}'></script>
+<script type="module">
+    import createModal from {{ versioning "/static/js/components/modal.js" }}
+    import createReader from {{ versioning "/static/js/components/reader.js" }}
+
+    let _sid = {{ sid . }};
+    let _eid = {{ eid . }};
+    let _entry = {{ entry . }};
+    let _initialProgress = {{ entryProgress . }};
+    let _entries = {{ entries . }};
+    let _modal = createModal();
+    let _reader = createReader(_sid, _eid, _entry, _initialProgress, _entries, _modal)
+
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('modal', () => { return _modal })
+        Alpine.data('reader', () => { return _reader })
+    })
+</script>
+{{ end }}
+
+{{ define "content" }}
+<div x-data="reader">
+    <!--  Modal  -->
+    <div x-data="modal" x-bind="modal_bg" class="modal" x-cloak>
+            <div x-bind="modal_content" class="modal__content" x-transition>
+                <!--  Basic Info  -->
+                <span class="modal__close-button" x-bind="modal_close">&times;</span>
+                <h2 class="modal__header" x-text="entry.display_title || entry.folder_title"></h2>
+                <p class="modal__sub-header" x-text="entry.archive.path"></p>
+                <!--  Progress  -->
+                <div class="flex--row">
+                    <h4 class="flex__key--centered flex__key--less-padding">Progress</h4>
+                    <p class="flex__key--centered flex__key--less-padding" x-text="`${currentPage}/${entry.pages.length} (${fmtPercent(currentPage / entry.pages.length)})`"></p>
+                </div>
+                <!--  Mode Change  -->
+                <div class="flex--row">
+                    <h4 class="flex__key--less-padding flex__key--centered">Mode</h4>
+                    <select class="flex__key--centered" x-model="selectedMode" @change="changeMode(selectedMode)" id="modeSelect">
+                        <template x-for="m in filteredMode">
+                            <option :value="m.value" x-text="m.name"></option>
+                        </template>
+                    </select>
+                </div>
+                <!--  Webtoon format  -->
+                <div class="flex--row">
+                    <h4 class="flex__key--less-padding flex__key--centered">Webtoon</h4>
+                    <label class="flex__key--less-padding">
+                        <input type="checkbox" x-model="webtoon" @change="saveWebtoon()">
+                    </label>
+                </div>
+                <!--  Page Change  -->
+                <div class="flex--row">
+                    <h4 class="flex__key--less-padding flex__key--centered">Jump To Page</h4>
+                    <select class="flex__key--centered" x-model="selectedPage" @change="await jumpToPage(selectedPage)" id="pageSelect">
+                        <template x-for="i in filteredPages">
+                            <option :value="i" x-text="i"></option>
+                        </template>
+                    </select>
+                </div>
+                <!--  Entry Change Select -->
+                <div class="flex--row">
+                    <h4 class="flex__key--less-padding flex__key--centered">Jump To Entry</h4>
+                    <select class="flex__key--centered" x-model="selectedEntry" @change="changeEntry(selectedEntry)">
+                        <template x-for="e in filteredEntries">
+                            <option :value="e.eid" x-text="e.title || e.file_title"></option>
+                        </template>
+                    </select>
+                </div>
+                <!--  Entry Change Buttons  -->
+                <div class="flex--row" style="margin-top: 30px; justify-content: flex-end">
+                    <button @click="changeEntry(entries[entryIndex - 1].eid)" x-show="hasPreviousEntry">Previous Entry</button>
+                    <button @click="changeEntry(entries[entryIndex + 1].eid)" x-show="hasNextEntry">Next Entry</button>
+                    <button @click="exitReader()">Exit Reader</button>
+                </div>
+
+            </div>
+        </div>
+
+    <!--  Paged reader  -->
+    <template x-if="mode !== 'continuous'">
+        <div class="pagedContainer" @click.document="await handlePagedClick">
+            <img class="pagedImg unloaded" :src="blankImage" id="page">
+
+            <!--  Configures key events for scrolling direction  -->
+            <div style="display: none"
+                 @keydown.arrow-left.document="await flipPage('left')"
+                 @keydown.arrow-right.document="await flipPage('right')">
+            </div>
+        </div>
+    </template>
+
+    <!--  Continuous scrolling reader  -->
+    <template x-if="mode === 'continuous'">
+        <div :class="webtoon ? 'scrollContainer webtoon' : 'scrollContainer'">
+            <template x-for="(e, i) in entry.pages">
+                <img class="scrollImg unloaded" :src="blankImage" :id="`page-${i+1}`" x-intersect.once="await getPage(i+1, true)"
+                     x-intersect="await updateProgress(i+1)" @click="showModal()">
+            </template>
+            <button style="align-self: center" @click="changeEntry(entries[entryIndex + 1].eid)" x-show="hasNextEntry">Next Entry</button>
+            <button style="align-self: center" @click="exitReader()" x-show="!hasNextEntry">Exit Reader</button>
+        </div>
+    </template>
+</div>
+{{ end }}

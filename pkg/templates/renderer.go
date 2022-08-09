@@ -10,6 +10,7 @@ import (
 
 	"github.com/fiwippi/tanuki/internal/platform/multitemplate"
 	"github.com/fiwippi/tanuki/pkg/human"
+	"github.com/fiwippi/tanuki/pkg/manga"
 
 	"github.com/fiwippi/tanuki/pkg/server"
 )
@@ -34,85 +35,98 @@ func (r *Renderer) FuncMap() template.FuncMap {
 		"admin": func(c *gin.Context) bool {
 			return c.GetBool("admin")
 		},
-		//// Returns the current catalog (list of all series)
-		//"catalog": func() api.Catalog {
-		//	return r.server.Store.GetCatalog()
-		//},
-		//// Returns the progress for the user
-		//"catalogProgress": func(c *gin.Context) map[string]users.SeriesProgress {
-		//	uid := c.GetString("uid")
-		//	user, err := r.server.Store.GetUser(uid)
-		//	if err != nil {
-		//		return nil
-		//	}
-		//	return user.Progress.Data
-		//},
-		//"tags": func() []string {
-		//	return r.server.Store.GetTags().List()
-		//},
-		////
-		//"seriesWithTag": func(c *gin.Context) api.Catalog {
-		//	tag := c.Param("tag")
-		//	return r.server.Store.GetSeriesWithTag(tag)
-		//},
-		////
-		//"sid": func(c *gin.Context) string {
-		//	return c.Param("sid")
-		//},
-		////
-		//"eid": func(c *gin.Context) string {
-		//	return c.Param("eid")
-		//},
-		////
-		//"entry": func(c *gin.Context) *api.Entry {
-		//	sid := c.Param("sid")
-		//	eid := c.Param("eid")
-		//	e, err := r.server.Store.GetEntry(sid, eid)
-		//	if err != nil {
-		//		return nil
-		//	}
-		//	return e
-		//},
-		////
-		//"entries": func(c *gin.Context) api.Entries {
-		//	sid := c.Param("sid")
-		//	e, err := r.server.Store.GetEntries(sid)
-		//	if err != nil {
-		//		return nil
-		//	}
-		//	return e
-		//},
-		//"entryProgress": func(c *gin.Context) users.EntryProgress {
-		//	sid := c.Param("sid")
-		//	eid := c.Param("eid")
-		//	uid := c.GetString("uid")
-		//
-		//	ep, _, _, err := series.GetEntryProgressInternal(uid, sid, eid, r.server)
-		//	if err != nil {
-		//		c.Error(err)
-		//		return users.EntryProgress{}
-		//	}
-		//	return ep
-		//},
-		//"seriesProgress": func(c *gin.Context) map[string]users.EntryProgress {
-		//	sid := c.Param("sid")
-		//	uid := c.GetString("uid")
-		//
-		//	p, _, err := series.GetSeriesProgressInternal(uid, sid, r.server)
-		//	if err != nil {
-		//		c.Error(err)
-		//		return nil
-		//	}
-		//	return p.Entries
-		//},
-		//"series": func(c *gin.Context) api.Series {
-		//	id := c.Param("sid")
-		//	s, err := r.server.Store.GetSeries(id)
-		//	if err != nil {
-		//		return api.Series{}
-		//	}
-		//	return *s
-		//},
+		// Returns the current catalog (list of all series)
+		"catalog": func(c *gin.Context) []manga.Series {
+			ctl, err := r.server.Store.GetCatalog()
+			if err != nil {
+				c.Error(err)
+				return []manga.Series{}
+			}
+			return ctl
+		},
+		// Returns the progress for the user
+		"catalogProgress": func(c *gin.Context) human.CatalogProgress {
+			uid := c.GetString("uid")
+			cp, err := r.server.Store.GetCatalogProgress(uid)
+			if err != nil {
+				c.Error(err)
+				return human.CatalogProgress{}
+			}
+			return cp
+		},
+		"tags": func(c *gin.Context) []string {
+			t, err := r.server.Store.GetAllTags()
+			if err != nil {
+				c.Error(err)
+				return nil
+			}
+			return t.List()
+		},
+		"seriesWithTag": func(c *gin.Context) []manga.Series {
+			tag := c.Param("tag")
+			series, err := r.server.Store.GetSeriesWithTag(tag)
+			if err != nil {
+				c.Error(err)
+				return nil
+			}
+			return series
+		},
+		"sid": func(c *gin.Context) string {
+			return c.Param("sid")
+		},
+		"eid": func(c *gin.Context) string {
+			return c.Param("eid")
+		},
+		"entry": func(c *gin.Context) manga.Entry {
+			sid := c.Param("sid")
+			eid := c.Param("eid")
+			e, err := r.server.Store.GetEntry(sid, eid)
+			if err != nil {
+				c.Error(err)
+				return manga.Entry{}
+			}
+			return e
+		},
+		"entries": func(c *gin.Context) []manga.Entry {
+			sid := c.Param("sid")
+			e, err := r.server.Store.GetEntries(sid)
+			if err != nil {
+				c.Error(err)
+				return []manga.Entry{}
+			}
+			return e
+		},
+		"entryProgress": func(c *gin.Context) human.EntryProgress {
+			sid := c.Param("sid")
+			eid := c.Param("eid")
+			uid := c.GetString("uid")
+
+			ep, err := r.server.Store.GetEntryProgress(sid, eid, uid)
+			if err != nil {
+				c.Error(err)
+				return human.EntryProgress{}
+			}
+			return ep
+		},
+		"seriesProgress": func(c *gin.Context) human.SeriesProgress {
+			sid := c.Param("sid")
+			uid := c.GetString("uid")
+
+			p, err := r.server.Store.GetSeriesProgress(sid, uid)
+			if err != nil {
+				c.Error(err)
+				return human.SeriesProgress{}
+			}
+			return p
+		},
+		"series": func(c *gin.Context) manga.Series {
+			id := c.Param("sid")
+			s, err := r.server.Store.GetSeries(id)
+			if err != nil {
+				return manga.Series{}
+			}
+			return s
+		},
 		"username": func(c *gin.Context) string {
 			uid := c.GetString("uid")
 			u, err := r.server.Store.GetUser(uid)

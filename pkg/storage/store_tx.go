@@ -22,31 +22,47 @@ func dbBusy(err error) bool {
 	return false
 }
 
-func (s *Store) tx(fn txFunc) error {
-	tx, err := s.pool.Beginx()
+func processTx(pool *sqlx.DB, fn txFunc) error {
+	// Begin transaction
+	tx, err := pool.Beginx()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	for i := 0; i < 5; i++ {
-		err = fn(tx)
-		if dbBusy(err) {
-			time.Sleep(100 * time.Millisecond)
+	// Run transaction
+	err = fn(tx)
+	if err != nil {
+		return err
+	}
+
+	// Commit transaction
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	return nil
+}
+
+const retries = 10
+const retryTimout = 50 * time.Millisecond
+
+func (s *Store) tx(fn txFunc) error {
+	// Begin loop
+	for i := 1; i <= retries; i++ {
+		err := processTx(s.pool, fn)
+
+		if dbBusy(err) && i < retries {
+			time.Sleep(retryTimout)
 			continue
 		}
-
 		if err != nil {
 			if err == sql.ErrNoRows {
 				return ErrItemNotExist
 			}
 			return err
 		}
-		break
-	}
 
-	if err := tx.Commit(); err != nil {
-		return err
+		break
 	}
 	return nil
 }

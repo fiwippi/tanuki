@@ -1,23 +1,21 @@
-{{ define "title" }}Home{{ end }}
+{{ define "title" }}Tag{{ end }}
 
 {{ define "scripts" }}
 <script type="module">
-    import createCatalog from {{versioning "/static/js/components/catalog.js"}}
+    import createST from {{versioning "/static/js/components/specific-tag.js"}}
 
-    const _entries = {{ catalog . }}
-    const _progress = {{ catalogProgress . }}
+    const _entries = {{ seriesWithTag . }}
 
     document.addEventListener('alpine:init', () => {
-        Alpine.data('catalog', () => { return createCatalog(_entries, _progress) })
+        Alpine.data('specificTag', () => { return createST(_entries) })
     })
 </script>
 {{ end }}
 
 {{ define "content" }}
-<div x-data="catalog">
-    <h2>Library</h2>
-    <template x-if="entries.length === 0">
-        <h3>Empty!</h3>
+<div x-data="specificTag">
+    <template x-if="entries.length > 0">
+        <h2 x-text="`Tag: ${tag}`"></h2>
     </template>
 
     <template x-if="entries.length > 0">
@@ -27,14 +25,13 @@
     </template>
 
     <div class="entries">
-        <template x-for="e in filteredEntries">
+        <template x-for="(e, index) in filteredEntries">
             <a class="no-bottom" :href="`/entries/${e.sid}`">
                 <div class="entry" :style="`flex: 0 1 auto; max-width: ${imageWidth()}px`">
                     <img class="entry__img" :src="getThumbnail(e.sid)">
                     <div class="entry__info" >
                         <h4 class="entry__title" x-text="e.display_title || e.folder_title"></h4>
                         <span x-text="`Entries: ${e.num_entries}`"></span><br>
-                        <span x-text="fmtProgress(e)"></span>
                     </div>
                 </div>
             </a>

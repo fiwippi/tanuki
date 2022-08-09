@@ -1,0 +1,29 @@
+{{ define "title" }}Tags{{ end }}
+
+{{ define "scripts" }}
+<script>
+    // Tags added via a script tag instead of only
+    // x-data because otherwise the templating engine
+    // does not marshal each entry in tags as a string
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('tags', () => ({
+            tags: {{ tags . }},
+        }))
+    })
+</script>
+{{ end }}
+
+{{ define "content" }}
+<div x-data="tags">
+    <h2>Tags</h2>
+    <template x-if="tags.length === 0">
+        <h3>Empty!</h3>
+    </template>
+
+    <template x-for="tag in tags" :key="tag">
+        <div class="flex--row">
+            <span>⦿ <a class="flex__key--list" :href="`/tags/${tag}`" x-text="tag"></a></span>
+        </div>
+    </template>
+</div>
+{{ end }}

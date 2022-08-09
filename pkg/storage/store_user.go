@@ -13,6 +13,8 @@ var ErrUserExist = errors.New("user already exists")
 var ErrNotEnoughUsers = errors.New("not enough users in the db")
 var ErrNotEnoughAdmins = errors.New("not enough admins in the db")
 
+// TODO remove all replace into
+
 // Editing
 
 func (s *Store) AddUser(u human.User, overwrite bool) error {
@@ -30,7 +32,11 @@ func (s *Store) AddUser(u human.User, overwrite bool) error {
 			}
 		}
 
-		_, err := tx.NamedExec(`REPLACE INTO users (uid, name, pass, type) Values (:uid,:name,:pass,:type)`, u)
+		stmt := `INSERT INTO users (uid, name, pass, type) 
+					Values (:uid,:name,:pass,:type)
+					ON CONFLICT (uid)
+					DO UPDATE SET uid=:uid,name=:name,pass=:pass,type=:type`
+		_, err := tx.NamedExec(stmt, u)
 		return err
 	}
 

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -19,6 +20,8 @@ type Instance struct {
 	Session *auth.Session
 	Config  *config.Config
 	Router  *gin.Engine
+
+	srv *http.Server
 }
 
 func NewInstance(c *config.Config, store *storage.Store, session *auth.Session) *Instance {
@@ -52,6 +55,23 @@ func (i *Instance) SetHTMLRenderer(r render.HTMLRender) {
 	i.Router.HTMLRender = r
 }
 
+func (i *Instance) Shutdown() error {
+	if i.srv == nil {
+		return nil
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	defer cancel()
+
+	err := i.Store.Close()
+	if err != nil {
+		return err
+	}
+	return i.srv.Shutdown(ctx)
+}
+
+// TODO stop sqlbusy errors and have more than one connection open at a time
+
 func (i *Instance) Start() error {
 	// Begin cron jobs and one time setup jobs
 	i.Config.ScanInterval.Run(i.Store.PopulateCatalog, "scan library", true, log.Copy())
@@ -63,9 +83,9 @@ func (i *Instance) Start() error {
 	}()
 
 	// Run the server
-	s := http.Server{
+	i.srv = &http.Server{
 		Addr:    i.Config.Host + ":" + i.Config.Port,
 		Handler: i.Router,
 	}
-	return s.ListenAndServe()
+	return i.srv.ListenAndServe()
 }

@@ -160,3 +160,116 @@ export class User {
             })
     }
 }
+
+export class Catalog {
+    // static async Series(sid) {
+    //     return fetchResource(`series/${sid}`)
+    //         .then(resp => resp.ensureSuccess())
+    //         .then(data => { return data.data })
+    // }
+    //
+    // static async Entries(sid) {
+    //     return fetchResource(`series/${sid}/entries`)
+    //         .then(resp => resp.ensureSuccess())
+    //         .then(data => {
+    //             return { entries: data.list, series_hash: data.series_hash }
+    //         })
+    // }
+
+    static async SeriesProgress(sid) {
+        return fetchResource(`series/${sid}/progress`)
+            .then(data => { return data.progress })
+    }
+
+    static async EntryProgress(sid, eid) {
+        return fetchResource(`series/${sid}/entries/${eid}/progress`)
+            .then(data => { return data.progress })
+    }
+
+    // static async PatchSeries(sid, title, author, date_released) {
+    //     let data = {
+    //         title: title,
+    //         author: author,
+    //         date_released: date_released
+    //     }
+    //
+    //     return fetchResource(`series/${sid}`, {
+    //         method: 'PATCH',
+    //         body: JSON.stringify(data),
+    //     })
+    //         .then(resp => resp.ensureSuccess())
+    // }
+    //
+    static async PatchTags(sid, tags) {
+        let data = { tags: tags }
+        return fetchResource(`series/${sid}/tags`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        })
+    }
+
+    static async PatchProgress(sid, eid, progress) {
+        let url
+        if (sid.length > 0) {
+            url = `series/${sid}/progress`
+        }
+        if (eid.length > 0) {
+            url = `series/${sid}/entries/${eid}/progress`
+        }
+
+        let data = { progress: progress }
+
+        return fetchResource(url, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        })
+    }
+
+    // static async PatchSeriesCover(sid, file, filename) {
+    //     let url = `series/${sid}/cover`
+    //     return Catalog.patchCover(url, file, filename)
+    // }
+    //
+    // static async DeleteSeriesCover(sid) {
+    //     return fetchResource(`series/${sid}/cover`, {method: 'DELETE'})
+    //         .then(resp => resp.ensureSuccess())
+    // }
+    //
+    // static async PatchEntry(sid, eid, title, author, date_released, chapter, volume) {
+    //     let data = {
+    //         title: title,
+    //         author: author,
+    //         date_released: date_released,
+    //         chapter: Number(chapter),
+    //         volume: Number(volume),
+    //     }
+    //
+    //     return fetchResource(`series/${sid}/entries/${eid}`, {
+    //         method: 'PATCH',
+    //         body: JSON.stringify(data),
+    //     })
+    //         .then(resp => resp.ensureSuccess())
+    // }
+    //
+    // static async PatchEntryCover(sid, eid, file, filename) {
+    //     let url = `series/${sid}/entries/${eid}/cover`
+    //     return Catalog.patchCover(url, file, filename)
+    // }
+    //
+    // static async DeleteEntryCover(sid, eid) {
+    //     return fetchResource(`series/${sid}/entries/${eid}/cover`, {method: 'DELETE'})
+    //         .then(resp => resp.ensureSuccess())
+    // }
+    //
+    // static async patchCover(url, file, filename) {
+    //     const form = new FormData();
+    //     form.append('file', file);
+    //     form.append('filename', filename);
+    //
+    //     return fetchResource(url, {
+    //         method: 'PATCH',
+    //         body: form,
+    //     }, true)
+    //         .then(resp => resp.ensureSuccess())
+    // }
+}

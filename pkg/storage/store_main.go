@@ -18,6 +18,8 @@ type Store struct {
 	libraryPath string
 }
 
+// TODO remove all replace intos
+
 func MustCreateNewStore(dbPath, libraryPath string, recreate bool) *Store {
 	s, err := NewStore(dbPath, libraryPath, recreate)
 	if err != nil {
@@ -31,6 +33,7 @@ func NewStore(dbPath, libraryPath string, recreate bool) (*Store, error) {
 		libraryPath: libraryPath,
 		pool:        sqlx.MustConnect("sqlite", dbPath+"?_pragma=journal_mode(WAL)&_pragma=foreign_keys(on)"),
 	}
+	s.pool.SetMaxOpenConns(1)
 
 	// Drop if recreating
 	if recreate {

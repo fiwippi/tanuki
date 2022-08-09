@@ -95,7 +95,11 @@ func (t Type) EncodeThumbnail(r io.Reader) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return buf.Bytes(), nil
+	data := buf.Bytes()
+	if len(data) == 0 {
+		return nil, fmt.Errorf("encoded thumbnail is empty")
+	}
+	return data, nil
 }
 
 // InferType attempts to guess a files image type based

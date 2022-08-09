@@ -3,6 +3,7 @@ package storage
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io/ioutil"
 
 	"github.com/jmoiron/sqlx"
@@ -64,11 +65,10 @@ func (s *Store) GetSeries(sid string) (manga.Series, error) {
 func (s *Store) AddSeries(series manga.Series, entries []manga.Entry) error {
 	fn := func(tx *sqlx.Tx) error {
 		// Insert the series data
-		stmt := `
-		REPLACE INTO series
-			(sid, folder_title, num_entries, num_pages, mod_time)
-		Values
-			(:sid, :folder_title, :num_entries, :num_pages, :mod_time)`
+		stmt := `INSERT INTO series (sid, folder_title, num_entries, num_pages, mod_time)
+					Values (:sid, :folder_title, :num_entries, :num_pages, :mod_time)
+					ON CONFLICT (sid)
+					DO UPDATE SET sid=:sid,folder_title=:folder_title,num_entries=:num_entries,num_pages=:num_pages,mod_time=:mod_time`
 		_, err := tx.NamedExec(stmt, series)
 		if err != nil {
 			return err
@@ -131,6 +131,9 @@ func (s *Store) getSeriesCover(tx *sqlx.Tx, sid string) ([]byte, image.Type, err
 	data, err = ioutil.ReadAll(r)
 	if err != nil {
 		return nil, image.Invalid, err
+	}
+	if len(data) == 0 {
+		return nil, image.Invalid, fmt.Errorf("first page from archive is empty")
 	}
 	return data, it, nil
 }
@@ -196,7 +199,6 @@ func (s *Store) generateSeriesThumbnail(tx *sqlx.Tx, sid string, overwrite bool)
 	if err != nil {
 		return nil, err
 	}
-
 	_, err = tx.Exec("UPDATE series SET thumbnail = ? WHERE sid = ?", thumb, sid)
 	if err != nil {
 		return nil, err

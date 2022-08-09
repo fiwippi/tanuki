@@ -32,12 +32,11 @@ func (s *Store) setEntryProgress(tx *sqlx.Tx, sid, eid, uid string, num int, set
 	}
 
 	// Update progress
-	stmt := `
-		REPLACE INTO progress
-			(sid, eid, uid, current, total)
-		Values
-			(?, ?, ?, ?, ?)`
-	_, err = tx.Exec(stmt, sid, eid, uid, num, e.Pages.Total())
+	stmt := `INSERT INTO progress (sid, eid, uid, current, total)
+				Values (?, ?, ?, ?, ?)
+				ON CONFLICT (sid, eid, uid)
+				DO UPDATE SET sid=?,eid=?,uid=?,current=?,total=?`
+	_, err = tx.Exec(stmt, sid, eid, uid, num, e.Pages.Total(), sid, eid, uid, num, e.Pages.Total())
 	return err
 }
 
@@ -85,12 +84,11 @@ func (s *Store) setSeriesProgress(tx *sqlx.Tx, sid, uid string, setUnread, setRe
 		}
 
 		// Update progress
-		stmt := `
-		REPLACE INTO progress
-			(sid, eid, uid, current, total)
-		Values
-			(?, ?, ?, ?, ?)`
-		_, err = tx.Exec(stmt, sid, e.EID, uid, num, e.Pages.Total())
+		stmt := `INSERT INTO progress (sid, eid, uid, current, total)
+				Values (?, ?, ?, ?, ?)
+				ON CONFLICT (sid, eid, uid)
+				DO UPDATE SET sid=?,eid=?,uid=?,current=?,total=?`
+		_, err = tx.Exec(stmt, sid, e.EID, uid, num, e.Pages.Total(), sid, e.EID, uid, num, e.Pages.Total())
 		if err != nil {
 			return err
 		}
@@ -154,4 +152,39 @@ func (s *Store) GetSeriesProgress(sid, uid string) (human.SeriesProgress, error)
 		sp.Add(e.EID, e)
 	}
 	return *sp, nil
+}
+
+func (s *Store) GetCatalogProgress(uid string) (human.CatalogProgress, error) {
+	cp := human.NewCatalogProgress()
+
+	fn := func(tx *sqlx.Tx) error {
+		// Get each series
+		var sids []string
+		tx.Select(&sids, `SELECT sid FROM series`)
+
+		// For each series get create its series progress
+		for _, sid := range sids {
+			var ep []human.EntryProgress
+			stmt := `SELECT eid, current, total FROM progress WHERE sid = ? AND uid = ?`
+			if err := tx.Select(&ep, stmt, sid, uid); err != nil {
+				return err
+			}
+
+			if len(ep) > 0 {
+				sp := human.NewSeriesProgress()
+				for _, e := range ep {
+					sp.Add(e.EID, e)
+				}
+
+				// Add it to the catalog progress
+				cp.Add(sid, *sp)
+			}
+		}
+		return nil
+	}
+
+	if err := s.tx(fn); err != nil {
+		return human.CatalogProgress{}, err
+	}
+	return *cp, nil
 }

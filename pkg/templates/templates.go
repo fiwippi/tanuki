@@ -5,8 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/rs/zerolog/log"
-
+	"github.com/fiwippi/tanuki/internal/log"
 	"github.com/fiwippi/tanuki/internal/platform/multitemplate"
 
 	"github.com/fiwippi/tanuki/pkg/server"

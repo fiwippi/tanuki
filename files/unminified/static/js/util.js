@@ -8,35 +8,33 @@ export const SmallMediaLimit = 820;
 
 export class Images {
     // Returns a promise which returns when an image is loaded
-    static WaitForLoad(img) {
+    static WaitForLoad(img, url) {
         return new Promise((resolve, reject) => {
-            img.onload = function () {
-                resolve()
-            }
-            img.onerror = reject
+            img.onload = resolve
+            img.onerror = img.onabort = reject
         })
     }
 
-    static async LoadImages(images, total, urlFunc, replace) {
+    static async LoadImages(images, total, urlFunc, idFunc, replace) {
         let promises = []
         for (let i = 0; i < total; i++) {
             let img = new Image()
-            promises.push(Images.WaitForLoad(img))
+            promises.push(Images.WaitForLoad(img, urlFunc(i)))
             img.src = urlFunc(i)
-            replace ? images[i] = img : images.push(img)
+            images.set(idFunc(i), img)
         }
         return Promise.all(promises)
             .catch(error => { console.error("failed to load images:", error) }
         )
     }
 
-    static BlankImageArray(length) {
-        return Array.from({length: length}).map(x => {
-            let img = new Image();
-            img.src = BlankImage
-            return img
-        } )
-    }
+    // static BlankImageArray(length) {
+    //     return Array.from({length: length}).map(x => {
+    //         let img = new Image();
+    //         img.src = BlankImage
+    //         return img
+    //     } )
+    // }
 }
 
 export function Sleep(ms) {
@@ -96,12 +94,9 @@ export class Fmt {
         }
 
         let current = 0
-        for (let i in sp.tracker) {
-            // .ensureSuccess function gets registered to
-            // all objects and appears if we loop over an
-            // so this avoids that
-            if (sp.tracker.hasOwnProperty(i)) {
-                let p = sp.tracker[i]
+        for (let i in sp) {
+            if (sp.hasOwnProperty(i)) {
+                let p = sp[i]
                 if (p !== null && p !== undefined) {
                     current += p.current
                 }

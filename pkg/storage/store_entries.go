@@ -3,6 +3,7 @@ package storage
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 
@@ -63,7 +64,7 @@ func (s *Store) getFirstEntry(tx *sqlx.Tx, sid string) (manga.Entry, error) {
 	stmt := `
 		SELECT 
 			sid, eid, title, archive, pages, mod_time, display_title
-		FROM entries WHERE sid = ? ORDER BY position ASC, ROWID DESC LIMIT 1`
+		FROM entries WHERE sid = ? ORDER BY position ASC, ROWID ASC LIMIT 1`
 	err := tx.Get(&e, stmt, sid)
 	if err != nil {
 		return manga.Entry{}, err
@@ -116,11 +117,10 @@ func (s *Store) addEntry(tx *sqlx.Tx, e manga.Entry, position int) error {
 		}
 	}
 
-	stmt := `
-		REPLACE INTO entries 
-			(sid, eid, title, archive, pages, mod_time) 
-		Values 
-			(:sid, :eid, :title, :archive, :pages, :mod_time)`
+	stmt := `INSERT INTO entries (sid, eid, title, archive, pages, mod_time) 
+					Values (:sid, :eid, :title, :archive, :pages, :mod_time)
+					ON CONFLICT (sid, eid)
+					DO UPDATE SET sid=:sid,eid=:eid,title=:title,archive=:archive,pages=:pages,mod_time=:mod_time`
 	_, err := tx.NamedExec(stmt, e)
 	if err != nil {
 		return err
@@ -278,7 +278,11 @@ func (s *Store) getPage(tx *sqlx.Tx, sid, eid string, pageNum int) (io.Reader, i
 	}
 
 	// Pages are 1-indexed
-	page := p[pageNum-1]
+	index := pageNum - 1
+	if index < 0 || index >= len(p) {
+		return nil, 0, image.Invalid, fmt.Errorf("page num index out of range")
+	}
+	page := p[index]
 	r, size, err := a.ReaderForFile(page.Path)
 	if err != nil {
 		return nil, 0, image.Invalid, err

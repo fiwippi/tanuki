@@ -98,7 +98,7 @@ func (s *Store) GenerateThumbnails(overwrite bool) error {
 
 	// Generate thumbnails for each series
 	for _, sid := range sids {
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(1 * time.Second)
 
 		fn := func(tx *sqlx.Tx) error {
 			_, err := s.generateSeriesThumbnail(tx, sid, overwrite)
@@ -115,7 +115,7 @@ func (s *Store) GenerateThumbnails(overwrite bool) error {
 
 		// Generate thumbnails for each series
 		for _, eid := range eids {
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(1 * time.Second)
 
 			fn := func(tx *sqlx.Tx) error {
 				_, err := s.generateEntryThumbnail(tx, sid, eid, overwrite)

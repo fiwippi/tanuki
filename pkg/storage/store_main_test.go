@@ -240,7 +240,11 @@ func TestStore_CanReadAndWriteConcurrently(t *testing.T) {
 
 	require.Nil(t, s.PopulateCatalog())
 
+	var wg sync.WaitGroup
+	wg.Add(1)
+
 	go func() {
+		defer wg.Done()
 		time.Sleep(1 * time.Second)
 
 		t.Log("Getting catalog...")
@@ -271,4 +275,6 @@ func TestStore_CanReadAndWriteConcurrently(t *testing.T) {
 	}
 	require.Nil(t, s.tx(fn))
 	t.Log("Done writing...", time.Since(start).String())
+
+	wg.Wait()
 }

@@ -40,13 +40,16 @@ func (t *Tags) Empty() bool {
 	return len(t.m) == 0
 }
 
-func (t Tags) MarshalJSON() ([]byte, error) {
+func (t Tags) List() []string {
 	list := make([]string, 0, len(t.m))
 	for item := range t.m {
 		list = append(list, item)
 	}
+	return list
+}
 
-	return json.Marshal(list)
+func (t Tags) MarshalJSON() ([]byte, error) {
+	return json.Marshal(t.List())
 }
 
 func (t *Tags) UnmarshalJSON(b []byte) error {

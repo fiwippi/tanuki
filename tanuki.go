@@ -14,10 +14,14 @@ package main
 // TODO test on mobile after docker build made
 
 import (
+	"context"
 	"embed"
 	"flag"
 	"io/fs"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -94,7 +98,17 @@ func main() {
 		}
 		return err
 	})
+	g.Go(func() error {
+		ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill, syscall.SIGTERM)
+		defer cancel()
+		<-ctx.Done()
+		return s.Shutdown()
+	})
 	if err := g.Wait(); err != nil {
-		log.Fatal().Err(err).Msg("server execution error")
+		if err == http.ErrServerClosed {
+			log.Info().Msg("server closed successfully")
+		} else {
+			log.Fatal().Err(err).Msg("server execution error")
+		}
 	}
 }
