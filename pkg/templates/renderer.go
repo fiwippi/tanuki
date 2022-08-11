@@ -156,8 +156,16 @@ func (r *Renderer) FuncMap() template.FuncMap {
 			user.Pass = ""
 			return user
 		},
-		//"mangadexUid": func(c *gin.Context) string {
-		//	return c.Param("uid")
-		//},
+		"mangadexUUID": func(c *gin.Context) string {
+			return c.Param("uuid")
+		},
+		"subscriptions": func(c *gin.Context) []manga.Subscription {
+			sub, err := r.server.Store.GetAllSubscriptions()
+			if err != nil {
+				c.AbortWithError(500, err)
+				return nil
+			}
+			return sub
+		},
 	}
 }

@@ -1,0 +1,35 @@
+{{ define "title" }}Search Mangadex{{ end }}
+
+{{ define "scripts" }}
+<script type="module">
+    import mangadex from {{versioning "/static/js/components/mangadex-search.js"}}
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('mangadex', mangadex)
+    })
+</script>
+{{ end }}
+
+{{ define "content" }}
+<div x-data="mangadex">
+    <h2>Mangadex</h2>
+    <div class="flex--row">
+        <h3>Search</h3>
+        <div id="spinner" class="flex__key--centered"></div>
+    </div>
+    <div class="search">
+        <input x-model.debounce.400ms="search" @input="handleSearchChange" class="search__bar" placeholder="Search..." type="text" autofocus>
+    </div>
+
+    <h3 x-show="canShow && search != '' && searchData.length === 0">No Results Found!</h3>
+
+    <template x-for="e in searchEntries">
+       <div class="flex--row" style="margin-bottom: 50px">
+           <a :href="fmtDlLink(e)" class="no-bottom"><img :src="e.small_cover_url" style="max-width: 100px"></a>
+           <div class="flex--col">
+               <a :href="fmtDlLink(e)" class="no-bottom"><span style="font-weight: bold" x-text="e.title"></span></a>
+               <span x-text="fmtDescription(e.description)"></span>
+           </div>
+       </div>
+    </template>
+</div>
+{{ end }}

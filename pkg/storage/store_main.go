@@ -18,8 +18,6 @@ type Store struct {
 	libraryPath string
 }
 
-// TODO remove all replace intos
-
 func MustCreateNewStore(dbPath, libraryPath string, recreate bool) *Store {
 	s, err := NewStore(dbPath, libraryPath, recreate)
 	if err != nil {

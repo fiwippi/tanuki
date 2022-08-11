@@ -10,6 +10,8 @@ func NewService(g *server.RouterGroup) {
 	a.Use(cookie.Auth(g.Server, cookie.Abort))
 	a.Use(cookie.Admin("/"))
 
+	a.GET("/check-subscriptions", checkSubscription)
+
 	a.GET("/library/scan", ScanLibrary)
 	a.GET("/library/generate-thumbnails", GenerateThumbnails)
 	a.GET("/library/missing-items", GetMissingItems)

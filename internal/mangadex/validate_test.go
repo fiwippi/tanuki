@@ -4,15 +4,15 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestValidateManga(t *testing.T) {
 	valid, err := ValidateManga(context.Background(), "a25e46ec-30f7-4db6-89df-cacbc1d9a900")
-	assert.Nil(t, err)
-	assert.True(t, valid)
+	require.Nil(t, err)
+	require.True(t, valid)
 
 	valid, err = ValidateManga(context.Background(), "xxx")
-	assert.NotNil(t, err)
-	assert.False(t, valid)
+	require.NotNil(t, err)
+	require.False(t, valid)
 }

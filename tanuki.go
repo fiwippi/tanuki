@@ -1,18 +1,5 @@
 package main
 
-// TODO
-// 	1. Implement interface to download manga
-//  2. Implement managers for the interfaces
-//  3. Implement users
-//  4. Implement storage backend (solve problems like user progress + catalog metadata)
-//  5. Implement OPDS
-//  5. Implement frontend
-//  6. Touch up frontend (e.g. more swirly loading icons in places)
-//  7. Implement metadata?
-
-// TODO go over all github issues to make sure they all covered
-// TODO test on mobile after docker build made
-
 import (
 	"context"
 	"embed"
@@ -37,6 +24,7 @@ import (
 	"github.com/fiwippi/tanuki/pkg/server"
 	"github.com/fiwippi/tanuki/pkg/storage"
 	"github.com/fiwippi/tanuki/pkg/templates"
+	"github.com/fiwippi/tanuki/pkg/transfer"
 )
 
 //go:embed files/minified*
@@ -62,7 +50,9 @@ func main() {
 	// Create the server
 	session := auth.NewSession(time.Hour*24*3, "tanuki", *conf.SessionSecret)
 	store := storage.MustCreateNewStore(conf.Paths.DB, conf.Paths.Library, *recreate)
-	s := server.NewInstance(conf, store, session)
+	manager := transfer.NewManager(conf.Paths.Library, 2, store,
+		store.PopulateCatalog, conf.SubscriptionsInterval.Duration)
+	s := server.NewInstance(conf, store, session, manager)
 
 	// Serve static files
 	files := "files/minified"

@@ -86,7 +86,10 @@ export class Auth {
 export class Admin {
     static async ScanLibrary() {
         return fetchResource("admin/library/scan/")
-            .then(resp => resp.json())
+    }
+
+    static async CheckSubcriptions() {
+        return fetchResource("admin/check-subscriptions")
     }
 
     static async ViewDB() {
@@ -107,17 +110,14 @@ export class Admin {
 
     static async GenerateThumbnails() {
         return fetchResource("admin/library/generate-thumbnails/")
-            .then(resp => resp.json())
     }
 
     static async VacuumDB() {
         return fetchResource("admin/db/vacuum/")
-            .then(resp => resp.json())
     }
 
     static async GetMissingItems() {
         return fetchResource("admin/library/missing-items/")
-            .then(resp => resp.json())
     }
 
     static async DeleteMissingItems() {
@@ -162,20 +162,6 @@ export class User {
 }
 
 export class Catalog {
-    // static async Series(sid) {
-    //     return fetchResource(`series/${sid}`)
-    //         .then(resp => resp.ensureSuccess())
-    //         .then(data => { return data.data })
-    // }
-    //
-    // static async Entries(sid) {
-    //     return fetchResource(`series/${sid}/entries`)
-    //         .then(resp => resp.ensureSuccess())
-    //         .then(data => {
-    //             return { entries: data.list, series_hash: data.series_hash }
-    //         })
-    // }
-
     static async SeriesProgress(sid) {
         return fetchResource(`series/${sid}/progress`)
             .then(data => { return data.progress })
@@ -186,20 +172,6 @@ export class Catalog {
             .then(data => { return data.progress })
     }
 
-    // static async PatchSeries(sid, title, author, date_released) {
-    //     let data = {
-    //         title: title,
-    //         author: author,
-    //         date_released: date_released
-    //     }
-    //
-    //     return fetchResource(`series/${sid}`, {
-    //         method: 'PATCH',
-    //         body: JSON.stringify(data),
-    //     })
-    //         .then(resp => resp.ensureSuccess())
-    // }
-    //
     static async PatchTags(sid, tags) {
         let data = { tags: tags }
         return fetchResource(`series/${sid}/tags`, {
@@ -224,52 +196,67 @@ export class Catalog {
             body: JSON.stringify(data),
         })
     }
+}
 
-    // static async PatchSeriesCover(sid, file, filename) {
-    //     let url = `series/${sid}/cover`
-    //     return Catalog.patchCover(url, file, filename)
-    // }
-    //
-    // static async DeleteSeriesCover(sid) {
-    //     return fetchResource(`series/${sid}/cover`, {method: 'DELETE'})
-    //         .then(resp => resp.ensureSuccess())
-    // }
-    //
-    // static async PatchEntry(sid, eid, title, author, date_released, chapter, volume) {
-    //     let data = {
-    //         title: title,
-    //         author: author,
-    //         date_released: date_released,
-    //         chapter: Number(chapter),
-    //         volume: Number(volume),
-    //     }
-    //
-    //     return fetchResource(`series/${sid}/entries/${eid}`, {
-    //         method: 'PATCH',
-    //         body: JSON.stringify(data),
-    //     })
-    //         .then(resp => resp.ensureSuccess())
-    // }
-    //
-    // static async PatchEntryCover(sid, eid, file, filename) {
-    //     let url = `series/${sid}/entries/${eid}/cover`
-    //     return Catalog.patchCover(url, file, filename)
-    // }
-    //
-    // static async DeleteEntryCover(sid, eid) {
-    //     return fetchResource(`series/${sid}/entries/${eid}/cover`, {method: 'DELETE'})
-    //         .then(resp => resp.ensureSuccess())
-    // }
-    //
-    // static async patchCover(url, file, filename) {
-    //     const form = new FormData();
-    //     form.append('file', file);
-    //     form.append('filename', filename);
-    //
-    //     return fetchResource(url, {
-    //         method: 'PATCH',
-    //         body: form,
-    //     }, true)
-    //         .then(resp => resp.ensureSuccess())
-    // }
+export class Mangadex {
+    static async Search(title, limit) {
+        if (limit == undefined) limit = 10
+        return fetchResource(`mangadex/search?title=${title}&limit=${limit}`)
+    }
+
+    static async View(uuid) {
+        return fetchResource(`mangadex/view/${uuid}`)
+    }
+}
+
+export class Download {
+    static async Chapters(title, chapters, create_subscription) {
+        let data = {
+            title: title,
+            chapters: chapters,
+            create_subscription: create_subscription,
+        }
+        return fetchResource(`manager/download/chapters`, {
+            method: 'POST',
+            body: JSON.stringify(data),
+        })
+    }
+
+    static Manager() {
+        return new EventSource(`${API_URL}manager/download`)
+    }
+
+    static async DeleteAllDownloads() {
+        return fetchResource(`manager/download/delete-all-dl`)
+    }
+
+    static async DeleteSuccessfulDownloads() {
+        return fetchResource(`manager/download/delete-successful-dl`)
+    }
+
+    static async RetryFailedDownloads() {
+        return fetchResource(`manager/download/retry-failed-dl`)
+    }
+
+    static async Pause() {
+        return fetchResource(`manager/download/pause-dl`)
+    }
+
+    static async Resume() {
+        return fetchResource(`manager/download/resume-dl`)
+    }
+
+    static async Cancel() {
+        return fetchResource(`manager/download/cancel-dl`)
+    }
+}
+
+export class Subscription {
+    static async ViewAll() {
+        return fetchResource(`manager/subscription`)
+    }
+
+    static async Delete(sid) {
+        return fetchResource(`manager/subscription/${sid}`, {method: 'DELETE'})
+    }
 }

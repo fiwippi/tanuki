@@ -27,14 +27,6 @@ export class Images {
             .catch(error => { console.error("failed to load images:", error) }
         )
     }
-
-    // static BlankImageArray(length) {
-    //     return Array.from({length: length}).map(x => {
-    //         let img = new Image();
-    //         img.src = BlankImage
-    //         return img
-    //     } )
-    // }
 }
 
 export function Sleep(ms) {
@@ -87,6 +79,12 @@ export class Compare {
     }
 }
 
+function pad2(t) {
+    if (t.length < 2)
+        return '0' + t;
+    return t
+}
+
 export class Fmt {
     static SeriesPercent(sp, total_pages) {
         if (sp === undefined || sp === null) {
@@ -132,19 +130,19 @@ export class Fmt {
         return (p * 100).toFixed(2) + "%"
     }
 
-    static RFCDate(date) {
+    static RFCDate(date, extra) {
         let d = new Date(date)
 
-        let month = '' + (d.getMonth() + 1),
-            day = '' + d.getDate(),
+        let month = pad2('' + (d.getMonth() + 1)),
+            day = pad2('' + d.getDate()),
             year = d.getFullYear();
+        if (!extra)
+            return [year, month, day].join('-')
 
-        if (month.length < 2)
-            month = '0' + month;
-        if (day.length < 2)
-            day = '0' + day;
-
-        return [year, month, day].join('-');
+        let hour = pad2('' + d.getHours()),
+            minute = pad2('' + d.getMinutes()),
+            second = pad2(d.getSeconds());
+        return [year, month, day].join('-') + ' ' + [hour, minute, second].join(':')
     }
 }
 

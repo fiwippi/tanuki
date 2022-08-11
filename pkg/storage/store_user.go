@@ -13,8 +13,6 @@ var ErrUserExist = errors.New("user already exists")
 var ErrNotEnoughUsers = errors.New("not enough users in the db")
 var ErrNotEnoughAdmins = errors.New("not enough admins in the db")
 
-// TODO remove all replace into
-
 // Editing
 
 func (s *Store) AddUser(u human.User, overwrite bool) error {

@@ -10,4 +10,4 @@ services:
       - ./data:/data
       - ./config:/config
     ports:
-      - 8096:8096
+      - "8096:8096"

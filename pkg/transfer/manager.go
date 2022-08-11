@@ -22,9 +22,8 @@ type Manager struct {
 	store           *storage.Store
 	doneFunc        func() error
 	libraryPath     string
+	waitingOnDone   bool
 }
-
-// TODO add sbInterval to the config
 
 func NewManager(libraryPath string, workers int, store *storage.Store, done func() error, sbInterval time.Duration) *Manager {
 	m := &Manager{
@@ -39,7 +38,10 @@ func NewManager(libraryPath string, workers int, store *storage.Store, done func
 	for id := 0; id < workers; id++ {
 		go m.worker(id)
 	}
-	go m.checkSubscriptions(sbInterval)
+	if sbInterval > 0 {
+		go m.checkSubscriptionsOnInterval(sbInterval)
+
+	}
 
 	return m
 }
@@ -92,17 +94,30 @@ func (m *Manager) worker(id int) {
 			log.Debug().Err(err).Int("wid", id).Str("dl", d.String()).Msg("could not save dl to store")
 		}
 
-		// If no more downloads left then call the doneFunc
-		if len(m.activeDownloads.l) == 0 {
+		// If it's the only download left call the doneFunc
+		if len(m.queue) == 0 && len(m.activeDownloads.l) == 0 && !m.waitingOnDone {
 			m.Pause()
-			log.Debug().Err(err).Int("wid", id).Msg("running doneFunc since list is empty")
+			m.waitingOnDone = true
+			log.Debug().Int("wid", id).Msg("running doneFunc since list is empty")
 			err := m.doneFunc()
 			if err != nil {
 				log.Error().Err(err).Int("wid", id).Msg("error when running doneFunc")
 			}
+			log.Debug().Int("wid", id).Msg("finished running doneFunc")
+			m.waitingOnDone = false
 			m.Resume()
 		}
 	}
+}
+
+// State
+
+func (m *Manager) Paused() bool {
+	return m.controller.Paused()
+}
+
+func (m *Manager) Waiting() bool {
+	return m.waitingOnDone
 }
 
 // Downloading
@@ -158,7 +173,39 @@ func (m *Manager) RetryFailedDownloads() error {
 
 // Subscriptions
 
-func (m *Manager) checkSubscriptions(interval time.Duration) {
+func (m *Manager) CheckSubscriptions() error {
+	// Get all subscriptions
+	sbs, err := m.store.GetAllSubscriptions()
+	if err != nil {
+		return err
+	}
+
+	// Download each subscription
+	for _, sb := range sbs {
+		title := sb.Title
+		series, err := m.store.GetSeries(sb.SID)
+		if err == nil {
+			title = series.FolderTitle
+		}
+
+		// Get all new chapters for the subscription
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		chs, err := mangadex.NewChapters(ctx, string(sb.MdexUUID), sb.MdexLastPublishedAt.Time())
+		cancel()
+		if err != nil {
+			return err
+		}
+
+		// Queue the new chapter for downloading
+		for _, ch := range chs {
+			m.Queue(title, ch, true)
+		}
+	}
+
+	return nil
+}
+
+func (m *Manager) checkSubscriptionsOnInterval(interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
@@ -167,36 +214,9 @@ func (m *Manager) checkSubscriptions(interval time.Duration) {
 		case <-ticker.C:
 			log.Info().Msg("checking subscriptions for new chapters")
 
-			// Get all subscriptions
-			sbs, err := m.store.GetAllSubscriptions()
+			err := m.CheckSubscriptions()
 			if err != nil {
-				log.Error().Err(err).Msg("manager failed to get subscriptions to check for new chapters")
-				continue
-			}
-
-			// Download each subscription
-			for _, sb := range sbs {
-				title := sb.Title
-				series, err := m.store.GetSeries(sb.SID)
-				if err == nil {
-					title = series.FolderTitle
-				}
-
-				// Get all new chapters for the subscription
-				ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-				chs, err := mangadex.NewChapters(ctx, string(sb.MdexUUID), sb.MdexLastPublishedAt.Time())
-				cancel()
-				if err != nil {
-					log.Error().Err(err).Str("sid", sb.SID).Str("mangadex_uuid", string(sb.MdexUUID)).
-						Str("mangadex_last_published_at", sb.MdexLastPublishedAt.String()).
-						Msg("manager failed to get new chapters for subscription")
-					continue
-				}
-
-				// Queue the new chapter for downloading
-				for _, ch := range chs {
-					m.Queue(title, ch, true)
-				}
+				log.Error().Err(err).Msg("error when checking subscription")
 			}
 		}
 	}

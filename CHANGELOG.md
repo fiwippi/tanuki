@@ -1,4 +1,14 @@
 ## Changelog
+### [0.17] - 2022-08-11
+⚠️ - Breaking changes are made to the database, it is in a different format!
+- Many QOL improvements
+- Ability to subscribe to Mangadex entries
+- Redone backend with comprehensive testing
+- Less bloated API
+- Some features removed
+  - No ability to edit metadata
+  - No ability to search in OPDS
+
 ### [0.16.3] - 2022-02-22
 - Entry progressed refreshed client side when edited
 - Cleaned up licenses to be in line with project standards

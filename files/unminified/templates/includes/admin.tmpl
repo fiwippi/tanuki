@@ -12,6 +12,21 @@
                 showThumbnailsResult: false,
                 vacuumResult: "",
                 showVacuumResult: false,
+                subResult: "",
+                showSubResult: false,
+
+                async subscription() {
+                    document.getElementById("sub").classList.add("loader")
+                    await API.Admin.CheckSubcriptions()
+                        .then(resp => {
+                            this.subResult = `Success!, time taken: ${resp.time_taken}`
+                        })
+                        .catch(() => {
+                            this.subResult = "Failure!"
+                        })
+                    document.getElementById("sub").classList.remove("loader")
+                    this.showSubResult = true
+                },
 
                 async thumbnails() {
                     document.getElementById("thumbnails").classList.add("loader")
@@ -30,9 +45,11 @@
                     document.getElementById("scan").classList.add("loader")
                     await API.Admin.ScanLibrary()
                         .then(resp => {
+                            console.log(resp)
                             this.scanResult = `Success!, time taken: ${resp.time_taken}`
                         })
-                        .catch(() => {
+                        .catch((e) => {
+                            console.error(e)
                             this.scanResult = "Failure!"
                         })
                     document.getElementById("scan").classList.remove("loader")
@@ -92,6 +109,14 @@
                 <div id="scan" class="flex__key--centered"></div>
             </div>
             <span x-show="showScanResult" @click.away="showScanResult = false" x-text="scanResult"></span>
+        </div>
+
+        <div class="flex--col flex--no-gap">
+            <div class="flex--row">
+                <span>⦿ <a class="flex__key--list" href="javascript:void(0)" @click="await subscription()">Check Subscriptions</a></span>
+                <div id="sub" class="flex__key--centered"></div>
+            </div>
+            <span x-show="showSubResult" @click.away="showSubResult = false" x-text="subResult"></span>
         </div>
 
         <div class="flex--col flex--no-gap">

@@ -1,0 +1,68 @@
+{{ define "title" }}Mangadex{{ end }}
+
+{{ define "scripts" }}
+<script type="module">
+    const uuid = {{ mangadexUUID . }};
+    import mangadex from {{versioning "/static/js/components/mangadex-download.js"}}
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('mangadex', () => { return mangadex(uuid) })
+    })
+</script>
+{{ end }}
+
+{{ define "content" }}
+<div x-data="mangadex">
+    <h2>Mangadex</h2>
+    <div class="flex--row">
+        <h3>Download</h3>
+        <div id="spinner" class="flex__key--centered"></div>
+    </div>
+
+    <template x-if="data !== {}">
+        <div class="flex--row" style="margin-bottom: 30px">
+            <img :src="data.small_cover_url" style="max-width: 160px">
+            <div class="flex--col">
+                <span style="font-weight: bold" x-text="data.title"></span>
+                <span x-text="data.description"></span>
+            </div>
+        </div>
+    </template>
+
+    <div class="flex--row" style="margin-bottom: 25px">
+        <button id="downloadButton" @click="downloadChapters" disabled>Download Selected Chapters</button>
+        <input style="align-self: center" type="checkbox" id="createSub" x-model="createSub">
+        <label style="align-self: center" for="createSub">Subscribe</label>
+        <p class="flex__key--no-padding flex__key--centered" x-text="resp"></p>
+    </div>
+
+    <template x-if="chapters.length > 0">
+        <div class="search" style="margin-bottom: 0">
+            <input x-model="search" class="search__bar" placeholder="Search..." type="text">
+        </div>
+    </template>
+    <table>
+        <thead>
+            <tr>
+                <th><input type="checkbox" @change="selectAll"></th>
+                <th>Volume</th>
+                <th>Chapter</th>
+                <th>Title</th>
+                <th>Scanlation Group</th>
+                <th>Last Updated</th>
+            </tr>
+        </thead>
+        <tbody>
+            <template x-for="(c, index) in filteredChapters">
+                <tr>
+                    <td><input x-model="checkboxes[index]" type="checkbox"></td>
+                    <td><span x-text="c.volume_no"></span></td>
+                    <td><span x-text="c.chapter_no"></span></td>
+                    <td><span x-text="c.title ? c.title : '-N/A-'"></span></td>
+                    <td><span x-text="c.scanlation_group ? c.scanlation_group : '-N/A-'"></span></td>
+                    <td><span x-text="fmtDate(c.published_at)"></span></td>
+                </tr>
+            </template>
+        </tbody>
+    </table>
+</div>
+{{ end }}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/url"
 	"strconv"
 )
@@ -26,25 +25,7 @@ func SearchManga(ctx context.Context, title string, limit int) ([]Listing, error
 
 	r := struct {
 		result
-		Data []struct {
-			ID         string `json:"id"`
-			Attributes struct {
-				Title struct {
-					English string `json:"en"`
-				} `json:"title"`
-				Description struct {
-					English string `json:"en"`
-				} `json:"description"`
-				Year int `json:"year"`
-			} `json:"attributes"`
-			Relationships []struct {
-				ID         string `json:"id"`
-				Type       string `json:"type"`
-				Attributes struct {
-					FileName string `json:"fileName"`
-				} `json:"attributes"`
-			} `json:"relationships"`
-		} `json:"data"`
+		Data []listingData `json:"data"`
 	}{}
 
 	err = json.NewDecoder(resp.Body).Decode(&r)
@@ -58,22 +39,7 @@ func SearchManga(ctx context.Context, title string, limit int) ([]Listing, error
 
 	listings := make([]Listing, 0)
 	for _, d := range r.Data {
-		var coverURL string
-		for _, rel := range d.Relationships {
-			if rel.Type == "cover_art" {
-				coverURL = fmt.Sprintf("https://uploads.mangadex.org/covers/%s/%s", d.ID, rel.Attributes.FileName)
-				break
-			}
-		}
-
-		listings = append(listings, Listing{
-			ID:            d.ID,
-			Title:         d.Attributes.Title.English,
-			Description:   d.Attributes.Description.English,
-			CoverURL:      coverURL,
-			SmallCoverURL: coverURL + ".256.jpg",
-			Year:          d.Attributes.Year,
-		})
+		listings = append(listings, d.makeListing())
 	}
 
 	return listings, nil

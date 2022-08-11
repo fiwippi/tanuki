@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	ScanInterval = 180 // Every 3 hours
+	ScanInterval          = 180     // Every 3 hours
+	SubscriptionsInterval = 60 * 24 // Every 24 hours
 )
 
 type Config struct {
@@ -26,6 +27,7 @@ type Config struct {
 	Paths                  Paths           `yaml:"paths"`
 	SessionSecret          *encryption.Key `yaml:"session_secret"`
 	ScanInterval           *task.Job       `yaml:"scan_interval_minutes"`
+	SubscriptionsInterval  *task.Job       `yaml:"subscriptions_interval_minutes"`
 	MaxUploadedFileSizeMiB int             `yaml:"max_uploaded_file_size_mib"`
 	DebugMode              bool            `yaml:"debug_mode"`
 }
@@ -44,6 +46,7 @@ func DefaultConfig() *Config {
 		Paths:                  defaultPaths(),
 		SessionSecret:          encryption.NewKey(32),
 		ScanInterval:           task.NewJob(ScanInterval),
+		SubscriptionsInterval:  task.NewJob(SubscriptionsInterval),
 		MaxUploadedFileSizeMiB: 10,
 		DebugMode:              false,
 	}
@@ -72,6 +75,9 @@ func LoadConfig(fp string) *Config {
 	// Ensure Job intervals can't be nil
 	if c.ScanInterval == nil {
 		c.ScanInterval = task.NewJob(ScanInterval)
+	}
+	if c.SubscriptionsInterval == nil {
+		c.SubscriptionsInterval = task.NewJob(SubscriptionsInterval)
 	}
 
 	return c

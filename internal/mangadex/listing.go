@@ -3,19 +3,59 @@ package mangadex
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/url"
 	"time"
 
 	"github.com/fiwippi/tanuki/internal/platform/dbutil"
 )
 
+type listingData struct {
+	ID         string `json:"id"`
+	Attributes struct {
+		Title struct {
+			English string `json:"en"`
+		} `json:"title"`
+		Description struct {
+			English string `json:"en"`
+		} `json:"description"`
+		Year int `json:"year"`
+	} `json:"attributes"`
+	Relationships []struct {
+		ID         string `json:"id"`
+		Type       string `json:"type"`
+		Attributes struct {
+			FileName string `json:"fileName"`
+		} `json:"attributes"`
+	} `json:"relationships"`
+}
+
+func (ld listingData) makeListing() Listing {
+	var coverURL string
+	for _, rel := range ld.Relationships {
+		if rel.Type == "cover_art" {
+			coverURL = fmt.Sprintf("https://uploads.mangadex.org/covers/%s/%s", ld.ID, rel.Attributes.FileName)
+			break
+		}
+	}
+
+	return Listing{
+		ID:            ld.ID,
+		Title:         ld.Attributes.Title.English,
+		Description:   ld.Attributes.Description.English,
+		CoverURL:      coverURL,
+		SmallCoverURL: coverURL + ".256.jpg",
+		Year:          ld.Attributes.Year,
+	}
+}
+
 type Listing struct {
-	ID            string
-	Title         string
-	Description   string
-	CoverURL      string
-	SmallCoverURL string
-	Year          int
+	ID            string `json:"id"`
+	Title         string `json:"title"`
+	Description   string `json:"description"`
+	CoverURL      string `json:"cover_url"`
+	SmallCoverURL string `json:"small_cover_url"`
+	Year          int    `json:"year"`
 }
 
 func (l Listing) ListChapters(ctx context.Context) ([]Chapter, error) {

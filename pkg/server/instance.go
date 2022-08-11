@@ -13,6 +13,7 @@ import (
 	"github.com/fiwippi/tanuki/pkg/auth"
 	"github.com/fiwippi/tanuki/pkg/config"
 	"github.com/fiwippi/tanuki/pkg/storage"
+	"github.com/fiwippi/tanuki/pkg/transfer"
 )
 
 type Instance struct {
@@ -20,11 +21,12 @@ type Instance struct {
 	Session *auth.Session
 	Config  *config.Config
 	Router  *gin.Engine
+	Manager *transfer.Manager
 
 	srv *http.Server
 }
 
-func NewInstance(c *config.Config, store *storage.Store, session *auth.Session) *Instance {
+func NewInstance(c *config.Config, store *storage.Store, session *auth.Session, m *transfer.Manager) *Instance {
 	r := gin.New()
 	r.Use(log.Middleware())
 	r.Use(gin.Recovery())
@@ -41,6 +43,7 @@ func NewInstance(c *config.Config, store *storage.Store, session *auth.Session) 
 		Session: session,
 		Config:  c,
 		Router:  r,
+		Manager: m,
 	}
 }
 
@@ -69,8 +72,6 @@ func (i *Instance) Shutdown() error {
 	}
 	return i.srv.Shutdown(ctx)
 }
-
-// TODO stop sqlbusy errors and have more than one connection open at a time
 
 func (i *Instance) Start() error {
 	// Begin cron jobs and one time setup jobs

@@ -27,6 +27,7 @@ paths:
     library: ./library
 session_secret: %s
 scan_interval_minutes: 180
+subscriptions_interval_minutes: 1440
 max_uploaded_file_size_mib: 10
 debug_mode: false`, c.SessionSecret.Base64())
 	require.Equal(t, strings.Trim(expected, "\n"), strings.Trim(string(data), "\n"))

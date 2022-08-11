@@ -9,10 +9,9 @@ Self-hosted manga server + reader
 - Nested folders in library
 - Track reading progress
 - Thumbnail generation
-- Single binary (~19.1 MB)
+- Single binary (~25.6 MB)
 - Dark/light mode
-- Metadata editor
-- Mangadex downloader
+- Mangadex downloader + subscriptions
 - Responsive Desktop & Mobile UI
 - Webtoon support (no row gaps)
 
@@ -44,6 +43,8 @@ An official container image exists at `ghcr.io/fiwippi/tanuki:latest`
 Usage of tanuki:
   -config string
         path to the config file, if it does not exist then it will be created (default "./config/config.yml")
+  -recreate
+        recreate the db on startup
 ```
 
 ### Config
@@ -61,13 +62,14 @@ paths:
   log: ./data/tanuki.log
   library: ./library
 session_secret: tanuki-secret
-scan_interval_minutes: 180
+scan_interval_minutes: 180            // How often Tanuki scans the library
+subscriptions_interval_minutes: 1440  // How often Tanuki checks to see if new chapters have been released
 max_uploaded_file_size_mib: 10
 debug_mode: false
 ```
 - To disable logging set `logging.log_to_file` and `logging.log_to_console` to `false`
 - `logging.level` can be `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `panic`
-- `scan_interval_minutes`  can be any non-negative integer. To disable interval scanning set the value to `0`
+- `scan_interval_minutes` and `subscriptions_interval_minutes` can be any non-negative integer. To disable interval scanning set the value to `0`
 
 ⚠️ - Tanuki expects all archives in the library folder to be within their own folder. So, you can't have any standalone archives in the root of the library folder
 
@@ -87,8 +89,8 @@ If you supply tanuki with RAR archives (`.rar`, `.cbr`), their unarchive time to
 - [x] Viewing library
 - [x] Downloading archive
 - [x] Getting cover/thumbnail of archive
-- [] Search
 - [x] Page streaming
+- [ ] Search
 
 ## License
 `BSD-3-Clause`
