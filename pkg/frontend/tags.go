@@ -6,20 +6,24 @@ import (
 	"github.com/fiwippi/tanuki/pkg/server"
 )
 
-func specificTag(s *server.Server) gin.HandlerFunc {
+func specificTag(s *server.Instance) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tag := c.Param("tag")
 
-		allTags := s.Store.GetTags()
+		allTags, err := s.Store.GetAllTags()
+		if err != nil {
+			c.AbortWithError(500, err)
+			return
+		}
 		if !allTags.Has(tag) {
-			s.Err404(c)
+			c.AbortWithStatus(404)
 			return
 		}
 		c.HTML(200, "specific-tag.tmpl", c)
 	}
 }
 
-func tags(s *server.Server) gin.HandlerFunc {
+func tags(s *server.Instance) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.HTML(200, "tags.tmpl", c)
 	}

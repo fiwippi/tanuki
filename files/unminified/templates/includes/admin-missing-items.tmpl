@@ -22,7 +22,11 @@
             async refreshItems() {
                 await API.Admin.GetMissingItems()
                     .then(resp => {
-                        this.items = resp.items
+                        if (resp.items == null) {
+                            this.items = []
+                        } else {
+                            this.items = resp.items
+                        }
                     })
                     .catch(() => {
                         this.modalText = 'FAILED TO GET ITEMS'
@@ -54,7 +58,7 @@
     <p x-text="response" style="font-weight: bold" x-show="!loaded"></p>
     <h3 x-show="loaded && items.length === 0">No Missing Items!</h3>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; row-gap: 0.8em;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; row-gap: 0.8em; column-gap: 4px;">
         <!-- Table Headings -->
         <template x-if="items.length > 0">
             <b><span style="grid-column: 1; grid-row: 0">Type</span></b>

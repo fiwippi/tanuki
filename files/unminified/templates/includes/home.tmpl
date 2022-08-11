@@ -4,7 +4,7 @@
 <script type="module">
     import createCatalog from {{versioning "/static/js/components/catalog.js"}}
 
-    const _entries = {{ catalog }}
+    const _entries = {{ catalog . }}
     const _progress = {{ catalogProgress . }}
 
     document.addEventListener('alpine:init', () => {
@@ -28,12 +28,12 @@
 
     <div class="entries">
         <template x-for="e in filteredEntries">
-            <a class="no-bottom" :href="`/entries/${e.hash}`">
+            <a class="no-bottom" :href="`/entries/${e.sid}`">
                 <div class="entry" :style="`flex: 0 1 auto; max-width: ${imageWidth()}px`">
-                    <img class="entry__img" :src="getThumbnail(e)">
+                    <img class="entry__img" :src="getThumbnail(e.sid)">
                     <div class="entry__info" >
-                        <h4 class="entry__title" x-text="e.title"></h4>
-                        <span x-text="`Entries: ${e.entries}`"></span><br>
+                        <h4 class="entry__title" x-text="e.display_title || e.folder_title"></h4>
+                        <span x-text="`Entries: ${e.num_entries}`"></span><br>
                         <span x-text="fmtProgress(e)"></span>
                     </div>
                 </div>

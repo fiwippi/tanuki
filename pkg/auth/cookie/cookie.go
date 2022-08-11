@@ -12,7 +12,7 @@ import (
 var RedirectCookie = "tanuki-redirect"
 
 // Auth middleware which ensures the user is authorised
-func Auth(s *server.Server, action Action) gin.HandlerFunc {
+func Auth(s *server.Instance, action Action) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		uid, err := s.Session.Get(c)
 		if err != nil {
@@ -28,7 +28,7 @@ func Auth(s *server.Server, action Action) gin.HandlerFunc {
 		}
 
 		// Set values for next requests
-		valid, _ := s.Store.IsAdmin(uid)
+		valid := s.Store.IsAdmin(uid)
 		c.Set("admin", valid)
 		c.Set("uid", uid)
 

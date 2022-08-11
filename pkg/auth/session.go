@@ -8,7 +8,7 @@ import (
 	"github.com/shaj13/libcache"
 	_ "github.com/shaj13/libcache/lru"
 
-	"github.com/fiwippi/tanuki/internal/encryption"
+	"github.com/fiwippi/tanuki/internal/platform/encryption"
 )
 
 var (
@@ -34,9 +34,6 @@ func NewSession(ttl time.Duration, cookie string, secret encryption.Key) *Sessio
 		ttl:        ttl,
 	}
 	s.cache.SetTTL(ttl)
-	s.cache.RegisterOnExpired(func(key, _ interface{}) {
-		s.cache.Delete(key)
-	})
 
 	return s
 }

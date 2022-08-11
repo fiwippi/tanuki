@@ -7,7 +7,7 @@
 
     document.addEventListener('alpine:init', () => {
         Alpine.data('users', () => ({
-            users: {{ users }},
+            users: {{ users . }},
             username: {{ username . }},
             showModal: false,
             modalText: "",
@@ -17,13 +17,11 @@
             },
 
             async refreshUsers() {
-                await API.User.Name()
-                    .then(name => { this.username = name })
-
                 await API.Admin.Users()
-                    .then(data => { this.users = data.users })
-                    .catch(() => {
-                        this.modalText = 'FAILED TO GET USERS'
+                    .then(data => { console.log("data", data); this.users = data.users })
+                    .catch((e) => {
+                        console.error(e)
+                        this.modalText = 'FAILED TO REFRESH USERS'
                         this.showModal = true
                     })
             },
@@ -48,7 +46,7 @@
 {{ define "content" }}
 <div x-data="users">
     <h2>Users</h2>
-    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; row-gap: 0.8em; ">
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; row-gap: 0.8em; column-gap: 4px;">
         <!-- Table Headings -->
         <b><span style="grid-column: 1; grid-row: 0">User</span></b>
         <b><span style="grid-column: 2; grid-row: 0">Admin</span></b>
@@ -72,9 +70,9 @@
         <template x-for="(user, index) in sortedUsers">
             <template x-if="1 === 1">
                 <span :style="`grid-column: 3; grid-row: ${index + 2}`">
-                    <a :href="`/admin/users/edit?hash=${user.hash}`">EDIT</a>
+                    <a :href="`/admin/users/edit?uid=${user.uid}`">EDIT</a>
                     <template x-if="user.name !== username">
-                        <a href="javascript:void(0)" @click="deleteUser(user.hash)">DELETE</a>
+                        <a href="javascript:void(0)" @click="deleteUser(user.uid)">DELETE</a>
                     </template>
                 </span>
             </template>

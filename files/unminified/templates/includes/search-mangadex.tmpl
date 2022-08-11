@@ -1,4 +1,4 @@
-{{ define "title" }}Mangadex{{ end }}
+{{ define "title" }}Search Mangadex{{ end }}
 
 {{ define "scripts" }}
 <script type="module">
@@ -20,9 +20,11 @@
         <input x-model.debounce.400ms="search" @input="handleSearchChange" class="search__bar" placeholder="Search..." type="text" autofocus>
     </div>
 
+    <h3 x-show="canShow && search != '' && searchData.length === 0">No Results Found!</h3>
+
     <template x-for="e in searchEntries">
        <div class="flex--row" style="margin-bottom: 50px">
-           <a :href="fmtDlLink(e)" class="no-bottom"><img :src="e.src" style="max-width: 100px"></a>
+           <a :href="fmtDlLink(e)" class="no-bottom"><img :src="e.small_cover_url" style="max-width: 100px"></a>
            <div class="flex--col">
                <a :href="fmtDlLink(e)" class="no-bottom"><span style="font-weight: bold" x-text="e.title"></span></a>
                <span x-text="fmtDescription(e.description)"></span>

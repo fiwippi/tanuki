@@ -2,10 +2,10 @@
 
 {{ define "scripts" }}
 <script type="module">
-    const uid = {{ mangadexUid . }};
+    const uuid = {{ mangadexUUID . }};
     import mangadex from {{versioning "/static/js/components/mangadex-download.js"}}
     document.addEventListener('alpine:init', () => {
-        Alpine.data('mangadex', () => { return mangadex(uid) })
+        Alpine.data('mangadex', () => { return mangadex(uuid) })
     })
 </script>
 {{ end }}
@@ -20,7 +20,7 @@
 
     <template x-if="data !== {}">
         <div class="flex--row" style="margin-bottom: 30px">
-            <img :src="data.src" style="max-width: 160px">
+            <img :src="data.small_cover_url" style="max-width: 160px">
             <div class="flex--col">
                 <span style="font-weight: bold" x-text="data.title"></span>
                 <span x-text="data.description"></span>
@@ -30,6 +30,8 @@
 
     <div class="flex--row" style="margin-bottom: 25px">
         <button id="downloadButton" @click="downloadChapters" disabled>Download Selected Chapters</button>
+        <input style="align-self: center" type="checkbox" id="createSub" x-model="createSub">
+        <label style="align-self: center" for="createSub">Subscribe</label>
         <p class="flex__key--no-padding flex__key--centered" x-text="resp"></p>
     </div>
 
@@ -53,11 +55,11 @@
             <template x-for="(c, index) in filteredChapters">
                 <tr>
                     <td><input x-model="checkboxes[index]" type="checkbox"></td>
-                    <td><span x-text="c.volume"></span></td>
-                    <td><span x-text="c.chapter"></span></td>
+                    <td><span x-text="c.volume_no"></span></td>
+                    <td><span x-text="c.chapter_no"></span></td>
                     <td><span x-text="c.title ? c.title : '-N/A-'"></span></td>
                     <td><span x-text="c.scanlation_group ? c.scanlation_group : '-N/A-'"></span></td>
-                    <td><span x-text="c.updatedAt"></span></td>
+                    <td><span x-text="fmtDate(c.published_at)"></span></td>
                 </tr>
             </template>
         </tbody>

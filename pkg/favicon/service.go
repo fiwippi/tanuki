@@ -9,7 +9,7 @@ import (
 	"github.com/fiwippi/tanuki/pkg/server"
 )
 
-func NewService(s *server.Server, efs fs.FS, path string) {
+func NewService(s *server.Instance, efs fs.FS, path string) {
 	// Load the favicon data
 	f, err := efs.Open(path)
 	if err != nil {
@@ -23,7 +23,7 @@ func NewService(s *server.Server, efs fs.FS, path string) {
 	}
 
 	// Create the function
-	getFavicon := func(s *server.Server) gin.HandlerFunc {
+	getFavicon := func(s *server.Instance) gin.HandlerFunc {
 		return func(c *gin.Context) {
 			if c.Request.RequestURI != "/favicon.ico" {
 				c.Next()

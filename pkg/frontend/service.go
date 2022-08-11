@@ -5,7 +5,7 @@ import (
 	"github.com/fiwippi/tanuki/pkg/server"
 )
 
-func NewService(s *server.Server) {
+func NewService(s *server.Instance) {
 	// Don't have to be authorised to login
 	loginGroup := s.Group("/")
 	loginGroup.Use(cookie.SkipIfAuthed(s.Session, "/"))
@@ -19,10 +19,11 @@ func NewService(s *server.Server) {
 	authorised.GET("/tags/:tag", specificTag)
 	authorised.GET("/entries/:sid", entries)
 	authorised.GET("/reader/:sid/:eid", reader)
-	authorised.GET("/download", downloadHome)
+	authorised.GET("/download-subscribe", downloadSubscribeHome)
 	authorised.GET("/download/mangadex", downloadMangadex)
-	authorised.GET("/download/mangadex/:uid", downloadMangadexChapters)
+	authorised.GET("/download/mangadex/:uuid", downloadMangadexChapters)
 	authorised.GET("/download/manager", downloadManager)
+	authorised.GET("/subscription/manager", subscriptionManager)
 
 	// Must be authorised and an admin to access these routes i.e. /admin
 	admin := authorised.Group("/admin")

@@ -6,7 +6,7 @@ import (
 	"github.com/fiwippi/tanuki/pkg/server"
 )
 
-func home(s *server.Server) gin.HandlerFunc {
+func home(s *server.Instance) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.HTML(200, "home.tmpl", c)
 	}

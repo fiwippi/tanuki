@@ -3,14 +3,13 @@ package basic
 import (
 	"encoding/base64"
 	"errors"
-	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 
-	"github.com/fiwippi/tanuki/pkg/store/bolt"
+	"github.com/fiwippi/tanuki/internal/log"
+	"github.com/fiwippi/tanuki/pkg/storage"
 )
 
 var (
@@ -18,7 +17,7 @@ var (
 	ErrInvalidAuthFormat = errors.New("auth header formatted in incorrect way")
 )
 
-func Auth(realm string, store *bolt.DB) gin.HandlerFunc {
+func Auth(realm string, store *storage.Store) gin.HandlerFunc {
 	if realm == "" {
 		realm = "Authorization Required"
 	}
@@ -29,7 +28,7 @@ func Auth(realm string, store *bolt.DB) gin.HandlerFunc {
 		if err != nil {
 			log.Debug().Err(err).Msg("failed to parse auth credentials")
 			c.Header("WWW-Authenticate", realm)
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatus(401)
 			return
 		}
 
@@ -37,7 +36,7 @@ func Auth(realm string, store *bolt.DB) gin.HandlerFunc {
 		if !valid {
 			log.Debug().Err(err).Msg("failed to validate auth credentials")
 			c.Header("WWW-Authenticate", realm)
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatus(401)
 			return
 		}
 

@@ -7,7 +7,7 @@
     // does not marshal each entry in tags as a string
     document.addEventListener('alpine:init', () => {
         Alpine.data('tags', () => ({
-            tags: {{ tags }},
+            tags: {{ tags . }},
         }))
     })
 </script>

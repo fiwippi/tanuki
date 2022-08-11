@@ -35,7 +35,6 @@
     .scrollContainer {
         display: flex;
         flex-direction: column;
-        align-items: center;
         row-gap: 40px;
     }
 
@@ -120,12 +119,12 @@
             <div x-bind="modal_content" class="modal__content" x-transition>
                 <!--  Basic Info  -->
                 <span class="modal__close-button" x-bind="modal_close">&times;</span>
-                <h2 class="modal__header" x-text="entry.title"></h2>
-                <p class="modal__sub-header" x-text="entry.path"></p>
+                <h2 class="modal__header" x-text="entry.display_title || entry.folder_title"></h2>
+                <p class="modal__sub-header" x-text="entry.archive.path"></p>
                 <!--  Progress  -->
                 <div class="flex--row">
                     <h4 class="flex__key--centered flex__key--less-padding">Progress</h4>
-                    <p class="flex__key--centered flex__key--less-padding" x-text="`${currentPage}/${entry.pages} (${fmtPercent(currentPage / entry.pages)})`"></p>
+                    <p class="flex__key--centered flex__key--less-padding" x-text="`${currentPage}/${entry.pages.length} (${fmtPercent(currentPage / entry.pages.length)})`"></p>
                 </div>
                 <!--  Mode Change  -->
                 <div class="flex--row">
@@ -157,14 +156,14 @@
                     <h4 class="flex__key--less-padding flex__key--centered">Jump To Entry</h4>
                     <select class="flex__key--centered" x-model="selectedEntry" @change="changeEntry(selectedEntry)">
                         <template x-for="e in filteredEntries">
-                            <option :value="e.hash" x-text="e.title"></option>
+                            <option :value="e.eid" x-text="e.title || e.file_title"></option>
                         </template>
                     </select>
                 </div>
                 <!--  Entry Change Buttons  -->
                 <div class="flex--row" style="margin-top: 30px; justify-content: flex-end">
-                    <button @click="changeEntry(entries[entryIndex - 1].hash)" x-show="hasPreviousEntry">Previous Entry</button>
-                    <button @click="changeEntry(entries[entryIndex + 1].hash)" x-show="hasNextEntry">Next Entry</button>
+                    <button @click="changeEntry(entries[entryIndex - 1].eid)" x-show="hasPreviousEntry">Previous Entry</button>
+                    <button @click="changeEntry(entries[entryIndex + 1].eid)" x-show="hasNextEntry">Next Entry</button>
                     <button @click="exitReader()">Exit Reader</button>
                 </div>
 
@@ -187,12 +186,12 @@
     <!--  Continuous scrolling reader  -->
     <template x-if="mode === 'continuous'">
         <div :class="webtoon ? 'scrollContainer webtoon' : 'scrollContainer'">
-            <template x-for="i in entry.pages">
-                <img class="scrollImg unloaded" :src="blankImage" :id="`page-${i}`" x-intersect.once="await getPage(i, true)"
-                     x-intersect="await updateProgress(i)" @click="showModal()">
+            <template x-for="(e, i) in entry.pages">
+                <img class="scrollImg unloaded" :src="blankImage" :id="`page-${i+1}`" x-intersect.once="await getPage(i+1, true)"
+                     x-intersect="await updateProgress(i+1)" @click="showModal()">
             </template>
-            <button @click="changeEntry(entries[entryIndex + 1].hash)" x-show="hasNextEntry">Next Entry</button>
-            <button @click="exitReader()" x-show="!hasNextEntry">Exit Reader</button>
+            <button style="align-self: center" @click="changeEntry(entries[entryIndex + 1].eid)" x-show="hasNextEntry">Next Entry</button>
+            <button style="align-self: center" @click="exitReader()" x-show="!hasNextEntry">Exit Reader</button>
         </div>
     </template>
 </div>

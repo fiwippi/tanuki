@@ -20,6 +20,7 @@ function isEventInElement(event, element)   {
 }
 
 export default function (sid, eid, entry, initialProgress, entries, modal) {
+    console.debug("entry:", entry)
     console.debug("entry progress:", initialProgress)
 
     return {
@@ -50,17 +51,17 @@ export default function (sid, eid, entry, initialProgress, entries, modal) {
 
         get filteredEntries() {
             // Remove the current entry
-            let temp = this.entries.filter(i => i.hash !== this.eid)
+            let temp = this.entries.filter(i => i.eid !== this.eid)
             // Prepend the entry so users can't change to it,
             // this works because in a select box, users can't
             // change to the first element
-            let front = this.entries.filter(i => i.hash === this.eid)
+            let front = this.entries.filter(i => i.eid === this.eid)
             temp.unshift(front[0])
             return temp
         },
 
         get filteredPages() {
-            let temp = Array.from({length: this.entry.pages}, (_, i) => i + 1).filter(i => i !== this.currentPage)
+            let temp = Array.from({length: this.entry.pages.length}, (_, i) => i + 1).filter(i => i !== this.currentPage)
             temp.unshift(this.currentPage)
             return temp
         },
@@ -73,7 +74,6 @@ export default function (sid, eid, entry, initialProgress, entries, modal) {
         },
 
         // Util functions
-
         fmtPercent(p) {
             return Util.Fmt.Percent(p)
         },
@@ -139,7 +139,7 @@ export default function (sid, eid, entry, initialProgress, entries, modal) {
             this.lastSavedPage = this.currentPage
 
             // Determine which buttons can be displayed
-            this.entryIndex = this.entries.findIndex((e) => e.hash === this.eid)
+            this.entryIndex = this.entries.findIndex((e) => e.eid === this.eid)
             if (this.entryIndex + 1 < this.entries.length) {
                 this.hasNextEntry = true
             }
@@ -148,7 +148,7 @@ export default function (sid, eid, entry, initialProgress, entries, modal) {
             }
 
             // Initialise the images array
-            this.images = new Array(this.entry.pages)
+            this.images = new Array(this.entry.pages.length)
 
             // Ensure the mode is saved, jumpToPage triggers here
             this.changeMode(this.mode)
@@ -163,7 +163,8 @@ export default function (sid, eid, entry, initialProgress, entries, modal) {
 
         async getPage(num, buffer) {
             // Ensure valid page num
-            if (num < 1 || num > this.entry.pages) {
+            console.debug("loading: ", num)
+            if (num < 1 || num > this.entry.pages.length) {
                 console.debug("page out of reach", num)
                 return
             }
@@ -199,10 +200,11 @@ export default function (sid, eid, entry, initialProgress, entries, modal) {
             // we only want the viewport changing to trigger buffering because otherwise we will
             // start recursion and load all images possible
             if (buffer) {
-                // User could be scrolling up or down
+                // User could be scrolling up
                 await this.getPage(num - 1, false)
                 await this.getPage(num - 2, false)
 
+                // User could be scrolling down
                 await this.getPage(num + 1, false)
                 await this.getPage(num + 2, false)
                 await this.getPage(num + 3, false)
@@ -217,7 +219,7 @@ export default function (sid, eid, entry, initialProgress, entries, modal) {
             // and if so we don't want to see it
             this.modal.hide()
             // Don't want to jump to pages which are out of range
-            if (num < 1 || num > this.entry.pages) {
+            if (num < 1 || num > this.entry.pages.length) {
                 console.debug("page out of reach", num)
                 return
             }
@@ -320,7 +322,7 @@ export default function (sid, eid, entry, initialProgress, entries, modal) {
             this.currentPage = num
 
             let a = this.currentPage === 1
-            let b = this.currentPage === this.entry.pages
+            let b = this.currentPage === this.entry.pages.length
             let c = Math.abs(this.lastSavedPage - this.currentPage) >= 5
 
             if (a || b || c) {

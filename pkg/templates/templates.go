@@ -5,14 +5,14 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/rs/zerolog/log"
+	"github.com/fiwippi/tanuki/internal/log"
+	"github.com/fiwippi/tanuki/internal/platform/multitemplate"
 
-	"github.com/fiwippi/tanuki/internal/multitemplate"
 	"github.com/fiwippi/tanuki/pkg/server"
 )
 
 // CreateRenderer creates a Renderer which  renders the templates from the fs
-func CreateRenderer(s *server.Server, efs fs.FS, debug bool, prefix string) multitemplate.Renderer {
+func CreateRenderer(s *server.Instance, efs fs.FS, debug bool, prefix string) {
 	var temp multitemplate.Renderer
 	if os.Getenv("DOCKER") == "true" {
 		// Always static renderer
@@ -41,7 +41,7 @@ func CreateRenderer(s *server.Server, efs fs.FS, debug bool, prefix string) mult
 		r = newR
 	}
 
-	return r
+	s.SetHTMLRenderer(r)
 }
 
 func addTemplates(layoutsDir, includesDir string, f fs.FS, r *Renderer) (*Renderer, error) {

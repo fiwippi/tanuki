@@ -1,5 +1,5 @@
 # Stage 1: Build Tanuki
-FROM golang:1.17-alpine as builder
+FROM golang:1.18-alpine as builder
 
 WORKDIR /app
 COPY . .

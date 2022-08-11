@@ -1,4 +1,4 @@
-{{ define "title" }}Mangadex{{ end }}
+{{ define "title" }}Download Manager{{ end }}
 
 {{ define "scripts" }}
 <script type="module">
@@ -26,8 +26,9 @@
     <template x-if="downloads.length > 0 && loaded">
         <div>
             <div class="flex--row" style="margin-bottom: 25px; justify-content: center">
-                <button @click="deleteFinished">Delete Finished Tasks</button>
-                <button @click="retryFailed">Retry Failed Tasks</button>
+                <button @click="deleteAll">Delete All Downloads</button>
+                <button @click="deleteSuccessful">Delete Successful Downloads</button>
+                <button @click="retryFailed">Retry Failed Downloads</button>
                 <button @click="pauseDl" x-show="!paused">Pause Downloads</button>
                 <button @click="resumeDl" x-show="paused">Resume Downloads</button>
                 <button @click="cancelDl">Cancel Downloads</button>
@@ -51,9 +52,9 @@
                 <tbody>
                 <template x-for="d in downloads">
                     <tr>
-                        <td><span x-text="d.manga"></span></td>
-                        <td><span x-text="d.chapter.attributes.volume"></span></td>
-                        <td><span x-text="d.chapter.attributes.chapter"></span></td>
+                        <td><span x-text="d.manga_title"></span></td>
+                        <td><span x-text="d.chapter.volume_no ? d.chapter.volume_no : '-N/A-'"></span></td>
+                        <td><span x-text="d.chapter.chapter_no ? d.chapter.chapter_no : '-N/A-'"></span></td>
                         <td><span x-text="fmtPercent(d.current_page / d.total_pages)"></span></td>
                         <td><span x-text="d.time_taken"></span></td>
                         <td><span x-text="d.status"></span></td>

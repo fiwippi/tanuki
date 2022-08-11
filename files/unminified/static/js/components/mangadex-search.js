@@ -1,47 +1,29 @@
 export const name = 'mangadex-search';
 
-import * as MAPI from "/static/js/mangadex.js"
+import * as API from "/static/js/api.js"
 import * as Util from "/static/js/util.js"
 
 export default function () {
     return {
         search: "",
         searchData: [],
+        canShow: false,
 
         async searchEntries() {
             if (this.search.length === 0) {
                 return []
             }
 
+            this.canShow = false
             document.getElementById("spinner").classList.add("loader")
 
-            await MAPI.Search.Manga(this.search, 8, true)
-                .then(resp => {
-                    if (resp.data === undefined) {
-                        console.debug(resp)
-                        return
-                    }
-                    for (let i = 0; i < resp.data.length; i++) {
-                        let item = resp.data[i]
-
-                        let data = {
-                            id: item.id,
-                            createdAt: Util.Fmt.RFCDate(item.attributes.createdAt),
-                            title: Object.values(item.attributes.title)[0],
-                            description: item.attributes.description.en,
-                        }
-                        for (let j = 0; j < item.relationships.length; j++) {
-                            let r = item.relationships[j]
-                            if (r.type === "cover_art") {
-                                data.src = `https://uploads.mangadex.org/covers/${item.id}/${r.attributes.fileName}.256.jpg`
-                            }
-                        }
-
-                        this.searchData.push(data)
-                    }
+            await API.Mangadex.Search(this.search, 8)
+                .then(data => {
+                    this.searchData = data
                 })
 
             document.getElementById("spinner").classList.remove("loader")
+            this.canShow = true
 
             return this.searchData
         },
@@ -54,7 +36,7 @@ export default function () {
         },
 
         fmtDlLink(e) {
-          return `/download/mangadex/${e.id}`
+            return `/download/mangadex/${e.id}`
         },
 
         handleSearchChange(e) {

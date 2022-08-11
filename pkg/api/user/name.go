@@ -6,21 +6,15 @@ import (
 	"github.com/fiwippi/tanuki/pkg/server"
 )
 
-// NameReply defines the reply from /api/user/name
-type NameReply struct {
-	Success bool   `json:"success"`
-	Name    string `json:"name"`
-}
-
-func GetName(s *server.Server) gin.HandlerFunc {
+func GetName(s *server.Instance) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		uid := c.GetString("uid")
 		u, err := s.Store.GetUser(uid)
 		if err != nil {
-			c.AbortWithStatusJSON(500, NameReply{Success: false})
+			c.AbortWithError(500, err)
 			return
 		}
 
-		c.JSON(200, NameReply{Success: true, Name: u.Name})
+		c.JSON(200, gin.H{"name": u.Name})
 	}
 }

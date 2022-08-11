@@ -1,79 +1,131 @@
 {{ define "title" }}Admin{{ end }}
 
 {{ define "scripts" }}
-<script type="module">
-    import * as API from {{ versioning "/static/js/api.js" }}
+    <script type="module">
+        import * as API from {{ versioning "/static/js/api.js" }}
 
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('dashboard', () => ({
-            scanResult: "",
-            showScanResult: false,
-            thumbnailsResult: "",
-            showThumbnailsResult: false,
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('dashboard', () => ({
+                scanResult: "",
+                showScanResult: false,
+                thumbnailsResult: "",
+                showThumbnailsResult: false,
+                vacuumResult: "",
+                showVacuumResult: false,
+                subResult: "",
+                showSubResult: false,
 
-            async thumbnails() {
-                document.getElementById("thumbnails").classList.add("loader")
-                await API.Admin.GenerateThumbnails()
-                    .then(resp => {
-                        this.thumbnailsResult = `Success!, ${resp.message}`
-                    })
-                    .catch(() => {
-                        this.thumbnailsResult = "Failure!"
-                    })
-                document.getElementById("thumbnails").classList.remove("loader")
-                this.showThumbnailsResult = true
-            },
+                async subscription() {
+                    document.getElementById("sub").classList.add("loader")
+                    await API.Admin.CheckSubcriptions()
+                        .then(resp => {
+                            this.subResult = `Success!, time taken: ${resp.time_taken}`
+                        })
+                        .catch(() => {
+                            this.subResult = "Failure!"
+                        })
+                    document.getElementById("sub").classList.remove("loader")
+                    this.showSubResult = true
+                },
 
-            async scan() {
-                document.getElementById("scan").classList.add("loader")
-                await API.Admin.ScanLibrary()
-                    .then(resp => {
-                        this.scanResult = `Success!, ${resp.message}`
-                    })
-                    .catch(() => {
-                        this.scanResult = "Failure!"
-                    })
-                document.getElementById("scan").classList.remove("loader")
-                this.showScanResult = true
-            },
+                async thumbnails() {
+                    document.getElementById("thumbnails").classList.add("loader")
+                    await API.Admin.GenerateThumbnails()
+                        .then(resp => {
+                            this.thumbnailsResult = `Success!, time taken: ${resp.time_taken}`
+                        })
+                        .catch(() => {
+                            this.thumbnailsResult = "Failure!"
+                        })
+                    document.getElementById("thumbnails").classList.remove("loader")
+                    this.showThumbnailsResult = true
+                },
 
-            async db() {
-                document.getElementById("db").classList.add("loader")
-                await API.Admin.ViewDB()
-                document.getElementById("db").classList.remove("loader")
-                this.showScanResult = true
-            }
-        }))
-    })
-</script>
+                async scan() {
+                    document.getElementById("scan").classList.add("loader")
+                    await API.Admin.ScanLibrary()
+                        .then(resp => {
+                            console.log(resp)
+                            this.scanResult = `Success!, time taken: ${resp.time_taken}`
+                        })
+                        .catch((e) => {
+                            console.error(e)
+                            this.scanResult = "Failure!"
+                        })
+                    document.getElementById("scan").classList.remove("loader")
+                    this.showScanResult = true
+                },
+
+                async db() {
+                    document.getElementById("db").classList.add("loader")
+                    await API.Admin.ViewDB()
+                    document.getElementById("db").classList.remove("loader")
+                },
+
+                async vacuum() {
+                    document.getElementById("vacuum").classList.add("loader")
+                    await API.Admin.VacuumDB()
+                        .then(resp => {
+                            this.vacuumResult = `Success!, time taken: ${resp.time_taken}`
+                        })
+                        .catch(() => {
+                            this.vacuumResult = "Failure!"
+                        })
+                    document.getElementById("vacuum").classList.remove("loader")
+                    this.showVacuumResult = true
+                }
+            }))
+        })
+    </script>
 {{ end }}
 
 {{ define "content" }}
-<div x-data="dashboard">
-    <h2>Admin</h2>
-    <div class="flex--row">
-        <span class="flex__key--centered flex__key--list">⦿ <a href="/admin/users">User Management</a></span>
-    </div>
-    <div class="flex--row">
-        <span>⦿ <a class="flex__key--list" href="javascript:void(0)" @click="await db()">View Database</a></span>
-        <div id="db" class="flex__key--centered"></div>
-    </div>
-    <div class="flex--row">
-        <span class="flex__key--centered flex__key--list">⦿ <a href="/admin/missing-items">Missing Items</a></span>
-    </div>
-    <div class="flex--col flex--no-gap">
+    <div x-data="dashboard">
+        <h2>Admin</h2>
         <div class="flex--row">
-            <span>⦿ <a class="flex__key--list" href="javascript:void(0)" @click="await scan()">Scan Library Files</a></span>
-            <div id="scan" class="flex__key--centered"></div>
+            <span class="flex__key--centered flex__key--list">⦿ <a href="/admin/users">User Management</a></span>
         </div>
-        <span x-show="showScanResult" @click.away="showScanResult = false" x-text="scanResult"></span>
-    </div>
-    <div class="flex--col flex--no-gap">
+
         <div class="flex--row">
-            <span>⦿ <a class="flex__key--list" href="javascript:void(0)" @click="await thumbnails()">Generate Thumbnails</a></span>
-            <div id="thumbnails" class="flex__key--centered"></div>
+            <span class="flex__key--centered flex__key--list">⦿ <a href="/admin/missing-items">Missing Items</a></span>
         </div>
-        <span x-show="showThumbnailsResult" @click.away="showThumbnailsResult = false" x-text="thumbnailsResult"></span>
+
+        <div class="flex--row">
+            <span>⦿ <a class="flex__key--list" href="javascript:void(0)" @click="await db()">View Database</a></span>
+            <div id="db" class="flex__key--centered"></div>
+        </div>
+
+        <div class="flex--col flex--no-gap">
+            <div class="flex--row">
+                <span>⦿ <a class="flex__key--list" href="javascript:void(0)" @click="await vacuum()">Vacuum Database</a></span>
+                <div id="vacuum" class="flex__key--centered"></div>
+            </div>
+            <span x-show="showVacuumResult" @click.away="showVacuumResult = false" x-text="vacuumResult"></span>
+        </div>
+
+        <div class="flex--col flex--no-gap">
+            <div class="flex--row">
+                <span>⦿ <a class="flex__key--list" href="javascript:void(0)" @click="await scan()">Scan Library Files</a></span>
+                <div id="scan" class="flex__key--centered"></div>
+            </div>
+            <span x-show="showScanResult" @click.away="showScanResult = false" x-text="scanResult"></span>
+        </div>
+
+        <div class="flex--col flex--no-gap">
+            <div class="flex--row">
+                <span>⦿ <a class="flex__key--list" href="javascript:void(0)" @click="await subscription()">Check Subscriptions</a></span>
+                <div id="sub" class="flex__key--centered"></div>
+            </div>
+            <span x-show="showSubResult" @click.away="showSubResult = false" x-text="subResult"></span>
+        </div>
+
+        <div class="flex--col flex--no-gap">
+            <div class="flex--row">
+                <span>⦿ <a class="flex__key--list" href="javascript:void(0)" @click="await thumbnails()">Generate Thumbnails</a></span>
+                <div id="thumbnails" class="flex__key--centered"></div>
+            </div>
+            <span x-show="showThumbnailsResult" @click.away="showThumbnailsResult = false" x-text="thumbnailsResult"></span>
+        </div>
     </div>
-</div>
 {{ end }}
+Footer

@@ -3,6 +3,7 @@
 {{ define "scripts" }}
 <script type="module">
     import * as API from {{ versioning "/static/js/api.js" }}
+    import * as Util from {{ versioning "/static/js/util.js" }}
 
     document.addEventListener('alpine:init', () => {
         Alpine.data('user_edit', () => ({
@@ -13,13 +14,25 @@
             showModal: false,
             modalText: "",
             open: false,
+            loaded: false,
 
             async init() {
                 const user = {{ user . }}
 
-                this.uid = user.hash
+                this.uid = user.uid
                 this.username = user.name
                 this.admin = user.type === 'admin';
+
+                let cancel = Util.Animate.DotDotDot("Loading", (str) => this.loadingTxt = str)
+                await Util.Sleep(750)
+                cancel()
+
+                if (this.uid != "") {
+                    this.loaded = true
+                } else {
+                    this.loadingTxt = "User ID Incorrect"
+                }
+
             },
 
             async edit() {
@@ -29,14 +42,17 @@
                         return API.User.IsAdmin()
                     })
                     .then(admin => {
+                        console.log("AM ADMIN", admin)
                         if (!admin) {
-                            window.location.replace('/login')
+                            window.location.replace('/')
                         } else {
                             window.location.replace('/admin/users')
                         }
                     })
-                    .catch(() => {
+                    .catch((e) => {
                         this.modalText = 'FAILED'
+                        if (e.message != "" && e.message != undefined && e.message != null)
+                            this.modalText += ", " + e.message
                         this.showModal = true
                     })
             }
@@ -48,27 +64,31 @@
 {{ define "content" }}
 <div x-data="user_edit">
     <h2>Edit User</h2>
-    <!-- Username -->
-    <div class="flex--row">
-        <h3 class="flex__key--centered flex__key--less-padding">Username:</h3>
-        <label class="flex__key--less-padding">
-            <input type="text" placeholder="Username" x-model="username">
-        </label>
-    </div>
-    <!-- Admin -->
-    <div class="flex--row">
-        <h3 class="flex__key--centered flex__key--less-padding">Admin:</h3>
-        <label class="flex__key--less-padding">
-            <input type="checkbox" x-model="admin">
-        </label>
-    </div>
-    <!-- Password -->
-    <button @click="open = !open">Change Password</button>
-    <div class="flex--row" x-show="open" @click.away="open = false">
-        <h3 class="flex__key--centered flex__key--less-padding">New Password:</h3>
-        <label class="flex__key--less-padding">
-            <input type="password" placeholder="Password" x-model="password">
-        </label>
+
+    <p x-text="loadingTxt" style="font-weight: bold" x-show="!loaded"></p>
+
+    <div x-cloak x-show="loaded">
+        <!-- Username -->
+        <div class="flex--row">
+            <h3 class="flex__key--centered flex__key--less-padding">Username:</h3>
+            <label class="flex__key--less-padding">
+                <input type="text" placeholder="Username" x-model="username">
+            </label>
+        </div>
+        <!-- Password -->
+        <div class="flex--row">
+            <h3 class="flex__key--centered flex__key--less-padding">New Password:</h3>
+            <label class="flex__key--less-padding">
+                <input type="password" placeholder="Password" x-model="password">
+            </label>
+        </div>
+        <!-- Admin -->
+        <div class="flex--row">
+            <h3 class="flex__key--centered flex__key--less-padding">Admin:</h3>
+            <label class="flex__key--less-padding">
+                <input type="checkbox" x-model="admin">
+            </label>
+        </div>
     </div>
     <!-- Modal -->
     <div x-cloak>
@@ -80,6 +100,6 @@
         </div>
     </div>
     <!-- Save Button -->
-    <button class="form-button" @click="await edit()">Save</button>
+    <button x-cloak x-show="loaded" class="form-button" @click="await edit()">Save</button>
 </div>
 {{ end }}

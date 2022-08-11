@@ -2,10 +2,12 @@ package server
 
 import "github.com/gin-gonic/gin"
 
+type HandlerFunc func(i *Instance) gin.HandlerFunc
+
 type RouterGroup struct {
 	*gin.RouterGroup
 
-	Server *Server
+	Server *Instance
 }
 
 func (rg *RouterGroup) Group(relativePath string) *RouterGroup {

@@ -3,68 +3,49 @@ package opds
 import (
 	"github.com/gin-gonic/gin"
 
-	"github.com/fiwippi/tanuki/internal/image"
-	"github.com/fiwippi/tanuki/pkg/opds/feed"
+	"github.com/fiwippi/tanuki/internal/feed"
+	"github.com/fiwippi/tanuki/internal/platform/image"
 	"github.com/fiwippi/tanuki/pkg/server"
 )
 
-func GetEntries(s *server.Server) gin.HandlerFunc {
+func GetEntries(s *server.Instance) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id := c.Param("sid")
+		sid := c.Param("sid")
 
-		data, err := s.Store.GetSeries(id)
+		series, err := s.Store.GetSeries(sid)
 		if err != nil {
 			c.AbortWithStatus(404)
 			return
 		}
-		series := feed.NewSeries(data.Hash, data.Title)
-		series.SetAuthor(s.Author)
-		updated, err := s.Store.GetSeriesModTime(id)
+
+		f := feed.NewSeriesFeed(opdsRoot, series.SID, series.Title())
+		f.SetAuthor(authorName, authorURI)
+		f.SetUpdated(series.ModTime.Time())
+
+		entries, err := s.Store.GetEntries(sid)
 		if err != nil {
 			c.AbortWithStatus(500)
 			return
 		}
-		series.SetUpdated(updated)
-
-		list, err := s.Store.GetEntries(id)
-		if err != nil {
-			c.AbortWithStatus(500)
-			return
-		}
-		for _, e := range list {
-			entryTime, err := s.Store.GetEntryModTime(id, e.Hash)
+		for _, e := range entries {
+			tt := image.JPEG
+			pt := image.Invalid
+			if len(e.Pages) > 0 {
+				pt = e.Pages[0].Type
+			}
+			ct, err := s.Store.GetEntryCoverType(sid, e.EID)
 			if err != nil {
-				c.AbortWithStatus(500)
+				c.AbortWithError(500, err)
 				return
 			}
-			cover, err := s.Store.GetEntryCover(id, e.Hash)
-			if err != nil {
-				c.AbortWithStatus(500)
-				return
-			}
-			a, err := s.Store.GetEntryArchive(id, e.Hash)
-			if err != nil {
-				c.AbortWithStatus(500)
-				return
-			}
-			p, err := s.Store.GetEntryPage(id, e.Hash, 1)
-			if err != nil {
-				c.AbortWithStatus(500)
-				return
+			if ct == image.Invalid {
+				ct = pt
 			}
 
-			series.AddEntry(&feed.ArchiveEntry{
-				Title:     e.Title,
-				Updated:   feed.Time{Time: entryTime},
-				ID:        e.Hash,
-				CoverType: cover.ImageType,
-				ThumbType: image.JPEG,
-				PageType:  p.ImageType,
-				Archive:   a,
-				Pages:     e.Pages,
-			})
+			f.AddEntry(e.EID, e.Title(), tt.MimeType(), ct.MimeType(),
+				pt.MimeType(), len(e.Pages), e.ModTime.Time(), &e.Archive)
 		}
 
-		c.XML(200, series)
+		c.XML(200, f)
 	}
 }

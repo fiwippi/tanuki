@@ -3,54 +3,52 @@ package admin
 import (
 	"github.com/gin-gonic/gin"
 
+	"github.com/fiwippi/tanuki/pkg/human"
 	"github.com/fiwippi/tanuki/pkg/server"
-	"github.com/fiwippi/tanuki/pkg/store/entities/users"
 )
 
-// UsersPutRequest for /api/admin/users
-type UsersPutRequest struct {
-	Username string     `json:"username"`
-	Password string     `json:"password"`
-	Type     users.Type `json:"type"`
-}
-
-// UsersReply for /api/admin/users
-type UsersReply struct {
-	Success bool         `json:"success"`
-	Users   []users.User `json:"users,omitempty"`
-	Message string       `json:"message,omitempty"`
-}
-
-func GetUsers(s *server.Server) gin.HandlerFunc {
+func GetUsers(s *server.Instance) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.JSON(200, UsersReply{Success: true, Users: s.Store.GetUsers(true)})
+		us, err := s.Store.GetUsers()
+		if err != nil {
+			c.AbortWithError(500, err)
+			return
+		}
+
+		for i := range us {
+			us[i].Pass = ""
+		}
+
+		c.JSON(200, gin.H{"users": us})
 	}
 }
 
-func PutUsers(s *server.Server) gin.HandlerFunc {
+func PutUsers(s *server.Instance) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var data UsersPutRequest
+		data := struct {
+			Username string     `json:"username"`
+			Password string     `json:"password"`
+			Type     human.Type `json:"type"`
+		}{}
 		if err := c.ShouldBindJSON(&data); err != nil {
-			c.AbortWithStatusJSON(400, UsersReply{Success: false})
+			c.AbortWithStatus(400)
 			return
 		}
 
 		if data.Username == "" {
-			c.AbortWithStatusJSON(400, UsersReply{Success: false, Message: "username cannot be empty"})
+			c.AbortWithStatusJSON(400, gin.H{"message": "username cannot be empty"})
 			return
 		}
-
 		if len(data.Password) < 8 {
-			c.AbortWithStatusJSON(400, UsersReply{Success: false, Message: "password should be minimum of 8 characters"})
+			c.AbortWithStatusJSON(400, gin.H{"message": "password should be minimum of 8 characters"})
 			return
 		}
 
-		err := s.Store.CreateUser(users.NewUser(data.Username, data.Password, data.Type))
+		err := s.Store.AddUser(human.NewUser(data.Username, data.Password, data.Type), false)
 		if err != nil {
-			c.AbortWithStatusJSON(500, UsersReply{Success: false})
+			c.AbortWithError(500, err)
 			return
 		}
-
-		c.JSON(200, UsersReply{Success: true})
+		c.Status(200)
 	}
 }

@@ -1,68 +1,55 @@
 package admin
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/fiwippi/tanuki/pkg/server"
-	"github.com/fiwippi/tanuki/pkg/store/entities/api"
 )
 
-// LibraryScanReply for /api/admin/library
-type LibraryScanReply struct {
-	Success bool   `json:"success"`
-	Message string `json:"message,omitempty"`
-}
-
-// LibraryMissingEntriesReply for /api/admin/library/missing-items
-type LibraryMissingEntriesReply struct {
-	Success bool             `json:"success"`
-	Items   api.MissingItems `json:"items"`
-}
-
-func ScanLibrary(s *server.Server) gin.HandlerFunc {
+func ScanLibrary(s *server.Instance) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		now := time.Now()
-		err := s.ScanLibrary()
+		err := s.Store.PopulateCatalog()
 		if err != nil {
 			c.AbortWithError(500, err)
 			return
-		} else {
-			timeTaken := time.Now().Sub(now)
-			c.JSON(200, LibraryScanReply{Success: true, Message: fmt.Sprintf("The time taken was %s", timeTaken)})
 		}
+		c.JSON(200, gin.H{"time_taken": time.Now().Sub(now).String()})
 	}
 }
 
-func GenerateThumbnails(s *server.Server) gin.HandlerFunc {
+func GenerateThumbnails(s *server.Instance) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		now := time.Now()
 		err := s.Store.GenerateThumbnails(true)
 		if err != nil {
 			c.AbortWithError(500, err)
 			return
-		} else {
-			timeTaken := time.Now().Sub(now)
-			c.JSON(200, LibraryScanReply{Success: true, Message: fmt.Sprintf("The time taken was %s", timeTaken)})
 		}
+		c.JSON(200, gin.H{"time_taken": time.Now().Sub(now).String()})
 	}
 }
 
-func GetMissingItems(s *server.Server) gin.HandlerFunc {
+func GetMissingItems(s *server.Instance) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.JSON(200, LibraryMissingEntriesReply{Success: true, Items: s.Store.GetMissingItems()})
+		items, err := s.Store.GetMissingItems()
+		if err != nil {
+			c.AbortWithError(500, err)
+			return
+		}
+		c.JSON(200, gin.H{"items": items})
 	}
 }
 
-func DeleteMissingItems(s *server.Server) gin.HandlerFunc {
+func DeleteMissingItems(s *server.Instance) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		err := s.Store.DeleteMissingItems()
 		if err != nil {
 			c.AbortWithError(500, err)
 			return
 		}
-		c.JSON(200, LibraryMissingEntriesReply{Success: true})
+		c.Status(200)
 	}
 }

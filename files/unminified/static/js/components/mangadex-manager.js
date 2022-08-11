@@ -17,24 +17,29 @@ export default function () {
             return Util.Fmt.Percent(p)
         },
 
-        async deleteFinished() {
-          await API.Download.DeleteFinishedTasks()
+        async deleteAll() {
+            await API.Download.DeleteAllDownloads()
+                .catch(() => {alert("Failed!")})
         },
-
+        async deleteSuccessful() {
+            await API.Download.DeleteSuccessfulDownloads()
+                .catch(() => {alert("Failed!")})
+        },
         async retryFailed() {
-            await API.Download.RetryFailedTasks()
+            await API.Download.RetryFailedDownloads()
+                .catch(() => {alert("Failed!")})
         },
-
         async pauseDl() {
             await API.Download.Pause()
+                .catch(() => {alert("Failed!")})
         },
-
         async resumeDl() {
             await API.Download.Resume()
+                .catch(() => {alert("Failed!")})
         },
-
         async cancelDl() {
             await API.Download.Cancel()
+                .catch(() => {alert("Failed!")})
         },
 
         async init() {

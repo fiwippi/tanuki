@@ -1,51 +1,37 @@
 package opds
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
 
-	"github.com/fiwippi/tanuki/internal/fuzzy"
-	"github.com/fiwippi/tanuki/pkg/opds/feed"
+	"github.com/fiwippi/tanuki/internal/feed"
 	"github.com/fiwippi/tanuki/pkg/server"
 )
 
-func getCatalog(s *server.Server, filter string) (*feed.Catalog, error) {
-	catalog := feed.NewCatalog()
-	catalog.SetAuthor(s.Author)
-
-	updated, err := s.Store.GetCatalogModTime()
-	if err != nil {
-		return nil, err
-	}
-	catalog.SetUpdated(updated)
-
-	list := s.Store.GetCatalog()
-	for _, series := range list {
-		if len(filter) > 0 && !fuzzy.Search(series.Title, filter) {
-			continue
-		}
-
-		seriesTime, err := s.Store.GetSeriesModTime(series.Hash)
-		if err != nil {
-			return nil, err
-		}
-		catalog.AddEntry(&feed.SeriesEntry{
-			Title:   series.Title,
-			Updated: feed.Time{Time: seriesTime},
-			ID:      series.Hash,
-		})
-	}
-
-	return catalog, nil
-}
-
-func GetCatalog(s *server.Server) gin.HandlerFunc {
+func GetCatalog(s *server.Instance) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		catalog, err := getCatalog(s, c.Query("search"))
+		ctl, err := s.Store.GetCatalog()
 		if err != nil {
-			c.AbortWithStatus(500)
+			c.AbortWithError(500, err)
 			return
 		}
 
-		c.XML(200, catalog)
+		var modTime time.Time
+		for _, series := range ctl {
+			t := series.ModTime.Time()
+			if t.After(modTime) {
+				modTime = t
+			}
+		}
+
+		f := feed.NewCatalogFeed(opdsRoot)
+		f.SetAuthor(authorName, authorURI)
+		f.SetUpdated(modTime)
+		for _, series := range ctl {
+			f.AddSeries(series.SID, series.Title(), series.ModTime.Time())
+		}
+
+		c.XML(200, f)
 	}
 }

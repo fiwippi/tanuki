@@ -2,10 +2,10 @@ export const name = 'entries';
 
 import * as Util from "/static/js/util.js"
 
-export default function (entries, progress, urlFunc, extra) {
+export default function (entries, progress, urlFunc, idFunc, extra) {
     return {
         search: "",
-        images: Util.Images.BlankImageArray(entries.length),
+        images: new Map(),
         entries: Util.Ensure.Array(entries),
         progress: Util.Ensure.Object(progress),
         smallMedia: false,
@@ -13,7 +13,7 @@ export default function (entries, progress, urlFunc, extra) {
 
         get filteredEntries() {
             return this.entries.filter(
-                i => Util.Search.Match(this.search, i.title)
+                i => Util.Search.Match(this.search, i.display_title || i.folder_title || i.title)
             )
         },
 
@@ -22,16 +22,15 @@ export default function (entries, progress, urlFunc, extra) {
             return (window.innerWidth * 0.8) / 2
         },
 
-        getThumbnail(e) {
-            if (e === undefined || this.images[e.order - 1] === undefined) {
+        getThumbnail(id) {
+            let img = this.images.get(id)
+            if (img === undefined) {
                 return this.blankImage
             }
-            return this.images[e.order - 1].src
+            return img.src
         },
 
         async init() {
-            console.debug(this.entries)
-
             if (this.preInit !== undefined) {
                 await this.preInit()
             }
@@ -41,7 +40,9 @@ export default function (entries, progress, urlFunc, extra) {
                 this.smallMedia = true
             }
 
-            await Util.Images.LoadImages(this.images, this.entries.length, urlFunc, true)
+            console.debug("Waiting for load", this.images)
+            await Util.Images.LoadImages(this.images, this.entries.length, urlFunc, idFunc, true)
+            console.debug("Loaded", this.images.size)
 
             if (this.postInit !== undefined) {
                 await this.postInit()
