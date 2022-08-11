@@ -1,4 +1,8 @@
 ## Changelog
+
+### [0.17.1] - 2022-08-11
+- Merged redesign into main
+
 ### [0.17] - 2022-08-11
 ⚠️ - Breaking changes are made to the database, it is in a different format!
 - Many QOL improvements
