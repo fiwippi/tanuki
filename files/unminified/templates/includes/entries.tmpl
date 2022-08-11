@@ -124,7 +124,7 @@
                 <div class="entry" :style="`flex: 0 1 auto; max-width: ${imageWidth()}px`">
                     <img class="entry__img" :src="getThumbnail(e.eid)">
                     <div class="entry__info" >
-                        <h4 class="entry__title" x-text="e.display_title || e.file_title"></h4>
+                        <h4 class="entry__title" x-text="e.display_title || e.title"></h4>
                         <span x-text="`Pages: ${e.pages.length}`"></span><br>
                         <span x-text="fmtEntryProgressLabel(progress[e.eid])"></span>
                     </div>

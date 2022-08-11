@@ -1,5 +1,8 @@
 ## Changelog
 
+### [0.17.2] - 2022-08-11
+- Fix bug where file titles not showing
+
 ### [0.17.1] - 2022-08-11
 - Merged redesign into main
 

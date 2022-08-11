@@ -156,7 +156,7 @@
                     <h4 class="flex__key--less-padding flex__key--centered">Jump To Entry</h4>
                     <select class="flex__key--centered" x-model="selectedEntry" @change="changeEntry(selectedEntry)">
                         <template x-for="e in filteredEntries">
-                            <option :value="e.eid" x-text="e.title || e.file_title"></option>
+                            <option :value="e.eid" x-text="e.display_title || e.title"></option>
                         </template>
                     </select>
                 </div>
