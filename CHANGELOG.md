@@ -1,5 +1,8 @@
 ## Changelog
 
+### [0.17.3] - 2022-08-11
+- Correct ordering for some entries
+
 ### [0.17.2] - 2022-08-11
 - Fix bug where file titles not showing
 

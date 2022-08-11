@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/fvbommel/sortorder"
 	"github.com/rs/xid"
 	"golang.org/x/sync/errgroup"
 
@@ -111,6 +112,7 @@ func ParseSeries(ctx context.Context, dir string) (Series, []Entry, error) {
 				en = append(en, e)
 				return nil
 			})
+
 		}
 
 		return nil
@@ -121,12 +123,8 @@ func ParseSeries(ctx context.Context, dir string) (Series, []Entry, error) {
 
 	s.NumEntries = len(en)
 
-	// Sort the entries list
 	sort.SliceStable(en, func(i, j int) bool {
-		if len(en) > 0 {
-			return fse.SortNatural(en[i].Archive.Title, en[j].Archive.Title)
-		}
-		return false
+		return sortorder.NaturalLess(en[i].Archive.Title, en[j].Archive.Title)
 	})
 
 	return s, en, nil

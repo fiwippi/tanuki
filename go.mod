@@ -3,6 +3,7 @@ module github.com/fiwippi/tanuki
 go 1.18
 
 require (
+	github.com/fvbommel/sortorder v1.0.2
 	github.com/gin-gonic/gin v1.7.7
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/mholt/archiver/v4 v4.0.0-alpha.6
