@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 // Middleware which provides ability to log with gin
@@ -30,7 +31,8 @@ func Middleware() gin.HandlerFunc {
 		if raw != "" {
 			path = path + "?" + raw
 		}
-		errorMsg := fmt.Errorf("%s", strings.Join(strings.Split(c.Errors.ByType(gin.ErrorTypePrivate).String(), "\n"), ","))
+		errorStr := c.Errors.ByType(gin.ErrorTypePrivate).String()
+		errorMsg := fmt.Errorf("%s", strings.Join(strings.Split(errorStr, "\n"), ","))
 
 		// User data
 		sid := c.Param("sid")
@@ -38,30 +40,28 @@ func Middleware() gin.HandlerFunc {
 		uid := c.GetString("uid")
 		admin := c.GetBool("admin")
 
-		// Log the data after parsing it
+		// Choose the appropriate log event
 		var event *zerolog.Event
 		switch {
 		case statusCode >= 400 && statusCode < 500:
-			event = Warn()
+			event = log.Warn()
 		case statusCode >= 500:
-			event = Error()
+			event = log.Error()
+		case strings.HasPrefix(path, "/static"):
+			event = log.Trace()
 		default:
-			if strings.HasPrefix(path, "/static") {
-				event = Trace()
-			} else {
-				event = Info()
-			}
+			event = log.Info()
 		}
 
-		if event != nil {
-			event.Str("method", method).Str("path", path).Str("resp_time", latency).
-				Int("status", statusCode).Str("client_ip", clientIP).Str("sid", sid).
-				Str("eid", eid).Str("uid", uid).Bool("admin", admin)
+		// Log the request
+		event.Str("method", method).Str("path", path).Str("resp_time", latency).
+			Int("status", statusCode).Str("client_ip", clientIP).Str("sid", sid).
+			Str("eid", eid).Str("uid", uid).Bool("admin", admin)
 
-			if len(errorMsg.Error()) > 0 {
-				event.Err(errorMsg)
-			}
-			event.Send()
+		if len(errorMsg.Error()) > 0 {
+			event.Err(errorMsg)
 		}
+
+		event.Send()
 	}
 }

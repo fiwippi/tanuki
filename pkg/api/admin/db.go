@@ -28,6 +28,6 @@ func VacuumStore(s *server.Instance) gin.HandlerFunc {
 			c.AbortWithError(500, err)
 			return
 		}
-		c.JSON(200, gin.H{"time_taken": time.Now().Sub(now).String()})
+		c.JSON(200, gin.H{"time_taken": time.Since(now).String()})
 	}
 }

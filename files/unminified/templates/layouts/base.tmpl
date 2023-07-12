@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ block "title" . }}{{ end }}</title>
-    <link rel="stylesheet" href='{{versioning "/static/css/style.css"}}'>
-    <link rel="stylesheet" href='{{versioning "/static/css/fira_mono.css"}}'>
-    <script src='{{versioning "/static/js/theme.js"}}'></script>
+    <link rel="stylesheet" href='{{ "/static/css/style.css"}}'>
+    <link rel="stylesheet" href='{{ "/static/css/fira_mono.css"}}'>
+    <script src='{{ "/static/js/theme.js"}}'></script>
     <script type="module">
-        import logout from {{versioning "/static/js/components/logout.js"}}
+        import logout from {{ "/static/js/components/logout.js"}}
         document.addEventListener('alpine:init', () => {
             Alpine.data('logout', logout)
             Alpine.data('navbar', () => ({
@@ -24,7 +24,7 @@
     </script>
     {{ block "styles" . }}{{ end }}
     {{ block "scripts" . }}{{ end }}
-    <script defer src='{{versioning "/static/js/alpine.js"}}'></script>
+    <script defer src='{{ "/static/js/alpine.js"}}'></script>
 </head>
 <body>
     <div class="container" x-data="navbar">
@@ -42,7 +42,7 @@
                 <div id="navBar" class="flex--col flex--row">
                     <div class="flex__key--centered">→ <a href="/">Home</a></div>
                     <div class="flex__key--centered">→ <a href="/tags">Tags</a></div>
-                    <div class="flex__key--centered">→ <a href="/download-subscribe">Download/Subscribe</a></div>
+                    <div class="flex__key--centered">→ <a href="/download-subscribe">Download</a></div>
                     <div class="flex__key--centered"><span x-data="{ admin: {{ admin . }} }" x-show="admin" x-cloak>
                     → <a href="/admin">Admin</a>
                     </span></div>

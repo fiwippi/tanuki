@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/fiwippi/tanuki/internal/platform/image"
+	"github.com/fiwippi/tanuki/internal/image"
 	"github.com/fiwippi/tanuki/pkg/server"
 )
 

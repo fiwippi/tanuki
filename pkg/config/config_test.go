@@ -17,17 +17,10 @@ func TestDefaultConfig(t *testing.T) {
 	expected := fmt.Sprintf(`
 host: 0.0.0.0
 port: "8096"
-logging:
-    level: info
-    log_to_file: true
-    log_to_console: true
-paths:
-    db: ./data/tanuki.db
-    log: ./data/tanuki.log
-    library: ./library
+db_path: ./data/tanuki.db
+library_Path: ./library
 session_secret: %s
 scan_interval_minutes: 180
-subscriptions_interval_minutes: 1440
 max_uploaded_file_size_mib: 10
 debug_mode: false`, c.SessionSecret.Base64())
 	require.Equal(t, strings.Trim(expected, "\n"), strings.Trim(string(data), "\n"))

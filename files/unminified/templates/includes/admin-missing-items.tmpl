@@ -2,8 +2,8 @@
 
 {{ define "scripts" }}
 <script type="module">
-    import * as API from {{ versioning "/static/js/api.js" }}
-    import * as Util from {{ versioning "/static/js/util.js" }}
+    import * as API from {{  "/static/js/api.js" }}
+    import * as Util from {{  "/static/js/util.js" }}
 
     document.addEventListener('alpine:init', () => {
         Alpine.data('missing_items', () => ({
@@ -58,6 +58,13 @@
     <p x-text="response" style="font-weight: bold" x-show="!loaded"></p>
     <h3 x-show="loaded && items.length === 0">No Missing Items!</h3>
 
+    <!-- Delete Missing Items -->
+    <template x-if="items.length > 0">
+        <a class="no-bottom" href="javascript:void(0)"><button style="margin-bottom: 1.5em" @click="await deleteItems()">Delete Missing Items</button></a>
+    </template>
+
+
+    <!-- Missing Item List -->
     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; row-gap: 0.8em; column-gap: 4px;">
         <!-- Table Headings -->
         <template x-if="items.length > 0">
@@ -85,11 +92,6 @@
             <span x-text="item.path" :style="`grid-column: 3; grid-row: ${index + 2}`"></span>
         </template>
     </div>
-
-    <!-- Delete Missing Items -->
-    <template x-if="items.length > 0">
-        <a class="no-bottom" href="javascript:void(0)"><button class="form-button" @click="await deleteItems()">Delete Missing Items</button></a>
-    </template>
 
     <!-- Modal -->
     <div x-cloak>

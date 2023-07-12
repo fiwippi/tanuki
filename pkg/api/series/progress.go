@@ -105,6 +105,10 @@ func PatchEntryProgress(s *server.Instance) gin.HandlerFunc {
 		} else {
 			err = s.Store.SetEntryProgressAmount(sid, eid, uid, num)
 		}
+		if err != nil {
+			c.AbortWithError(500, err)
+			return
+		}
 
 		c.Status(200)
 	}

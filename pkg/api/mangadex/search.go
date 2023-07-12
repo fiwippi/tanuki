@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/fiwippi/tanuki/internal/mangadex"
+	"github.com/fiwippi/tanuki/pkg/mangadex"
 	"github.com/fiwippi/tanuki/pkg/server"
 )
 

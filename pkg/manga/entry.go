@@ -11,34 +11,27 @@ import (
 
 	"github.com/mholt/archiver/v4"
 
-	"github.com/fiwippi/tanuki/internal/platform/archive"
-	"github.com/fiwippi/tanuki/internal/platform/dbutil"
-	"github.com/fiwippi/tanuki/internal/platform/fse"
-	"github.com/fiwippi/tanuki/internal/platform/hash"
-	"github.com/fiwippi/tanuki/internal/platform/image"
+	"github.com/fiwippi/tanuki/internal/archive"
+	"github.com/fiwippi/tanuki/internal/fse"
+	"github.com/fiwippi/tanuki/internal/hash"
+	"github.com/fiwippi/tanuki/internal/image"
+	"github.com/fiwippi/tanuki/internal/sortnat"
+	"github.com/fiwippi/tanuki/internal/sqlutil"
 )
 
 // Entry represents an entry which you read, i.e. an archive file
 type Entry struct {
-	SID          string            `json:"sid" db:"sid"`
-	EID          string            `json:"eid" db:"eid"`
-	FileTitle    string            `json:"title" db:"title"`
-	Archive      Archive           `json:"archive" db:"archive"`
-	Pages        Pages             `json:"pages" db:"pages"`
-	ModTime      dbutil.Time       `json:"mod_time" db:"mod_time"`
-	DisplayTitle dbutil.NullString `json:"display_title" db:"display_title"`
-}
-
-func (e Entry) Title() string {
-	if e.DisplayTitle != "" {
-		return string(e.DisplayTitle)
-	}
-	return e.FileTitle
+	SID     string       `json:"sid" db:"sid"`
+	EID     string       `json:"eid" db:"eid"`
+	Title   string       `json:"title" db:"title"`
+	Archive Archive      `json:"archive" db:"archive"`
+	Pages   Pages        `json:"pages" db:"pages"`
+	ModTime sqlutil.Time `json:"mod_time" db:"mod_time"`
 }
 
 func ParseEntry(ctx context.Context, fp string) (Entry, error) {
 	// Ensure valid archive
-	at, err := archive.InferType(fp)
+	t, err := archive.InferType(fp)
 	if err != nil {
 		return Entry{}, err
 	}
@@ -52,24 +45,24 @@ func ParseEntry(ctx context.Context, fp string) (Entry, error) {
 	if err != nil {
 		return Entry{}, err
 	}
-	a := Archive{
+	title := fse.Filename(absFp)
+	arch := Archive{
 		Path:  absFp,
-		Type:  at,
-		Title: fse.Filename(fp),
+		Type:  t,
+		Title: title,
 	}
 
 	// Create the entry
-	title := fse.Filename(a.Path)
 	e := Entry{
-		Archive:   a,
-		EID:       hash.SHA1(title),
-		FileTitle: title,
-		Pages:     make(Pages, 0),
-		ModTime:   dbutil.Time(aStats.ModTime().Round(time.Second)),
+		Archive: arch,
+		EID:     hash.SHA1(title),
+		Title:   title,
+		Pages:   make(Pages, 0),
+		ModTime: sqlutil.Time(aStats.ModTime().Round(time.Second)),
 	}
 
-	// Iterate through the files in the archive
-	err = a.Walk(ctx, func(ctx context.Context, f archiver.File) error {
+	// Iterate through the files in the archive and add them
+	err = arch.Walk(ctx, func(ctx context.Context, f archiver.File) error {
 		if !f.IsDir() && !strings.HasPrefix(f.Name(), ".") {
 			it, err := image.InferType(f.Name())
 			if err != nil {
@@ -92,11 +85,11 @@ func ParseEntry(ctx context.Context, fp string) (Entry, error) {
 		return Entry{}, fmt.Errorf("archive has no pages")
 	}
 
-	// Walker does not walk the archive in archived order so we need to sort the pages
+	// Walker does not walk the archive in order, so we need to sort the pages ourselves
 	sort.SliceStable(e.Pages, func(i, j int) bool {
 		a := strings.TrimSuffix(e.Pages[i].Path, filepath.Ext(e.Pages[i].Path))
 		b := strings.TrimSuffix(e.Pages[j].Path, filepath.Ext(e.Pages[j].Path))
-		return fse.SortNatural(a, b)
+		return sortnat.Natural(a, b)
 	})
 
 	return e, nil

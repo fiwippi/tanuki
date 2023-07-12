@@ -6,7 +6,8 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
 
-	"github.com/fiwippi/tanuki/pkg/human"
+	"github.com/fiwippi/tanuki/pkg/progress"
+	"github.com/fiwippi/tanuki/pkg/user"
 )
 
 func TestStore_SetEntryProgressAmount(t *testing.T) {
@@ -15,7 +16,7 @@ func TestStore_SetEntryProgressAmount(t *testing.T) {
 	series := parsedData[0].s
 	entry := parsedData[0].e[0]
 	require.Nil(t, s.AddSeries(series, parsedData[0].e))
-	u := human.NewUser("a", "a", human.Standard)
+	u := user.NewAccount("a", "a", user.Standard)
 	require.Nil(t, s.AddUser(u, true))
 
 	require.Nil(t, s.SetEntryProgressAmount(series.SID, entry.EID, u.UID, 5))
@@ -34,7 +35,7 @@ func TestStore_SetEntryProgressRead(t *testing.T) {
 	series := parsedData[0].s
 	entry := parsedData[0].e[0]
 	require.Nil(t, s.AddSeries(series, parsedData[0].e))
-	u := human.NewUser("a", "a", human.Standard)
+	u := user.NewAccount("a", "a", user.Standard)
 	require.Nil(t, s.AddUser(u, true))
 
 	require.Nil(t, s.SetEntryProgressRead(series.SID, entry.EID, u.UID))
@@ -53,7 +54,7 @@ func TestStore_SetEntryProgressUnread(t *testing.T) {
 	series := parsedData[0].s
 	entry := parsedData[0].e[0]
 	require.Nil(t, s.AddSeries(series, parsedData[0].e))
-	u := human.NewUser("a", "a", human.Standard)
+	u := user.NewAccount("a", "a", user.Standard)
 	require.Nil(t, s.AddUser(u, true))
 
 	require.Nil(t, s.SetEntryProgressUnread(series.SID, entry.EID, u.UID))
@@ -69,7 +70,7 @@ func TestStore_SetEntryProgressUnread(t *testing.T) {
 func TestStore_SetSeriesProgressRead(t *testing.T) {
 	s := mustOpenStoreMem(t)
 
-	u := human.NewUser("a", "a", human.Standard)
+	u := user.NewAccount("a", "a", user.Standard)
 	require.Nil(t, s.AddUser(u, true))
 
 	for _, d := range parsedData {
@@ -105,7 +106,7 @@ func TestStore_SetSeriesProgressRead(t *testing.T) {
 func TestStore_SetSeriesProgressUnread(t *testing.T) {
 	s := mustOpenStoreMem(t)
 
-	u := human.NewUser("a", "a", human.Standard)
+	u := user.NewAccount("a", "a", user.Standard)
 	require.Nil(t, s.AddUser(u, true))
 
 	for _, d := range parsedData {
@@ -142,7 +143,7 @@ func TestStore_GetEntryProgress(t *testing.T) {
 	s := mustOpenStoreMem(t)
 
 	require.Nil(t, s.AddSeries(parsedData[0].s, parsedData[0].e))
-	u := human.NewUser("a", "a", human.Standard)
+	u := user.NewAccount("a", "a", user.Standard)
 	require.Nil(t, s.AddUser(u, true))
 
 	t.Run("ProgressDoesNotExist", func(t *testing.T) {
@@ -152,7 +153,7 @@ func TestStore_GetEntryProgress(t *testing.T) {
 		entry := parsedData[0].e[0]
 		p, err := s.GetEntryProgress(entry.SID, entry.EID, u.UID)
 		require.Nil(t, err)
-		require.NotEqual(t, human.EntryProgress{}, p)
+		require.NotEqual(t, progress.Entry{}, p)
 		require.Equal(t, entry.EID, p.EID)
 		require.Equal(t, 0, p.Current)
 		require.Equal(t, len(entry.Pages), p.Total)
@@ -163,7 +164,7 @@ func TestStore_GetEntryProgress(t *testing.T) {
 		require.Nil(t, s.SetEntryProgressAmount(entry.SID, entry.EID, u.UID, 5))
 		p, err := s.GetEntryProgress(entry.SID, entry.EID, u.UID)
 		require.Nil(t, err)
-		require.NotEqual(t, human.EntryProgress{}, p)
+		require.NotEqual(t, progress.Entry{}, p)
 		require.Equal(t, entry.EID, p.EID)
 		require.Equal(t, 5, p.Current)
 		require.Equal(t, len(entry.Pages), p.Total)
@@ -177,7 +178,7 @@ func TestStore_GetSeriesProgress(t *testing.T) {
 
 	require.Nil(t, s.AddSeries(parsedData[0].s, parsedData[0].e))
 	require.Nil(t, s.AddSeries(parsedData[1].s, parsedData[1].e))
-	u := human.NewUser("a", "a", human.Standard)
+	u := user.NewAccount("a", "a", user.Standard)
 	require.Nil(t, s.AddUser(u, true))
 
 	t.Run("ProgressDoesNotExist", func(t *testing.T) {
@@ -185,7 +186,7 @@ func TestStore_GetSeriesProgress(t *testing.T) {
 		series := parsedData[0].s
 		sp, err := s.GetSeriesProgress(series.SID, u.UID)
 		require.Nil(t, err)
-		require.Equal(t, *human.NewSeriesProgress(), sp)
+		require.Equal(t, *progress.NewSeriesProgress(), sp)
 	})
 
 	t.Run("ProgressExists", func(t *testing.T) {
@@ -223,7 +224,7 @@ func TestStore_ProgressDeletedOnCascade(t *testing.T) {
 		s := mustOpenStoreMem(t)
 		defer mustCloseStore(t, s)
 
-		u := human.NewUser("a", "a", human.Standard)
+		u := user.NewAccount("a", "a", user.Standard)
 		require.Nil(t, s.AddUser(u, true))
 
 		for _, d := range parsedData {
@@ -249,7 +250,7 @@ func TestStore_ProgressDeletedOnCascade(t *testing.T) {
 		s := mustOpenStoreMem(t)
 		defer mustCloseStore(t, s)
 
-		u := human.NewUser("a", "a", human.Standard)
+		u := user.NewAccount("a", "a", user.Standard)
 		require.Nil(t, s.AddUser(u, true))
 
 		for _, d := range parsedData {
@@ -278,7 +279,7 @@ func TestStore_ProgressDeletedOnCascade(t *testing.T) {
 		s := mustOpenStoreMem(t)
 		defer mustCloseStore(t, s)
 
-		u := human.NewUser("a", "a", human.Standard)
+		u := user.NewAccount("a", "a", user.Standard)
 		require.Nil(t, s.AddUser(u, true))
 
 		for _, d := range parsedData {

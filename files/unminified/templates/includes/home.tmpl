@@ -2,7 +2,7 @@
 
 {{ define "scripts" }}
 <script type="module">
-    import createCatalog from {{versioning "/static/js/components/catalog.js"}}
+    import createCatalog from {{ "/static/js/components/catalog.js"}}
 
     const _entries = {{ catalog . }}
     const _progress = {{ catalogProgress . }}

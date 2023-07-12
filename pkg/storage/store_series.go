@@ -8,7 +8,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"github.com/fiwippi/tanuki/internal/platform/image"
+	"github.com/fiwippi/tanuki/internal/image"
 	"github.com/fiwippi/tanuki/pkg/manga"
 )
 
@@ -37,7 +37,7 @@ func (s *Store) getSeries(tx *sqlx.Tx, sid string) (manga.Series, error) {
 	var v manga.Series
 	stmt := `
 		SELECT 
-		    sid, folder_title, num_entries, num_pages, mod_time, tags, display_title
+		    sid, folder_title, num_entries, num_pages, mod_time, tags
 		FROM series WHERE sid = ? ORDER BY ROWID DESC`
 	err := tx.Get(&v, stmt, sid)
 	if err != nil {
@@ -62,37 +62,37 @@ func (s *Store) GetSeries(sid string) (manga.Series, error) {
 	return v, nil
 }
 
-func (s *Store) AddSeries(series manga.Series, entries []manga.Entry) error {
-	fn := func(tx *sqlx.Tx) error {
-		// Insert the series data
-		stmt := `INSERT INTO series (sid, folder_title, num_entries, num_pages, mod_time)
-					Values (:sid, :folder_title, :num_entries, :num_pages, :mod_time)
-					ON CONFLICT (sid)
-					DO UPDATE SET sid=:sid,folder_title=:folder_title,num_entries=:num_entries,num_pages=:num_pages,mod_time=:mod_time`
-		_, err := tx.NamedExec(stmt, series)
-		if err != nil {
-			return err
-		}
-
-		//Insert each entry
-		for i, e := range entries {
-			if err := s.addEntry(tx, e, i+1); err != nil {
-				return err
-			}
-		}
-
-		return nil
+func (s *Store) addSeries(tx *sqlx.Tx, series manga.Series, entries []manga.Entry) error {
+	// Insert the series data
+	stmt := `INSERT INTO series (sid, folder_title, num_entries, num_pages, mod_time, missing)
+			 Values (:sid, :folder_title, :num_entries, :num_pages, :mod_time, 0)
+			 ON CONFLICT (sid)
+			 DO UPDATE SET  sid=:sid, folder_title=:folder_title, num_entries=:num_entries, num_pages=:num_pages,
+						    mod_time=:mod_time, missing=0`
+	_, err := tx.NamedExec(stmt, series)
+	if err != nil {
+		return err
 	}
 
+	// Insert each entry
+	for i, e := range entries {
+		if err := s.addEntry(tx, e, i+1); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Store) AddSeries(series manga.Series, entries []manga.Entry) error {
+	fn := func(tx *sqlx.Tx) error {
+		return s.addSeries(tx, series, entries)
+	}
 	return s.tx(fn)
 }
 
 func (s *Store) deleteSeries(tx *sqlx.Tx, sid string) error {
 	_, err := tx.Exec(`DELETE FROM series WHERE sid = ?`, sid)
-	if err != nil {
-		return err
-	}
-	return s.deleteSubscription(tx, sid)
+	return err
 }
 
 func (s *Store) DeleteSeries(sid string) error {
@@ -195,7 +195,11 @@ func (s *Store) generateSeriesThumbnail(tx *sqlx.Tx, sid string, overwrite bool)
 	if err != nil {
 		return nil, err
 	}
-	thumb, err := it.EncodeThumbnail(bytes.NewReader(cover))
+	img, err := it.Decode(bytes.NewReader(cover))
+	if err != nil {
+		return nil, err
+	}
+	thumb, err := it.EncodeThumbnail(img, 300, 300)
 	if err != nil {
 		return nil, err
 	}
@@ -257,9 +261,4 @@ func (s *Store) GetAllTags() (*manga.Tags, error) {
 	}
 
 	return all, nil
-}
-
-func (s *Store) SetSeriesDisplayTitle(sid string, title string) error {
-	_, err := s.pool.Exec("UPDATE series SET display_title = ? WHERE sid = ?", title, sid)
-	return err
 }

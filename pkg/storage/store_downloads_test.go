@@ -7,8 +7,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/fiwippi/tanuki/internal/mangadex"
-	"github.com/fiwippi/tanuki/internal/platform/dbutil"
+	"github.com/fiwippi/tanuki/internal/sqlutil"
+	"github.com/fiwippi/tanuki/pkg/mangadex"
 )
 
 func (s *Store) mustGetRows(t *testing.T, table string) int {
@@ -138,7 +138,7 @@ func TestStore_DownloadMarshalling(t *testing.T) {
 			ID:              "b",
 			Title:           "c",
 			ScanlationGroup: "d",
-			PublishedAt:     dbutil.Time(time.Now().Round(time.Second)),
+			PublishedAt:     sqlutil.Time(time.Now().Round(time.Second)),
 			Pages:           1,
 			VolumeNo:        "e",
 			ChapterNo:       "f",
@@ -146,7 +146,7 @@ func TestStore_DownloadMarshalling(t *testing.T) {
 		Status:      mangadex.DownloadFinished,
 		CurrentPage: 1,
 		TotalPages:  1,
-		TimeTaken:   "g",
+		TimeTaken:   -1,
 	}
 
 	require.Nil(t, s.AddDownloads(d))

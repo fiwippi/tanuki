@@ -3,7 +3,7 @@ package transfer
 import (
 	"sync"
 
-	"github.com/fiwippi/tanuki/internal/mangadex"
+	"github.com/fiwippi/tanuki/pkg/mangadex"
 )
 
 const poolStartCap = 20

@@ -5,7 +5,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"github.com/fiwippi/tanuki/pkg/human"
+	"github.com/fiwippi/tanuki/pkg/progress"
 )
 
 var ErrUserNotExist = errors.New("user does not exist")
@@ -22,13 +22,13 @@ func (s *Store) setEntryProgress(tx *sqlx.Tx, sid, eid, uid string, num int, set
 	}
 
 	// Validate amount is valid
-	if num < 0 || num > e.Pages.Total() {
+	if num < 0 || num > len(e.Pages) {
 		return ErrInvalidProgressAmount
 	}
 	if setUnread {
 		num = 0
 	} else if setRead {
-		num = e.Pages.Total()
+		num = len(e.Pages)
 	}
 
 	// Update progress
@@ -36,7 +36,7 @@ func (s *Store) setEntryProgress(tx *sqlx.Tx, sid, eid, uid string, num int, set
 				Values (?, ?, ?, ?, ?)
 				ON CONFLICT (sid, eid, uid)
 				DO UPDATE SET sid=?,eid=?,uid=?,current=?,total=?`
-	_, err = tx.Exec(stmt, sid, eid, uid, num, e.Pages.Total(), sid, eid, uid, num, e.Pages.Total())
+	_, err = tx.Exec(stmt, sid, eid, uid, num, len(e.Pages), sid, eid, uid, num, len(e.Pages))
 	return err
 }
 
@@ -69,7 +69,7 @@ func (s *Store) setSeriesProgress(tx *sqlx.Tx, sid, uid string, setUnread, setRe
 	if !s.hasUser(tx, uid) {
 		return ErrUserNotExist
 	}
-	en, err := s.getEntries(tx, sid)
+	en, err := s.getEntries(tx, sid, NotMissing)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func (s *Store) setSeriesProgress(tx *sqlx.Tx, sid, uid string, setUnread, setRe
 		if setUnread {
 			num = 0
 		} else if setRead {
-			num = e.Pages.Total()
+			num = len(e.Pages)
 		}
 
 		// Update progress
@@ -88,7 +88,7 @@ func (s *Store) setSeriesProgress(tx *sqlx.Tx, sid, uid string, setUnread, setRe
 				Values (?, ?, ?, ?, ?)
 				ON CONFLICT (sid, eid, uid)
 				DO UPDATE SET sid=?,eid=?,uid=?,current=?,total=?`
-		_, err = tx.Exec(stmt, sid, e.EID, uid, num, e.Pages.Total(), sid, e.EID, uid, num, e.Pages.Total())
+		_, err = tx.Exec(stmt, sid, e.EID, uid, num, len(e.Pages), sid, e.EID, uid, num, len(e.Pages))
 		if err != nil {
 			return err
 		}
@@ -113,8 +113,8 @@ func (s *Store) SetSeriesProgressRead(sid, uid string) error {
 	return s.tx(fn)
 }
 
-func (s *Store) GetEntryProgress(sid, eid, uid string) (human.EntryProgress, error) {
-	var p human.EntryProgress
+func (s *Store) GetEntryProgress(sid, eid, uid string) (progress.Entry, error) {
+	var p progress.Entry
 	fn := func(tx *sqlx.Tx) error {
 		stmt := `SELECT eid, current, total FROM progress WHERE sid = ? AND eid = ? AND uid = ?`
 
@@ -135,27 +135,27 @@ func (s *Store) GetEntryProgress(sid, eid, uid string) (human.EntryProgress, err
 	}
 
 	if err := s.tx(fn); err != nil {
-		return human.EntryProgress{}, err
+		return progress.Entry{}, err
 	}
 	return p, nil
 }
 
-func (s *Store) GetSeriesProgress(sid, uid string) (human.SeriesProgress, error) {
-	var ep []human.EntryProgress
+func (s *Store) GetSeriesProgress(sid, uid string) (progress.Series, error) {
+	var ep []progress.Entry
 	stmt := `SELECT eid, current, total FROM progress WHERE sid = ? AND uid = ?`
 	if err := s.pool.Select(&ep, stmt, sid, uid); err != nil {
-		return human.SeriesProgress{}, err
+		return progress.Series{}, err
 	}
 
-	sp := human.NewSeriesProgress()
+	sp := progress.NewSeriesProgress()
 	for _, e := range ep {
 		sp.Add(e.EID, e)
 	}
 	return *sp, nil
 }
 
-func (s *Store) GetCatalogProgress(uid string) (human.CatalogProgress, error) {
-	cp := human.NewCatalogProgress()
+func (s *Store) GetCatalogProgress(uid string) (progress.Catalog, error) {
+	cp := progress.NewCatalogProgress()
 
 	fn := func(tx *sqlx.Tx) error {
 		// Get each series
@@ -164,14 +164,14 @@ func (s *Store) GetCatalogProgress(uid string) (human.CatalogProgress, error) {
 
 		// For each series get create its series progress
 		for _, sid := range sids {
-			var ep []human.EntryProgress
+			var ep []progress.Entry
 			stmt := `SELECT eid, current, total FROM progress WHERE sid = ? AND uid = ?`
 			if err := tx.Select(&ep, stmt, sid, uid); err != nil {
 				return err
 			}
 
 			if len(ep) > 0 {
-				sp := human.NewSeriesProgress()
+				sp := progress.NewSeriesProgress()
 				for _, e := range ep {
 					sp.Add(e.EID, e)
 				}
@@ -184,7 +184,7 @@ func (s *Store) GetCatalogProgress(uid string) (human.CatalogProgress, error) {
 	}
 
 	if err := s.tx(fn); err != nil {
-		return human.CatalogProgress{}, err
+		return progress.Catalog{}, err
 	}
 	return *cp, nil
 }

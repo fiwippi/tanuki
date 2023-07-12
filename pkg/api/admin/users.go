@@ -3,8 +3,8 @@ package admin
 import (
 	"github.com/gin-gonic/gin"
 
-	"github.com/fiwippi/tanuki/pkg/human"
 	"github.com/fiwippi/tanuki/pkg/server"
+	"github.com/fiwippi/tanuki/pkg/user"
 )
 
 func GetUsers(s *server.Instance) gin.HandlerFunc {
@@ -26,9 +26,9 @@ func GetUsers(s *server.Instance) gin.HandlerFunc {
 func PutUsers(s *server.Instance) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		data := struct {
-			Username string     `json:"username"`
-			Password string     `json:"password"`
-			Type     human.Type `json:"type"`
+			Username string    `json:"username"`
+			Password string    `json:"password"`
+			Type     user.Type `json:"type"`
 		}{}
 		if err := c.ShouldBindJSON(&data); err != nil {
 			c.AbortWithStatus(400)
@@ -44,7 +44,7 @@ func PutUsers(s *server.Instance) gin.HandlerFunc {
 			return
 		}
 
-		err := s.Store.AddUser(human.NewUser(data.Username, data.Password, data.Type), false)
+		err := s.Store.AddUser(user.NewAccount(data.Username, data.Password, data.Type), false)
 		if err != nil {
 			c.AbortWithError(500, err)
 			return

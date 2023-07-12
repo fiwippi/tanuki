@@ -3,8 +3,8 @@ package opds
 import (
 	"github.com/gin-gonic/gin"
 
-	"github.com/fiwippi/tanuki/internal/feed"
-	"github.com/fiwippi/tanuki/internal/platform/image"
+	"github.com/fiwippi/tanuki/internal/image"
+	"github.com/fiwippi/tanuki/pkg/opds/feed"
 	"github.com/fiwippi/tanuki/pkg/server"
 )
 
@@ -18,7 +18,7 @@ func GetEntries(s *server.Instance) gin.HandlerFunc {
 			return
 		}
 
-		f := feed.NewSeriesFeed(opdsRoot, series.SID, series.Title())
+		f := feed.NewSeriesFeed(opdsRoot, series.SID, series.Title)
 		f.SetAuthor(authorName, authorURI)
 		f.SetUpdated(series.ModTime.Time())
 
@@ -42,7 +42,7 @@ func GetEntries(s *server.Instance) gin.HandlerFunc {
 				ct = pt
 			}
 
-			f.AddEntry(e.EID, e.Title(), tt.MimeType(), ct.MimeType(),
+			f.AddEntry(e.EID, e.Title, tt.MimeType(), ct.MimeType(),
 				pt.MimeType(), len(e.Pages), e.ModTime.Time(), &e.Archive)
 		}
 

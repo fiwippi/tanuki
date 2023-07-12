@@ -250,13 +250,3 @@ export class Download {
         return fetchResource(`manager/download/cancel-dl`)
     }
 }
-
-export class Subscription {
-    static async ViewAll() {
-        return fetchResource(`manager/subscription`)
-    }
-
-    static async Delete(sid) {
-        return fetchResource(`manager/subscription/${sid}`, {method: 'DELETE'})
-    }
-}

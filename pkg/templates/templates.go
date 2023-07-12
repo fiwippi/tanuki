@@ -1,32 +1,24 @@
 package templates
 
 import (
+	"embed"
 	"io/fs"
-	"os"
-	"path/filepath"
 
-	"github.com/fiwippi/tanuki/internal/log"
-	"github.com/fiwippi/tanuki/internal/platform/multitemplate"
+	"github.com/rs/zerolog/log"
+
+	"github.com/fiwippi/tanuki/internal/multitemplate"
 
 	"github.com/fiwippi/tanuki/pkg/server"
 )
 
 // CreateRenderer creates a Renderer which  renders the templates from the fs
-func CreateRenderer(s *server.Instance, efs fs.FS, debug bool, prefix string) {
-	var temp multitemplate.Renderer
-	if os.Getenv("DOCKER") == "true" {
-		// Always static renderer
-		temp = multitemplate.New()
-	} else {
-		// Static renderer unless gin is in debug
-		// mode where it then becomes a dynamic renderer
-		temp = multitemplate.NewRenderer()
-	}
+func CreateRenderer(s *server.Instance, efs embed.FS, debug bool, prefix string) {
+	temp := multitemplate.New()
 
 	r := &Renderer{
-		Renderer: temp,
-		server:   s,
-		debug:    debug,
+		Render: temp,
+		server: s,
+		debug:  debug,
 	}
 
 	// Generating our main templates
@@ -44,7 +36,7 @@ func CreateRenderer(s *server.Instance, efs fs.FS, debug bool, prefix string) {
 	s.SetHTMLRenderer(r)
 }
 
-func addTemplates(layoutsDir, includesDir string, f fs.FS, r *Renderer) (*Renderer, error) {
+func addTemplates(layoutsDir, includesDir string, f embed.FS, r *Renderer) (*Renderer, error) {
 	layouts, err := fs.Glob(f, layoutsDir)
 	if err != nil {
 		log.Error().Err(err).Str("dir", layoutsDir).Msg("could not get layouts dir")
@@ -60,7 +52,7 @@ func addTemplates(layoutsDir, includesDir string, f fs.FS, r *Renderer) (*Render
 		layoutCopy := make([]string, len(layouts))
 		copy(layoutCopy, layouts)
 		files := append(layoutCopy, include)
-		r.AddFromFilesFuncsFS(filepath.Base(include), r.FuncMap(), f, files...)
+		r.AddFromEFS(r.FuncMap(), f, files...)
 	}
 
 	return r, nil

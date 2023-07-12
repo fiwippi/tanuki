@@ -5,8 +5,8 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"github.com/fiwippi/tanuki/internal/platform/hash"
-	"github.com/fiwippi/tanuki/pkg/human"
+	"github.com/fiwippi/tanuki/internal/hash"
+	"github.com/fiwippi/tanuki/pkg/user"
 )
 
 var ErrUserExist = errors.New("user already exists")
@@ -15,7 +15,7 @@ var ErrNotEnoughAdmins = errors.New("not enough admins in the db")
 
 // Editing
 
-func (s *Store) AddUser(u human.User, overwrite bool) error {
+func (s *Store) AddUser(u user.Account, overwrite bool) error {
 	fn := func(tx *sqlx.Tx) error {
 		if s.hasUser(tx, u.UID) && !overwrite {
 			return ErrUserExist
@@ -82,7 +82,7 @@ func (s *Store) ChangePassword(uid, password string) error {
 	return nil
 }
 
-func (s *Store) ChangeType(uid string, t human.Type) error {
+func (s *Store) ChangeType(uid string, t user.Type) error {
 	fn := func(tx *sqlx.Tx) error {
 		// Check if enough admins
 		valid, err := s.validUserTypeChange(tx, uid, t)
@@ -103,17 +103,17 @@ func (s *Store) ChangeType(uid string, t human.Type) error {
 
 // Querying
 
-func (s *Store) getUser(tx *sqlx.Tx, uid string) (human.User, error) {
-	var u human.User
+func (s *Store) getUser(tx *sqlx.Tx, uid string) (user.Account, error) {
+	var u user.Account
 	err := tx.Get(&u, `SELECT * FROM users WHERE uid = ?`, uid)
 	if err != nil {
-		return human.User{}, err
+		return user.Account{}, err
 	}
 	return u, nil
 }
 
-func (s *Store) GetUser(uid string) (human.User, error) {
-	var u human.User
+func (s *Store) GetUser(uid string) (user.Account, error) {
+	var u user.Account
 	var err error
 	fn := func(tx *sqlx.Tx) error {
 		u, err = s.getUser(tx, uid)
@@ -121,13 +121,13 @@ func (s *Store) GetUser(uid string) (human.User, error) {
 	}
 
 	if err := s.tx(fn); err != nil {
-		return human.User{}, err
+		return user.Account{}, err
 	}
 	return u, nil
 }
 
-func (s *Store) GetUsers() ([]human.User, error) {
-	var u []human.User
+func (s *Store) GetUsers() ([]user.Account, error) {
+	var u []user.Account
 	err := s.pool.Select(&u, `SELECT * FROM users ORDER BY type ASC, ROWID ASC`)
 	if err != nil {
 		return nil, err
@@ -163,7 +163,7 @@ func (s *Store) HasUsers() (bool, error) {
 	return exists, nil
 }
 
-func (s *Store) validUserTypeChange(tx *sqlx.Tx, uid string, t human.Type) (bool, error) {
+func (s *Store) validUserTypeChange(tx *sqlx.Tx, uid string, t user.Type) (bool, error) {
 	// Get number of admins
 	var count int
 	tx.Get(&count, `SELECT COUNT(*) FROM users WHERE type = 'admin'`)
@@ -173,7 +173,7 @@ func (s *Store) validUserTypeChange(tx *sqlx.Tx, uid string, t human.Type) (bool
 	if err != nil {
 		return false, err
 	}
-	if u.Type == human.Admin && t != human.Admin {
+	if u.Type == user.Admin && t != user.Admin {
 		count -= 1
 	}
 	return count > 0, nil

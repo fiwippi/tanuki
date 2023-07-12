@@ -4,8 +4,8 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
-	"github.com/fiwippi/tanuki/internal/platform/dbutil"
-	"github.com/fiwippi/tanuki/internal/platform/image"
+	"github.com/fiwippi/tanuki/internal/image"
+	"github.com/fiwippi/tanuki/internal/sqlutil"
 )
 
 type Page struct {
@@ -15,14 +15,12 @@ type Page struct {
 
 type Pages []Page
 
-func (p Pages) Total() int {
-	return len(p)
-}
+// Representation
 
 func (p Pages) Value() (driver.Value, error) {
 	return json.Marshal(p)
 }
 
 func (p *Pages) Scan(src interface{}) error {
-	return dbutil.ScanJSON(src, p)
+	return sqlutil.ScanJSON(src, p)
 }

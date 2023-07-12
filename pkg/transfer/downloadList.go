@@ -3,7 +3,7 @@ package transfer
 import (
 	"sync"
 
-	"github.com/fiwippi/tanuki/internal/mangadex"
+	"github.com/fiwippi/tanuki/pkg/mangadex"
 )
 
 // DownloadList keeps track of the queued and active

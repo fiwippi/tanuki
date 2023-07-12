@@ -2,6 +2,7 @@ package storage
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -9,7 +10,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"github.com/fiwippi/tanuki/internal/platform/image"
+	"github.com/fiwippi/tanuki/internal/image"
 	"github.com/fiwippi/tanuki/pkg/manga"
 )
 
@@ -36,7 +37,7 @@ func (s *Store) getEntry(tx *sqlx.Tx, sid, eid string) (manga.Entry, error) {
 	var e manga.Entry
 	stmt := `
 		SELECT 
-			sid, eid, title, archive, pages, mod_time, display_title
+			sid, eid, title, archive, pages, mod_time
 		FROM entries WHERE sid = ? AND eid = ?`
 	err := tx.Get(&e, stmt, sid, eid)
 	if err != nil {
@@ -63,7 +64,7 @@ func (s *Store) getFirstEntry(tx *sqlx.Tx, sid string) (manga.Entry, error) {
 	var e manga.Entry
 	stmt := `
 		SELECT 
-			sid, eid, title, archive, pages, mod_time, display_title
+			sid, eid, title, archive, pages, mod_time
 		FROM entries WHERE sid = ? ORDER BY position ASC, ROWID ASC LIMIT 1`
 	err := tx.Get(&e, stmt, sid)
 	if err != nil {
@@ -72,13 +73,19 @@ func (s *Store) getFirstEntry(tx *sqlx.Tx, sid string) (manga.Entry, error) {
 	return e, nil
 }
 
-func (s *Store) getEntries(tx *sqlx.Tx, sid string) ([]manga.Entry, error) {
+func (s *Store) getEntries(tx *sqlx.Tx, sid string, mstatus MissingStatus) ([]manga.Entry, error) {
 	var e []manga.Entry
-	stmt := `
-	SELECT 
-	    sid, eid, title, archive, pages, mod_time, display_title
-	FROM entries WHERE sid = ? ORDER BY position ASC, ROWID DESC `
-	err := tx.Select(&e, stmt, sid)
+
+	stmt, err := tx.Preparex(
+		`SELECT sid, eid, title, archive, pages, mod_time
+	     FROM entries
+	     WHERE sid = ? AND missing = ?
+	     ORDER BY position ASC, ROWID DESC `)
+	if err != nil {
+		return nil, err
+	}
+
+	err = stmt.Select(&e, sid, int(mstatus))
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +96,7 @@ func (s *Store) GetEntries(sid string) ([]manga.Entry, error) {
 	var e []manga.Entry
 	fn := func(tx *sqlx.Tx) error {
 		var err error
-		e, err = s.getEntries(tx, sid)
+		e, err = s.getEntries(tx, sid, 0)
 		return err
 	}
 
@@ -117,10 +124,11 @@ func (s *Store) addEntry(tx *sqlx.Tx, e manga.Entry, position int) error {
 		}
 	}
 
-	stmt := `INSERT INTO entries (sid, eid, title, archive, pages, mod_time) 
-					Values (:sid, :eid, :title, :archive, :pages, :mod_time)
+	stmt := `INSERT INTO entries (sid, eid, title, archive, pages, mod_time, missing) 
+					Values (:sid, :eid, :title, :archive, :pages, :mod_time, 0)
 					ON CONFLICT (sid, eid)
-					DO UPDATE SET sid=:sid,eid=:eid,title=:title,archive=:archive,pages=:pages,mod_time=:mod_time`
+					DO UPDATE SET sid=:sid, eid=:eid, title=:title, archive=:archive, pages=:pages, mod_time=:mod_time,
+					              missing=0`
 	_, err := tx.NamedExec(stmt, e)
 	if err != nil {
 		return err
@@ -237,7 +245,11 @@ func (s *Store) generateEntryThumbnail(tx *sqlx.Tx, sid, eid string, overwrite b
 	if err != nil {
 		return nil, err
 	}
-	thumb, err := it.EncodeThumbnail(bytes.NewReader(cover))
+	img, err := it.Decode(bytes.NewReader(cover))
+	if err != nil {
+		return nil, err
+	}
+	thumb, err := it.EncodeThumbnail(img, 300, 300)
 	if err != nil {
 		return nil, err
 	}
@@ -283,7 +295,7 @@ func (s *Store) getPage(tx *sqlx.Tx, sid, eid string, pageNum int) (io.Reader, i
 		return nil, 0, image.Invalid, fmt.Errorf("page num index out of range")
 	}
 	page := p[index]
-	r, size, err := a.ReaderForFile(page.Path)
+	r, size, err := a.Extract(context.Background(), page.Path)
 	if err != nil {
 		return nil, 0, image.Invalid, err
 	}
@@ -308,11 +320,4 @@ func (s *Store) GetPage(sid, eid string, page int, zeroBased bool) (io.Reader, i
 		return nil, 0, image.Invalid, err
 	}
 	return r, size, it, nil
-}
-
-// Metadata
-
-func (s *Store) SetEntryDisplayTitle(sid, eid string, title string) error {
-	_, err := s.pool.Exec("UPDATE entries SET display_title = ? WHERE sid = ? AND eid = ?", title, sid, eid)
-	return err
 }

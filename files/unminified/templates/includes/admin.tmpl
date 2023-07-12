@@ -2,7 +2,7 @@
 
 {{ define "scripts" }}
     <script type="module">
-        import * as API from {{ versioning "/static/js/api.js" }}
+        import * as API from {{  "/static/js/api.js" }}
 
         document.addEventListener('alpine:init', () => {
             Alpine.data('dashboard', () => ({
@@ -113,14 +113,6 @@
 
         <div class="flex--col flex--no-gap">
             <div class="flex--row">
-                <span>⦿ <a class="flex__key--list" href="javascript:void(0)" @click="await subscription()">Check Subscriptions</a></span>
-                <div id="sub" class="flex__key--centered"></div>
-            </div>
-            <span x-show="showSubResult" @click.away="showSubResult = false" x-text="subResult"></span>
-        </div>
-
-        <div class="flex--col flex--no-gap">
-            <div class="flex--row">
                 <span>⦿ <a class="flex__key--list" href="javascript:void(0)" @click="await thumbnails()">Generate Thumbnails</a></span>
                 <div id="thumbnails" class="flex__key--centered"></div>
             </div>
@@ -128,4 +120,3 @@
         </div>
     </div>
 {{ end }}
-Footer

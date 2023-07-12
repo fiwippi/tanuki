@@ -4,7 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
-	"github.com/fiwippi/tanuki/internal/platform/dbutil"
+	"github.com/fiwippi/tanuki/internal/sqlutil"
 )
 
 var exists = struct{}{}
@@ -14,9 +14,7 @@ type Tags struct {
 }
 
 func NewTags() *Tags {
-	s := &Tags{}
-	s.m = map[string]struct{}{}
-	return s
+	return &Tags{m: map[string]struct{}{}}
 }
 
 func (t *Tags) Add(values ...string) {
@@ -48,6 +46,8 @@ func (t Tags) List() []string {
 	return list
 }
 
+// Representation
+
 func (t Tags) MarshalJSON() ([]byte, error) {
 	return json.Marshal(t.List())
 }
@@ -77,5 +77,5 @@ func (t Tags) Value() (driver.Value, error) {
 }
 
 func (t *Tags) Scan(src interface{}) error {
-	return dbutil.ScanJSON(src, t)
+	return sqlutil.ScanJSON(src, t)
 }

@@ -11,4 +11,5 @@ func NewService(g *server.RouterGroup) {
 
 	mdex.GET("/search", searchMangadex)
 	mdex.GET("/view/:uuid", viewManga)
+	mdex.GET("/cover/:endpoint", getCover)
 }

@@ -92,10 +92,10 @@
 {{ end }}
 
 {{ define "scripts" }}
-<script defer src='{{versioning "/static/js/intersect.js"}}'></script>
+<script defer src='{{ "/static/js/intersect.js"}}'></script>
 <script type="module">
-    import createModal from {{ versioning "/static/js/components/modal.js" }}
-    import createReader from {{ versioning "/static/js/components/reader.js" }}
+    import createModal from {{  "/static/js/components/modal.js" }}
+    import createReader from {{  "/static/js/components/reader.js" }}
 
     let _sid = {{ sid . }};
     let _eid = {{ eid . }};

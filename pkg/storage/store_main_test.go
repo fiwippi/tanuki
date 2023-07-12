@@ -2,7 +2,6 @@ package storage
 
 import (
 	"context"
-	"math"
 	"os"
 	"strings"
 	"sync"
@@ -13,12 +12,10 @@ import (
 	"github.com/stretchr/testify/require"
 	_ "modernc.org/sqlite"
 
-	"github.com/fiwippi/tanuki/internal/log"
-	"github.com/fiwippi/tanuki/internal/platform/dbutil"
-	"github.com/fiwippi/tanuki/internal/platform/fse"
-	"github.com/fiwippi/tanuki/internal/platform/hash"
-	"github.com/fiwippi/tanuki/pkg/human"
+	"github.com/fiwippi/tanuki/internal/hash"
+	"github.com/fiwippi/tanuki/internal/sqlutil"
 	"github.com/fiwippi/tanuki/pkg/manga"
+	"github.com/fiwippi/tanuki/pkg/user"
 )
 
 const (
@@ -58,8 +55,6 @@ func mustCloseStore(t require.TestingT, s *Store) {
 }
 
 func TestMain(m *testing.M) {
-	log.Disable()
-
 	// Make an example db in tests/data/tanuki.db which
 	// can be read by the IDE for linting etc.
 	os.Remove(dbPath)
@@ -116,7 +111,7 @@ func TestNewStore(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, defaultUID, u.UID)
 	require.Equal(t, "default", u.Name)
-	require.Equal(t, human.Admin, u.Type)
+	require.Equal(t, user.Admin, u.Type)
 	mustCloseStore(t, s)
 	oldPass := u.Pass
 
@@ -153,13 +148,12 @@ func TestVacuum(t *testing.T) {
 
 		fn := func(tx *sqlx.Tx) error {
 			err := s.addEntry(tx, manga.Entry{
-				SID:          sid,
-				EID:          eid,
-				FileTitle:    eid,
-				Archive:      manga.Archive{},
-				Pages:        nil,
-				ModTime:      dbutil.Time{},
-				DisplayTitle: "",
+				SID:     sid,
+				EID:     eid,
+				Title:   eid,
+				Archive: manga.Archive{},
+				Pages:   nil,
+				ModTime: sqlutil.Time{},
 			}, i)
 			return err
 		}
@@ -170,7 +164,7 @@ func TestVacuum(t *testing.T) {
 	// Check size of file
 	fi, err := tf.Stat()
 	require.Nil(t, err)
-	t.Log("Size: ", math.Round(fse.Filesize(fi.Size())), "MiB")
+	t.Log("Size: ", fi.Size())
 
 	// Delete the entries
 	for i := 1; i <= 200; i++ {
@@ -191,8 +185,8 @@ func TestVacuum(t *testing.T) {
 	// Check size of DB
 	fi, err = tf.Stat()
 	require.Nil(t, err)
-	sizeBef := math.Round(fse.Filesize(fi.Size()))
-	t.Log("Size: ", sizeBef, "MiB")
+	sizeBef := fi.Size()
+	t.Log("Size: ", sizeBef)
 
 	// Run Vacuum
 	t.Log("Vacuuming...")
@@ -201,8 +195,8 @@ func TestVacuum(t *testing.T) {
 	// Check size of DB
 	fi, err = tf.Stat()
 	require.Nil(t, err)
-	sizeAft := math.Round(fse.Filesize(fi.Size()))
-	t.Log("Size: ", sizeAft, "MiB")
+	sizeAft := fi.Size()
+	t.Log("Size: ", sizeAft)
 
 	// Size after should be less than size before
 	require.Less(t, sizeAft, sizeBef)

@@ -1,6 +1,8 @@
 package opds
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/fiwippi/tanuki/pkg/server"
@@ -17,6 +19,7 @@ func GetArchive(s *server.Instance) gin.HandlerFunc {
 			return
 		}
 
-		c.FileAttachment(e.Archive.Path, e.Archive.FilenameWithExt())
+		fp := fmt.Sprintf("%s.%s", e.Archive.Title, e.Archive.Type.String())
+		c.FileAttachment(e.Archive.Path, fp)
 	}
 }

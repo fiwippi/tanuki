@@ -17,7 +17,7 @@ import (
 	"github.com/tdewolff/minify/v2/html"
 	"github.com/tdewolff/minify/v2/js"
 
-	"github.com/fiwippi/tanuki/internal/platform/fse"
+	"github.com/fiwippi/tanuki/internal/fse"
 )
 
 var CSS = CSSData{
@@ -114,7 +114,7 @@ func main() {
 			}
 
 			outputFp := *outputDir + strings.TrimPrefix(path, *inputDir)
-			err = fse.EnsureFileDir(outputFp)
+			err = fse.CreateDirs(filepath.Dir(outputFp))
 			if err != nil {
 				panic(err)
 			}

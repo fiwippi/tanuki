@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/fiwippi/tanuki/internal/feed"
+	"github.com/fiwippi/tanuki/pkg/opds/feed"
 	"github.com/fiwippi/tanuki/pkg/server"
 )
 
@@ -29,7 +29,7 @@ func GetCatalog(s *server.Instance) gin.HandlerFunc {
 		f.SetAuthor(authorName, authorURI)
 		f.SetUpdated(modTime)
 		for _, series := range ctl {
-			f.AddSeries(series.SID, series.Title(), series.ModTime.Time())
+			f.AddSeries(series.SID, series.Title, series.ModTime.Time())
 		}
 
 		c.XML(200, f)

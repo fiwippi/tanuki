@@ -10,8 +10,8 @@
 
 {{ define "scripts" }}
 <script type="module">
-    import createModal from {{ versioning "/static/js/components/modal.js" }}
-    import createSeries from {{ versioning "/static/js/components/series.js" }}
+    import createModal from {{  "/static/js/components/modal.js" }}
+    import createSeries from {{  "/static/js/components/series.js" }}
 
     let _seriesData = {{ series . }};
     let _entriesData = {{ entries . }};

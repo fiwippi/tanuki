@@ -2,7 +2,7 @@
 
 {{ define "scripts" }}
 <script type="module">
-    import mangadex from {{versioning "/static/js/components/mangadex-search.js"}}
+    import mangadex from {{ "/static/js/components/mangadex-search.js"}}
     document.addEventListener('alpine:init', () => {
         Alpine.data('mangadex', mangadex)
     })
@@ -24,7 +24,7 @@
 
     <template x-for="e in searchEntries">
        <div class="flex--row" style="margin-bottom: 50px">
-           <a :href="fmtDlLink(e)" class="no-bottom"><img :src="e.small_cover_url" style="max-width: 100px"></a>
+           <a :href="fmtDlLink(e)" class="no-bottom"><img :src="fmtCoverLink(e)" style="max-width: 100px"></a>
            <div class="flex--col">
                <a :href="fmtDlLink(e)" class="no-bottom"><span style="font-weight: bold" x-text="e.title"></span></a>
                <span x-text="fmtDescription(e.description)"></span>

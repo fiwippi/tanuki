@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"io/ioutil"
 	"testing"
 	"time"
@@ -8,8 +9,9 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
 
-	"github.com/fiwippi/tanuki/internal/platform/dbutil"
-	"github.com/fiwippi/tanuki/internal/platform/image"
+	"github.com/fiwippi/tanuki/internal/image"
+	"github.com/fiwippi/tanuki/internal/sqlutil"
+
 	"github.com/fiwippi/tanuki/pkg/manga"
 )
 
@@ -195,11 +197,11 @@ func TestStore_addEntry(t *testing.T) {
 
 			for i := range d.e {
 				eOriginal := d.e[i]
-				eOriginal.FileTitle = "Before"
+				eOriginal.Title = "Before"
 
 				eChangedModTime := d.e[i]
-				eChangedModTime.FileTitle = "After"
-				eChangedModTime.ModTime = dbutil.Time(time.Now())
+				eChangedModTime.Title = "After"
+				eChangedModTime.ModTime = sqlutil.Time(time.Now())
 
 				require.NotEqual(t, eOriginal.ModTime, eChangedModTime.ModTime)
 
@@ -210,7 +212,7 @@ func TestStore_addEntry(t *testing.T) {
 				require.Nil(t, s.tx(fnBef))
 				e, err := s.GetEntry(d.s.SID, eOriginal.EID)
 				require.Nil(t, err)
-				require.Equal(t, e.FileTitle, "Before")
+				require.Equal(t, e.Title, "Before")
 
 				// Add progress for the original entry
 				require.Nil(t, s.SetEntryProgressRead(d.s.SID, eOriginal.EID, defaultUID))
@@ -228,7 +230,7 @@ func TestStore_addEntry(t *testing.T) {
 				require.Nil(t, s.tx(fnAft))
 				e, err = s.GetEntry(d.s.SID, eOriginal.EID)
 				require.Nil(t, err)
-				require.Equal(t, e.FileTitle, "After")
+				require.Equal(t, e.Title, "After")
 
 				// Check progress for said entry is now deleted
 				// Ensure the progress is set successfully
@@ -382,7 +384,7 @@ func TestStore_GetPage(t *testing.T) {
 		for _, e := range d.e {
 			for i, p := range e.Pages {
 				// Get the page from the archive file
-				r, size, err := e.Archive.ReaderForFile(p.Path)
+				r, size, err := e.Archive.Extract(context.Background(), p.Path)
 				require.Nil(t, err)
 				require.True(t, size > 0)
 				originalData, err := ioutil.ReadAll(r)
@@ -410,29 +412,6 @@ func TestStore_GetPage(t *testing.T) {
 				require.NotEqual(t, image.Invalid, it)
 			}
 		}
-	}
-
-	mustCloseStore(t, s)
-}
-
-// Metadata
-
-func TestStore_SetEntryDisplayTitle(t *testing.T) {
-	s := mustOpenStoreMem(t)
-
-	series := parsedData[0].s
-	require.Nil(t, s.AddSeries(series, parsedData[0].e))
-
-	for _, e := range parsedData[0].e {
-		require.Nil(t, s.SetEntryDisplayTitle(series.SID, e.EID, "HUH"))
-		dbEntry, err := s.GetEntry(series.SID, e.EID)
-		require.Nil(t, err)
-		require.Equal(t, dbutil.NullString("HUH"), dbEntry.DisplayTitle)
-
-		require.Nil(t, s.SetEntryDisplayTitle(series.SID, e.EID, ""))
-		dbEntry, err = s.GetEntry(series.SID, e.EID)
-		require.Nil(t, err)
-		require.Equal(t, dbutil.NullString(""), dbEntry.DisplayTitle)
 	}
 
 	mustCloseStore(t, s)

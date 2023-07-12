@@ -5,19 +5,17 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/fiwippi/tanuki/internal/platform/dbutil"
-	"github.com/fiwippi/tanuki/internal/platform/image"
+	"github.com/fiwippi/tanuki/internal/image"
 	"github.com/fiwippi/tanuki/pkg/manga"
 )
 
 func equalSeries(t *testing.T, s1, s2 manga.Series) {
 	require.NotNil(t, s1)
 	require.NotNil(t, s2)
-	require.Equal(t, s1.FolderTitle, s2.FolderTitle)
+	require.Equal(t, s1.Title, s2.Title)
 	require.Equal(t, s1.SID, s2.SID)
 	require.Equal(t, s1.NumEntries, s2.NumEntries)
 	require.Equal(t, s1.NumPages, s2.NumPages)
-	require.Equal(t, s1.DisplayTitle, s2.DisplayTitle)
 	require.Equal(t, s1.Tags, s2.Tags)
 	require.True(t, s1.ModTime.Equal(s2.ModTime))
 }
@@ -29,10 +27,9 @@ func equalEntries(t *testing.T, e1, e2 []manga.Entry) {
 	for i := range e1 {
 		require.Equal(t, e1[i].SID, e2[i].SID)
 		require.Equal(t, e1[i].EID, e2[i].EID)
-		require.Equal(t, e1[i].FileTitle, e2[i].FileTitle)
+		require.Equal(t, e1[i].Title, e2[i].Title)
 		require.Equal(t, e1[i].Archive, e2[i].Archive)
 		require.Equal(t, e1[i].Pages, e2[i].Pages)
-		require.Equal(t, e1[i].DisplayTitle, e2[i].DisplayTitle)
 		require.True(t, e1[i].ModTime.Equal(e2[i].ModTime))
 	}
 }
@@ -119,13 +116,10 @@ func TestStore_DeleteSeries(t *testing.T) {
 	for _, d := range parsedData {
 		// Add series and subscription for series
 		require.Nil(t, s.AddSeries(d.s, d.e))
-		require.Nil(t, s.SetSubscription(d.s.SID, "a", "a", false))
 
 		// Delete series and ensure it and its subscription is deleted
 		require.Nil(t, s.DeleteSeries(d.s.SID))
 		_, err := s.GetSeries(d.s.SID)
-		require.ErrorIs(t, err, ErrItemNotExist)
-		_, err = s.GetSubscription(d.s.SID)
 		require.ErrorIs(t, err, ErrItemNotExist)
 	}
 
@@ -308,25 +302,6 @@ func TestStore_GetAllTags(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, all)
 	require.Equal(t, final, all)
-
-	mustCloseStore(t, s)
-}
-
-func TestStore_SetSeriesDisplayTitle(t *testing.T) {
-	s := mustOpenStoreMem(t)
-
-	series := parsedData[0].s
-	require.Nil(t, s.AddSeries(series, parsedData[0].e))
-
-	require.Nil(t, s.SetSeriesDisplayTitle(series.SID, "HUH"))
-	dbSeries, err := s.GetSeries(series.SID)
-	require.Nil(t, err)
-	require.Equal(t, dbutil.NullString("HUH"), dbSeries.DisplayTitle)
-
-	require.Nil(t, s.SetSeriesDisplayTitle(series.SID, ""))
-	dbSeries, err = s.GetSeries(series.SID)
-	require.Nil(t, err)
-	require.Equal(t, dbutil.NullString(""), dbSeries.DisplayTitle)
 
 	mustCloseStore(t, s)
 }

@@ -10,11 +10,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/fiwippi/tanuki/internal/platform/archive"
-	"github.com/fiwippi/tanuki/internal/platform/dbutil"
-	"github.com/fiwippi/tanuki/internal/platform/fse"
-	"github.com/fiwippi/tanuki/internal/platform/hash"
-	"github.com/fiwippi/tanuki/internal/platform/image"
+	"github.com/fiwippi/tanuki/internal/archive"
+	"github.com/fiwippi/tanuki/internal/fse"
+	"github.com/fiwippi/tanuki/internal/hash"
+	"github.com/fiwippi/tanuki/internal/image"
+	"github.com/fiwippi/tanuki/internal/sqlutil"
+
 	"github.com/fiwippi/tanuki/pkg/manga"
 )
 
@@ -95,11 +96,11 @@ func testGetDeleteMissingEntries(t *testing.T) {
 	s := mustOpenStoreMem(t)
 
 	series := manga.Series{
-		SID:         hash.SHA1("a"),
-		FolderTitle: "a",
-		NumEntries:  1,
-		NumPages:    2,
-		ModTime:     dbutil.Time(time.Now()),
+		SID:        hash.SHA1("a"),
+		Title:      "a",
+		NumEntries: 1,
+		NumPages:   2,
+		ModTime:    sqlutil.Time(time.Now()),
 	}
 	missingSeries := MissingItem{
 		Type:  "Series",
@@ -109,27 +110,21 @@ func testGetDeleteMissingEntries(t *testing.T) {
 
 	entries := []manga.Entry{
 		{
-			SID:       hash.SHA1("a"),
-			EID:       hash.SHA1("b"),
-			FileTitle: "b",
-			Archive:   manga.Archive{Type: archive.Zip, Path: "./b"},
+			SID:     hash.SHA1("a"),
+			EID:     hash.SHA1("b"),
+			Title:   "b",
+			Archive: manga.Archive{Type: archive.Zip, Path: "./b"},
 			Pages: manga.Pages{
 				{Path: "1.jpg", Type: image.JPEG},
 				{Path: "2.jpg", Type: image.JPEG},
 			},
-			ModTime: dbutil.Time(time.Now()),
+			ModTime: sqlutil.Time(time.Now()),
 		},
 	}
 	missingEntry := MissingItem{
 		Type:  "Entry",
 		Title: "b",
 		Path:  "./b",
-	}
-
-	missingSubscription := MissingItem{
-		Type:  "Subscription",
-		Title: "c",
-		Path:  "c",
 	}
 
 	// Add the fake series and confirm they've been added
@@ -141,18 +136,13 @@ func testGetDeleteMissingEntries(t *testing.T) {
 	dbEntries, err := s.GetEntries(series.SID)
 	require.Nil(t, err)
 	require.True(t, len(dbEntries) == 1)
-	require.Nil(t, s.SetSubscription("c", "c", "c", false))
-	dbSubscription, err := s.GetSubscription("c")
-	require.Nil(t, err)
-	require.NotEqual(t, manga.Subscription{}, dbSubscription)
 
 	// Check they exist as missing entries
 	missingItems, err := s.GetMissingItems()
 	require.Nil(t, err)
-	require.Len(t, missingItems, 3)
+	require.Len(t, missingItems, 2)
 	require.Equal(t, missingSeries, missingItems[0])
 	require.Equal(t, missingEntry, missingItems[1])
-	require.Equal(t, missingSubscription, missingItems[2])
 
 	// Delete the missing items
 	require.Nil(t, s.DeleteMissingItems())
@@ -164,9 +154,6 @@ func testGetDeleteMissingEntries(t *testing.T) {
 	dbEntries, err = s.GetEntries(series.SID)
 	require.Nil(t, err)
 	require.True(t, len(dbEntries) == 0)
-	dbSubscriptions, err := s.GetAllSubscriptions()
-	require.Nil(t, err)
-	require.Zero(t, len(dbSubscriptions))
 
 	// Check they don't return as missing items
 	missingItems, err = s.GetMissingItems()

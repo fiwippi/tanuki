@@ -1,6 +1,7 @@
 package series
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -19,7 +20,8 @@ func GetEntryArchive(s *server.Instance) gin.HandlerFunc {
 			return
 		}
 
-		c.FileAttachment(e.Archive.Path, e.Archive.FilenameWithExt())
+		fp := fmt.Sprintf("%s.%s", e.Archive.Title, e.Archive.Type.String())
+		c.FileAttachment(e.Archive.Path, fp)
 	}
 }
 

@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/fiwippi/tanuki/internal/log"
 	"github.com/fiwippi/tanuki/pkg/api"
 	"github.com/fiwippi/tanuki/pkg/auth"
 	"github.com/fiwippi/tanuki/pkg/config"
@@ -41,17 +41,10 @@ func main() {
 		log.Error().Err(err).Msg("failure to save config on startup")
 	}
 
-	// Setup the logger
-	log.Setup(conf.Logging.Level,
-		conf.Logging.LogToConsole,
-		conf.Logging.LogToFile,
-		conf.Paths.Log)
-
 	// Create the server
 	session := auth.NewSession(time.Hour*24*3, "tanuki", *conf.SessionSecret)
-	store := storage.MustCreateNewStore(conf.Paths.DB, conf.Paths.Library, *recreate)
-	manager := transfer.NewManager(conf.Paths.Library, 2, store,
-		store.PopulateCatalog, conf.SubscriptionsInterval.Duration)
+	store := storage.MustNewStore(conf.DBPath, conf.LibraryPath, *recreate)
+	manager := transfer.NewManager(conf.LibraryPath, 2, store, store.PopulateCatalog)
 	s := server.NewInstance(conf, store, session, manager)
 
 	// Serve static files
@@ -75,10 +68,10 @@ func main() {
 	frontend.NewService(s)
 	opds.NewService(s)
 
-	log.Info().Str("host", conf.Host).Str("port", conf.Port).Str("log_level", conf.Logging.Level.String()).
-		Bool("file_log", conf.Logging.LogToFile).Bool("console_log", conf.Logging.LogToConsole).Str("db_path", conf.Paths.DB).
-		Str("log_path", conf.Paths.Log).Str("library_path", conf.Paths.Library).Str("mode", gin.Mode()).
-		Int("max_upload_size", conf.MaxUploadedFileSizeMiB).Str("gin_version", gin.Version).Msg("server created")
+	log.Info().Str("host", conf.Host).Str("port", conf.Port).Str("db_path", conf.DBPath).
+		Str("library_path", conf.LibraryPath).Str("mode", gin.Mode()).
+		Int("max_upload_size", conf.MaxUploadedFileSizeMiB).Str("gin_version", gin.Version).
+		Msg("server created")
 
 	var g errgroup.Group
 	g.Go(func() error {

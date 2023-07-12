@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ block "title" . }}{{ end }}</title>
-    <link rel="stylesheet" href='{{versioning "/static/css/style.css"}}'>
-    <link rel="stylesheet" href='{{versioning "/static/css/fira_mono.css"}}'>
-    <script src='{{versioning "/static/js/theme.js"}}'></script>
+    <link rel="stylesheet" href='{{ "/static/css/style.css"}}'>
+    <link rel="stylesheet" href='{{ "/static/css/fira_mono.css"}}'>
+    <script src='{{ "/static/js/theme.js"}}'></script>
     {{ block "styles" . }}{{ end }}
     {{ block "scripts" . }}{{ end }}
-    <script defer src='{{versioning "/static/js/alpine.js"}}'></script>
+    <script defer src='{{ "/static/js/alpine.js"}}'></script>
 </head>
 <body>
     <div class="container" id="container">

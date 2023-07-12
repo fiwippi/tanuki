@@ -1,22 +1,19 @@
 package templates
 
 import (
-	"fmt"
 	"html/template"
-	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/fiwippi/tanuki/internal/platform/multitemplate"
-	"github.com/fiwippi/tanuki/pkg/human"
+	"github.com/fiwippi/tanuki/internal/multitemplate"
 	"github.com/fiwippi/tanuki/pkg/manga"
-
+	"github.com/fiwippi/tanuki/pkg/progress"
 	"github.com/fiwippi/tanuki/pkg/server"
+	"github.com/fiwippi/tanuki/pkg/user"
 )
 
 type Renderer struct {
-	multitemplate.Renderer
+	multitemplate.Render
 
 	server *server.Instance
 	debug  bool
@@ -24,13 +21,6 @@ type Renderer struct {
 
 func (r *Renderer) FuncMap() template.FuncMap {
 	return template.FuncMap{
-		// Versions files so they don't get cached (used when debugging)
-		"versioning": func(filePath string) string {
-			if r.debug {
-				return fmt.Sprintf("%s?q=%s", filePath, strconv.Itoa(int(time.Now().Unix())))
-			}
-			return filePath
-		},
 		// Whether the user of this context is an admin
 		"admin": func(c *gin.Context) bool {
 			return c.GetBool("admin")
@@ -45,12 +35,12 @@ func (r *Renderer) FuncMap() template.FuncMap {
 			return ctl
 		},
 		// Returns the progress for the user
-		"catalogProgress": func(c *gin.Context) human.CatalogProgress {
+		"catalogProgress": func(c *gin.Context) progress.Catalog {
 			uid := c.GetString("uid")
 			cp, err := r.server.Store.GetCatalogProgress(uid)
 			if err != nil {
 				c.Error(err)
-				return human.CatalogProgress{}
+				return progress.Catalog{}
 			}
 			return cp
 		},
@@ -96,7 +86,7 @@ func (r *Renderer) FuncMap() template.FuncMap {
 			}
 			return e
 		},
-		"entryProgress": func(c *gin.Context) human.EntryProgress {
+		"entryProgress": func(c *gin.Context) progress.Entry {
 			sid := c.Param("sid")
 			eid := c.Param("eid")
 			uid := c.GetString("uid")
@@ -104,18 +94,18 @@ func (r *Renderer) FuncMap() template.FuncMap {
 			ep, err := r.server.Store.GetEntryProgress(sid, eid, uid)
 			if err != nil {
 				c.Error(err)
-				return human.EntryProgress{}
+				return progress.Entry{}
 			}
 			return ep
 		},
-		"seriesProgress": func(c *gin.Context) human.SeriesProgress {
+		"seriesProgress": func(c *gin.Context) progress.Series {
 			sid := c.Param("sid")
 			uid := c.GetString("uid")
 
 			p, err := r.server.Store.GetSeriesProgress(sid, uid)
 			if err != nil {
 				c.Error(err)
-				return human.SeriesProgress{}
+				return progress.Series{}
 			}
 			return p
 		},
@@ -136,36 +126,28 @@ func (r *Renderer) FuncMap() template.FuncMap {
 			}
 			return u.Name
 		},
-		"users": func(c *gin.Context) []human.User {
+		"users": func(c *gin.Context) []user.Account {
 			u, err := r.server.Store.GetUsers()
 			if err != nil {
 				c.Error(err)
-				return []human.User{}
+				return []user.Account{}
 			}
 			for i := range u {
 				u[i].Pass = ""
 			}
 			return u
 		},
-		"user": func(c *gin.Context) human.User {
+		"user": func(c *gin.Context) user.Account {
 			uid := c.Query("uid")
-			user, err := r.server.Store.GetUser(uid)
+			u, err := r.server.Store.GetUser(uid)
 			if err != nil {
-				return human.User{}
+				return user.Account{}
 			}
-			user.Pass = ""
-			return user
+			u.Pass = ""
+			return u
 		},
 		"mangadexUUID": func(c *gin.Context) string {
 			return c.Param("uuid")
-		},
-		"subscriptions": func(c *gin.Context) []manga.Subscription {
-			sub, err := r.server.Store.GetAllSubscriptions()
-			if err != nil {
-				c.AbortWithError(500, err)
-				return nil
-			}
-			return sub
 		},
 	}
 }

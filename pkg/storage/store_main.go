@@ -6,11 +6,12 @@ import (
 	"unicode/utf8"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/rs/zerolog/log"
 	_ "modernc.org/sqlite"
 
-	"github.com/fiwippi/tanuki/internal/log"
-	"github.com/fiwippi/tanuki/internal/platform/encryption"
-	"github.com/fiwippi/tanuki/pkg/human"
+	"github.com/fiwippi/tanuki/internal/encryption"
+
+	"github.com/fiwippi/tanuki/pkg/user"
 )
 
 type Store struct {
@@ -18,7 +19,7 @@ type Store struct {
 	libraryPath string
 }
 
-func MustCreateNewStore(dbPath, libraryPath string, recreate bool) *Store {
+func MustNewStore(dbPath, libraryPath string, recreate bool) *Store {
 	s, err := NewStore(dbPath, libraryPath, recreate)
 	if err != nil {
 		panic(err)
@@ -38,7 +39,7 @@ func NewStore(dbPath, libraryPath string, recreate bool) (*Store, error) {
 		// We have to delete the tables which depend on other tables first
 		// and work our way back to tables which don't depend on anything
 		// to satisfy the foreign keys constraint
-		for _, t := range []string{"progress", "entries", "subscriptions", "series", "users", "downloads"} {
+		for _, t := range []string{"progress", "entries", "series", "users", "downloads"} {
 			if _, err := s.pool.Exec(fmt.Sprintf(`DROP TABLE IF EXISTS %s`, t)); err != nil {
 				return nil, err
 			}
@@ -52,7 +53,7 @@ func NewStore(dbPath, libraryPath string, recreate bool) (*Store, error) {
 		status       TEXT    NOT NULL,
 		current_page INTEGER NOT NULL,
 		total_pages  INTEGER NOT NULL,
-		time_taken   TEXT    NOT NULL
+		time_taken   INTEGER NOT NULL
     );`
 	if _, err := s.pool.Exec(stmt); err != nil {
 		return nil, err
@@ -76,12 +77,12 @@ func NewStore(dbPath, libraryPath string, recreate bool) (*Store, error) {
 		num_entries  INTEGER NOT NULL,
 		num_pages    INTEGER NOT NULL,
 		mod_time     TEXT    NOT NULL,
+		missing      INTEGER NOT NULL,
 		position     INTEGER,
 		thumbnail    BLOB,
 		tags         TEXT,
 		
 		-- Custom metadata
-		display_title     TEXT,
 		custom_cover      BLOB,
 		custom_cover_type INTEGER
 	);`
@@ -89,30 +90,19 @@ func NewStore(dbPath, libraryPath string, recreate bool) (*Store, error) {
 		return nil, err
 	}
 
-	// Create the subscriptions table
-	stmt = `CREATE TABLE IF NOT EXISTS subscriptions (
-		sid                        TEXT PRIMARY KEY UNIQUE,
-		title                      TEXT NOT NULL,
-		mangadex_uuid              TEXT NOT NULL,
-		mangadex_last_published_at TEXT NOT NULL
-	);`
-	if _, err := s.pool.Exec(stmt); err != nil {
-		return nil, err
-	}
-
 	// Create the entries table
 	stmt = `CREATE TABLE IF NOT EXISTS entries (
-		eid       TEXT NOT NULL,
-		sid       TEXT NOT NULL,
-		title     TEXT NOT NULL,
-		archive   TEXT NOT NULL,
-		pages     TEXT NOT NULL,
-		mod_time  TEXT NOT NULL,
+		eid       TEXT    NOT NULL,
+		sid       TEXT    NOT NULL,
+		title     TEXT    NOT NULL,
+		archive   TEXT    NOT NULL,
+		pages     TEXT    NOT NULL,
+		mod_time  TEXT    NOT NULL,
+		missing   INTEGER NOT NULL,
 		position  INTEGER,
 		thumbnail BLOB,
 		
 		-- Custom metadata
-		display_title     TEXT,
 		custom_cover      BLOB,
 		custom_cover_type INTEGER,
 
@@ -159,7 +149,7 @@ func NewStore(dbPath, libraryPath string, recreate bool) (*Store, error) {
 	}
 	if !hasUsers {
 		pass := encryption.NewKey(32).Base64()
-		err = s.AddUser(human.NewUser("default", pass, human.Admin), true)
+		err = s.AddUser(user.NewAccount("default", pass, user.Admin), true)
 		if err != nil {
 			return nil, err
 		}

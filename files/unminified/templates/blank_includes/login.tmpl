@@ -38,8 +38,8 @@
 
 {{ define "scripts" }}
 <script type="module">
-    import createLogin from {{versioning "/static/js/components/login.js"}}
-    import createModal from {{versioning "/static/js/components/modal.js"}}
+    import createLogin from {{ "/static/js/components/login.js"}}
+    import createModal from {{ "/static/js/components/modal.js"}}
 
     let m = createModal()
     let l = createLogin(m)

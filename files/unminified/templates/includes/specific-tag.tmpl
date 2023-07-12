@@ -2,7 +2,7 @@
 
 {{ define "scripts" }}
 <script type="module">
-    import createST from {{versioning "/static/js/components/specific-tag.js"}}
+    import createST from {{ "/static/js/components/specific-tag.js"}}
 
     const _entries = {{ seriesWithTag . }}
 

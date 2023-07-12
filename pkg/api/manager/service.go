@@ -41,8 +41,4 @@ func NewService(g *server.RouterGroup) {
 	dl.GET("/pause-dl", dlFunc(g.Server.Manager.Pause))
 	dl.GET("/resume-dl", dlFunc(g.Server.Manager.Resume))
 	dl.GET("/cancel-dl", dlFunc(g.Server.Manager.CancelDownloads))
-
-	sub := m.Group("/subscription")
-	sub.GET("/", getAllSubscriptions)
-	sub.DELETE("/:sid", deleteSubscription)
 }

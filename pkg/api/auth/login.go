@@ -2,9 +2,9 @@ package auth
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 
-	"github.com/fiwippi/tanuki/internal/log"
-	"github.com/fiwippi/tanuki/internal/platform/hash"
+	"github.com/fiwippi/tanuki/internal/hash"
 	"github.com/fiwippi/tanuki/pkg/server"
 )
 

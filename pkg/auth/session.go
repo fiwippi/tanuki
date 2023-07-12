@@ -8,7 +8,7 @@ import (
 	"github.com/shaj13/libcache"
 	_ "github.com/shaj13/libcache/lru"
 
-	"github.com/fiwippi/tanuki/internal/platform/encryption"
+	"github.com/fiwippi/tanuki/internal/encryption"
 )
 
 var (
@@ -92,7 +92,7 @@ func (s *Session) TimeLeft(c *gin.Context) (time.Duration, error) {
 	if !found {
 		return 0, ErrNotInCache
 	}
-	return t.Sub(time.Now()), nil
+	return time.Until(t), nil
 }
 
 func (s *Session) Refresh(c *gin.Context) error {

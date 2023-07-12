@@ -5,8 +5,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/fiwippi/tanuki/internal/platform/hash"
-	"github.com/fiwippi/tanuki/pkg/human"
+	"github.com/fiwippi/tanuki/internal/hash"
+
+	"github.com/fiwippi/tanuki/pkg/user"
 )
 
 // Editing
@@ -14,8 +15,8 @@ import (
 func TestStore_AddUser(t *testing.T) {
 	s := mustOpenStoreMem(t)
 
-	uAdmin := human.NewUser("a", "", human.Admin)
-	uStandard := human.NewUser("a", "", human.Standard)
+	uAdmin := user.NewAccount("a", "", user.Admin)
+	uStandard := user.NewAccount("a", "", user.Standard)
 	require.Nil(t, s.AddUser(uAdmin, true))
 
 	// Can't save if overwrite is false
@@ -27,12 +28,12 @@ func TestStore_AddUser(t *testing.T) {
 	require.Nil(t, s.AddUser(uStandard, true))
 	u, err := s.GetUser(uAdmin.UID)
 	require.Nil(t, err)
-	require.Equal(t, human.Standard, u.Type)
+	require.Equal(t, user.Standard, u.Type)
 
 	// If there is only one user left in the DB we can't overwrite their
 	// save with a standard user since there would be no admins
 	require.Nil(t, s.DeleteUser(uStandard.UID))
-	err = s.AddUser(human.NewUser("default", "", human.Standard), true)
+	err = s.AddUser(user.NewAccount("default", "", user.Standard), true)
 	require.NotNil(t, err)
 	require.ErrorIs(t, err, ErrNotEnoughAdmins)
 	mustCloseStore(t, s)
@@ -47,7 +48,7 @@ func TestStore_DeleteUser(t *testing.T) {
 	require.ErrorIs(t, err, ErrNotEnoughUsers)
 
 	// Can delete if at least two users in DB
-	require.Nil(t, s.AddUser(human.NewUser("a", "", human.Admin), true))
+	require.Nil(t, s.AddUser(user.NewAccount("a", "", user.Admin), true))
 	require.Nil(t, s.DeleteUser(defaultUID))
 
 	mustCloseStore(t, s)
@@ -56,8 +57,8 @@ func TestStore_DeleteUser(t *testing.T) {
 func TestStore_ChangeUsername(t *testing.T) {
 	s := mustOpenStoreMem(t)
 
-	u1 := human.NewUser("a", "", human.Admin)
-	u2 := human.NewUser("b", "", human.Admin)
+	u1 := user.NewAccount("a", "", user.Admin)
+	u2 := user.NewAccount("b", "", user.Admin)
 	require.Nil(t, s.AddUser(u1, true))
 	require.Nil(t, s.AddUser(u2, true))
 	require.Nil(t, s.DeleteUser(defaultUID))
@@ -101,23 +102,23 @@ func TestStore_ChangePassword(t *testing.T) {
 func TestStore_ChangeType(t *testing.T) {
 	s := mustOpenStoreMem(t)
 
-	u1 := human.NewUser("a", "", human.Admin)
-	u2 := human.NewUser("b", "", human.Admin)
+	u1 := user.NewAccount("a", "", user.Admin)
+	u2 := user.NewAccount("b", "", user.Admin)
 	require.Nil(t, s.AddUser(u1, true))
 	require.Nil(t, s.AddUser(u2, true))
 	require.Nil(t, s.DeleteUser(defaultUID))
 
 	// Change to standard when there will still
 	// exist one admin afterwards should succeed
-	err := s.ChangeType(u1.UID, human.Standard)
+	err := s.ChangeType(u1.UID, user.Standard)
 	require.Nil(t, err)
 	u, err := s.GetUser(u1.UID)
 	require.Nil(t, err)
-	require.Equal(t, human.Standard, u.Type)
+	require.Equal(t, user.Standard, u.Type)
 
 	// Change to standard when there will be
 	// no admins afterwards should not succeed
-	err = s.ChangeType(u2.UID, human.Standard)
+	err = s.ChangeType(u2.UID, user.Standard)
 	require.NotNil(t, err)
 	require.ErrorIs(t, err, ErrNotEnoughAdmins)
 
@@ -132,18 +133,18 @@ func TestStore_GetUser(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, defaultUID, u.UID)
 	require.Equal(t, "default", u.Name)
-	require.Equal(t, human.Admin, u.Type)
+	require.Equal(t, user.Admin, u.Type)
 	mustCloseStore(t, s)
 }
 
 func TestStore_GetUsers(t *testing.T) {
 	s := mustOpenStoreMem(t)
 
-	users := []human.User{
-		human.NewUser("a", "a", human.Admin),
-		human.NewUser("b", "b", human.Standard),
-		human.NewUser("c", "c", human.Admin),
-		human.NewUser("d", "d", human.Standard),
+	users := []user.Account{
+		user.NewAccount("a", "a", user.Admin),
+		user.NewAccount("b", "b", user.Standard),
+		user.NewAccount("c", "c", user.Admin),
+		user.NewAccount("d", "d", user.Standard),
 	}
 	for _, u := range users {
 		require.Nil(t, s.AddUser(u, true))
@@ -191,7 +192,7 @@ func TestStore_IsAdmin(t *testing.T) {
 
 func TestStore_ValidateLogin(t *testing.T) {
 	s := mustOpenStoreMem(t)
-	require.Nil(t, s.AddUser(human.NewUser("a", "b", human.Admin), true))
+	require.Nil(t, s.AddUser(user.NewAccount("a", "b", user.Admin), true))
 	valid := s.ValidateLogin("a", "b")
 	require.True(t, valid)
 	mustCloseStore(t, s)

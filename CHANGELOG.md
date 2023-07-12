@@ -1,5 +1,11 @@
 ## Changelog
 
+### [1.0] - 2023-07-12
+⚠️ - You will have to recreate the database
+- Removed subscriptions
+- Fixed thumbnails not showing up on search
+- Improved backend design
+
 ### [0.17.3] - 2022-08-11
 - Correct ordering for some entries
 

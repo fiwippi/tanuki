@@ -2,8 +2,8 @@
 
 {{ define "scripts" }}
 <script type="module">
-    import * as API from {{ versioning "/static/js/api.js" }}
-    import * as Util from {{ versioning "/static/js/util.js" }}
+    import * as API from {{  "/static/js/api.js" }}
+    import * as Util from {{  "/static/js/util.js" }}
 
     document.addEventListener('alpine:init', () => {
         Alpine.data('user_create', () => ({

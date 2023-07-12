@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"sort"
@@ -9,9 +10,15 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"github.com/fiwippi/tanuki/internal/platform/errors"
-	"github.com/fiwippi/tanuki/internal/platform/fse"
+	"github.com/fiwippi/tanuki/internal/sortnat"
 	"github.com/fiwippi/tanuki/pkg/manga"
+)
+
+type MissingStatus int
+
+const (
+	NotMissing MissingStatus = 0
+	IsMissing  MissingStatus = 1
 )
 
 type MissingItem struct {
@@ -21,13 +28,34 @@ type MissingItem struct {
 }
 
 func (s *Store) PopulateCatalog() error {
+	fn := func(tx *sqlx.Tx) error {
+		return s.populateCatalog(tx)
+	}
+	return s.tx(fn)
+}
+
+func (s *Store) populateCatalog(tx *sqlx.Tx) error {
+	// Make all series and entries missing so that newly
+	// added ones are classed as not missing
+	_, err := tx.Exec(`UPDATE series SET missing=1`)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(`UPDATE entries SET missing=1`)
+	if err != nil {
+		return err
+	}
+
+	// Scan series
 	items, err := os.ReadDir(s.libraryPath)
 	if err != nil {
 		return err
 	}
 
-	var errs errors.Errors
+	// Add series
+	var errs error
 	for _, item := range items {
+		// Only accept folders, (i.e. no standalone files)
 		if !item.IsDir() {
 			continue
 		}
@@ -35,41 +63,38 @@ func (s *Store) PopulateCatalog() error {
 		fp := filepath.Join(s.libraryPath, item.Name())
 		series, entries, err := manga.ParseSeries(context.Background(), fp)
 		if err != nil {
-			errs.Add(err)
+			errs = errors.Join(err)
 			continue
 		}
 
-		err = s.AddSeries(series, entries)
+		err = s.addSeries(tx, series, entries)
 		if err != nil {
-			errs.Add(err)
+			errs = errors.Join(err)
 		}
 	}
-
-	return errs.Ret()
+	return errs
 }
 
-func (s *Store) getCatalog(tx *sqlx.Tx) ([]manga.Series, error) {
+func (s *Store) getCatalog(tx *sqlx.Tx, mstatus MissingStatus) ([]manga.Series, error) {
 	var v []manga.Series
-	stmt := `
-		SELECT 
-		    sid, folder_title, num_entries, num_pages, mod_time, tags, display_title
-		FROM series ORDER BY ROWID DESC`
-	err := tx.Select(&v, stmt)
+
+	stmt, err := tx.Preparex(
+		`SELECT sid, folder_title, num_entries, num_pages, mod_time, tags
+		 FROM series 
+		 WHERE missing=?
+		 ORDER BY ROWID DESC`)
+	if err != nil {
+		return nil, err
+	}
+	err = stmt.Select(&v, int(mstatus))
 	if err != nil {
 		return nil, err
 	}
 
 	sort.Slice(v, func(i, j int) bool {
-		a := v[i].FolderTitle
-		if v[i].DisplayTitle != "" {
-			a = string(v[i].DisplayTitle)
-		}
-		b := v[j].FolderTitle
-		if v[j].DisplayTitle != "" {
-			b = string(v[j].DisplayTitle)
-		}
-
-		return fse.SortNatural(a, b)
+		a := v[i].Title
+		b := v[j].Title
+		return sortnat.Natural(a, b)
 	})
 
 	return v, nil
@@ -79,7 +104,7 @@ func (s *Store) GetCatalog() ([]manga.Series, error) {
 	var ctl []manga.Series
 	fn := func(tx *sqlx.Tx) error {
 		var err error
-		ctl, err = s.getCatalog(tx)
+		ctl, err = s.getCatalog(tx, NotMissing)
 		return err
 	}
 
@@ -90,7 +115,7 @@ func (s *Store) GetCatalog() ([]manga.Series, error) {
 }
 
 func (s *Store) GenerateThumbnails(overwrite bool) error {
-	var errs errors.Errors
+	var errs error
 
 	// Get all sids
 	var sids []string
@@ -105,7 +130,7 @@ func (s *Store) GenerateThumbnails(overwrite bool) error {
 			return err
 		}
 		if err := s.tx(fn); err != nil {
-			errs.Add(err)
+			errs = errors.Join(err)
 			continue
 		}
 
@@ -122,90 +147,60 @@ func (s *Store) GenerateThumbnails(overwrite bool) error {
 				return err
 			}
 			if err := s.tx(fn); err != nil {
-				errs.Add(err)
+				errs = errors.Join(err)
 			}
 		}
 	}
 
-	return errs.Ret()
-}
-
-func (s *Store) processMissingItems(tx *sqlx.Tx, del bool) ([]MissingItem, error) {
-	var missing []MissingItem
-
-	catalog, err := s.getCatalog(tx)
-	if err != nil {
-		return nil, err
-	}
-	for _, series := range catalog {
-		fp := filepath.Join(s.libraryPath, series.FolderTitle)
-		if !fse.Exists(fp) {
-			missing = append(missing, MissingItem{
-				Type:  "Series",
-				Title: series.FolderTitle,
-				Path:  fp,
-			})
-
-			if del {
-				if err := s.deleteSeries(tx, series.SID); err != nil {
-					return nil, err
-				}
-			}
-		}
-
-		entries, err := s.getEntries(tx, series.SID)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, e := range entries {
-			if !e.Archive.Exists() {
-				missing = append(missing, MissingItem{
-					Type:  "Entry",
-					Title: e.Title(),
-					Path:  e.Archive.Path,
-				})
-
-				if del {
-					if err := s.deleteEntry(tx, e.SID, e.EID); err != nil {
-						return nil, err
-					}
-				}
-			}
-		}
-	}
-
-	sbs, err := s.getAllSubscriptions(tx)
-	if err != nil {
-		return nil, err
-	}
-	for _, sb := range sbs {
-		_, err := s.getSeries(tx, sb.SID)
-		if err != nil {
-			missing = append(missing, MissingItem{
-				Type:  "Subscription",
-				Title: sb.Title,
-				Path:  string(sb.MdexUUID),
-			})
-
-			if del {
-				if err := s.deleteSubscription(tx, sb.SID); err != nil {
-					return nil, err
-				}
-			}
-		}
-
-	}
-
-	return missing, nil
+	return errs
 }
 
 func (s *Store) GetMissingItems() ([]MissingItem, error) {
 	var missing []MissingItem
 	fn := func(tx *sqlx.Tx) error {
-		var err error
-		missing, err = s.processMissingItems(tx, false)
-		return err
+		// Track all missing items
+		err := s.populateCatalog(tx)
+		if err != nil {
+			return err
+		}
+
+		// Loop over each table and extract missing items
+		series, err := s.getCatalog(tx, IsMissing)
+		if err != nil {
+			return err
+		}
+		// Series
+		for _, ser := range series {
+			fp := filepath.Join(s.libraryPath, ser.Title)
+			missing = append(missing, MissingItem{
+				Type:  "Series",
+				Title: ser.Title,
+				Path:  fp,
+			})
+		}
+
+		// Entries - must check for both series which are missing and not missing
+		var sids []string
+		err = tx.Select(&sids, `SELECT sid FROM series`)
+		if err != nil {
+			return err
+		}
+
+		for _, sid := range sids {
+			entries, err := s.getEntries(tx, sid, IsMissing)
+			if err != nil {
+				return err
+			}
+			for _, e := range entries {
+				missing = append(missing, MissingItem{
+					Type:  "Entry",
+					Title: e.Title,
+					Path:  e.Archive.Path,
+				})
+			}
+		}
+
+		return nil
 	}
 
 	if err := s.tx(fn); err != nil {
@@ -216,8 +211,17 @@ func (s *Store) GetMissingItems() ([]MissingItem, error) {
 
 func (s *Store) DeleteMissingItems() error {
 	fn := func(tx *sqlx.Tx) error {
-		_, err := s.processMissingItems(tx, true)
-		return err
+		_, err := tx.Exec(`DELETE FROM series WHERE missing = ?`, IsMissing)
+		if err != nil {
+			return err
+		}
+
+		_, err = tx.Exec(`DELETE FROM entries WHERE missing = ?`, IsMissing)
+		if err != nil {
+			return err
+		}
+
+		return nil
 	}
 
 	return s.tx(fn)

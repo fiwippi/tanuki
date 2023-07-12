@@ -3,7 +3,7 @@ package storage
 import (
 	"github.com/jmoiron/sqlx"
 
-	"github.com/fiwippi/tanuki/internal/mangadex"
+	"github.com/fiwippi/tanuki/pkg/mangadex"
 )
 
 func (s *Store) AddDownloads(dls ...*mangadex.Download) error {

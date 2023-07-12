@@ -7,9 +7,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/render"
+	zlog "github.com/rs/zerolog/log"
 
 	"github.com/fiwippi/tanuki/internal/log"
-	"github.com/fiwippi/tanuki/internal/platform/pretty"
 	"github.com/fiwippi/tanuki/pkg/auth"
 	"github.com/fiwippi/tanuki/pkg/config"
 	"github.com/fiwippi/tanuki/pkg/storage"
@@ -74,12 +74,32 @@ func (i *Instance) Shutdown() error {
 }
 
 func (i *Instance) Start() error {
-	// Begin cron jobs and one time setup jobs
-	i.Config.ScanInterval.Run(i.Store.PopulateCatalog, "scan library", true, log.Copy())
+	// Scan on intervals
 	go func() {
+		err := i.Store.PopulateCatalog()
+		if err != nil {
+			zlog.Error().Err(err).Msg("failed to scan library on startup")
+		} else {
+			zlog.Info().Msg("scanned library on startup")
+		}
+
+		ticker := time.NewTicker(time.Duration(i.Config.ScanInterval) * time.Minute)
+		for range ticker.C {
+			err := i.Store.PopulateCatalog()
+			if err != nil {
+				zlog.Error().Err(err).Msg("failed to scan library on interval interval")
+			} else {
+				zlog.Info().Msg("scanned library on interval")
+			}
+		}
+	}()
+
+	// Generate thumbnails once at first load for all ones which don't yet exist
+	go func() {
+		zlog.Info().Msg("beginning thumbnail generation at startup")
 		thumbStart := time.Now()
 		err := i.Store.GenerateThumbnails(false)
-		log.Debug().Err(err).Str("time_taken", pretty.Duration(time.Now().Sub(thumbStart))).
+		zlog.Debug().Err(err).Str("time_taken", time.Since(thumbStart).String()).
 			Msg("thumbnail generation finished")
 	}()
 

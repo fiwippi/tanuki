@@ -16,13 +16,13 @@ func testSeries(t *testing.T, path, name string, pageCount int, entries []string
 	s, en, err := ParseSeries(context.TODO(), fp)
 	require.Nil(t, err)
 	require.NotEqual(t, s.SID, xid.NilID())
-	require.Equal(t, name, s.FolderTitle)
+	require.Equal(t, name, s.Title)
 	require.Equal(t, len(entries), len(en))
 	require.Equal(t, len(entries), s.NumEntries)
 	require.Equal(t, pageCount, s.NumPages)
 	names := make([]string, 0)
 	for _, e := range en {
-		names = append(names, e.FileTitle)
+		names = append(names, e.Title)
 	}
 	require.Equal(t, entries, names)
 }

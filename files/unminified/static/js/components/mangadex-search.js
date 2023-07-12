@@ -39,6 +39,12 @@ export default function () {
             return `/download/mangadex/${e.id}`
         },
 
+        fmtCoverLink(e) {
+            const parts = e.small_cover_url.split("/covers/")
+            const endpoint = parts.at(parts.length - 1).replace("/", "_")
+            return `/api/mangadex/cover/${endpoint}`
+        },
+
         handleSearchChange(e) {
             this.searchData = []
         },

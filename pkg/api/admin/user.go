@@ -3,18 +3,19 @@ package admin
 import (
 	"github.com/gin-gonic/gin"
 
-	"github.com/fiwippi/tanuki/internal/platform/hash"
-	"github.com/fiwippi/tanuki/pkg/human"
+	"github.com/fiwippi/tanuki/internal/hash"
+
 	"github.com/fiwippi/tanuki/pkg/server"
 	"github.com/fiwippi/tanuki/pkg/storage"
+	"github.com/fiwippi/tanuki/pkg/user"
 )
 
 func PatchUser(s *server.Instance) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		data := struct {
-			NewUsername string     `json:"new_username"`
-			NewPassword string     `json:"new_password"`
-			NewType     human.Type `json:"new_type"`
+			NewUsername string    `json:"new_username"`
+			NewPassword string    `json:"new_password"`
+			NewType     user.Type `json:"new_type"`
 		}{}
 		if err := c.ShouldBindJSON(&data); err != nil {
 			c.AbortWithError(400, err)

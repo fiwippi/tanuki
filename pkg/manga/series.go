@@ -2,50 +2,41 @@ package manga
 
 import (
 	"context"
+	"io"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
 
 	"github.com/fvbommel/sortorder"
 	"github.com/rs/xid"
-	"golang.org/x/sync/errgroup"
 
-	"github.com/fiwippi/tanuki/internal/platform/archive"
-	"github.com/fiwippi/tanuki/internal/platform/dbutil"
-	"github.com/fiwippi/tanuki/internal/platform/fse"
+	"github.com/fiwippi/tanuki/internal/archive"
+	"github.com/fiwippi/tanuki/internal/fse"
+	"github.com/fiwippi/tanuki/internal/sqlutil"
 )
 
 type Series struct {
-	SID         string      `json:"sid" db:"sid"`
-	FolderTitle string      `json:"folder_title" db:"folder_title"`
-	NumEntries  int         `json:"num_entries" db:"num_entries"`
-	NumPages    int         `json:"num_pages" db:"num_pages"`
-	ModTime     dbutil.Time `json:"mod_time" db:"mod_time"`
+	SID        string       `json:"sid" db:"sid"`
+	Title      string       `json:"folder_title" db:"folder_title"`
+	NumEntries int          `json:"num_entries" db:"num_entries"`
+	NumPages   int          `json:"num_pages" db:"num_pages"`
+	ModTime    sqlutil.Time `json:"mod_time" db:"mod_time"`
 
 	// Below are fields which aren't picked up by
 	// the scan and shouldn't overwrite current
-	// values that could exist
-	Tags         *Tags             `json:"tags" db:"tags"`
-	DisplayTitle dbutil.NullString `json:"display_title" db:"display_title"`
+	// values that may exist
+	Tags *Tags `json:"tags" db:"tags"`
 }
 
-func (s Series) Title() string {
-	if s.DisplayTitle != "" {
-		return string(s.DisplayTitle)
-	}
-	return s.FolderTitle
-}
-
-func FolderID(dir string) (string, error) {
+func folderID(dir string) (string, error) {
 	f, err := os.OpenFile(filepath.Join(dir, "info.tanuki"), os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
 		return "", err
 	}
 	defer f.Close()
 
-	data, err := ioutil.ReadAll(f)
+	data, err := io.ReadAll(f)
 	if err != nil {
 		return "", err
 	}
@@ -54,6 +45,7 @@ func FolderID(dir string) (string, error) {
 	if len(data) == 0 {
 		id := xid.New().String()
 
+		// Write the new ID to the file
 		_, err := f.WriteString(id)
 		if err != nil {
 			return "", err
@@ -67,21 +59,19 @@ func FolderID(dir string) (string, error) {
 }
 
 func ParseSeries(ctx context.Context, dir string) (Series, []Entry, error) {
-	id, err := FolderID(dir)
+	id, err := folderID(dir)
 	if err != nil {
 		return Series{}, nil, err
 	}
 
 	s := Series{
-		SID:         id,
-		FolderTitle: fse.Filename(dir),
-		ModTime:     dbutil.Time{},
+		SID:     id,
+		Title:   fse.Filename(dir),
+		ModTime: sqlutil.Time{},
 	}
 	en := make([]Entry, 0)
 
-	g, ctx := errgroup.WithContext(ctx)
-
-	filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+	err = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -95,29 +85,26 @@ func ParseSeries(ctx context.Context, dir string) (Series, []Entry, error) {
 				return nil
 			}
 
-			// Parse the archive
-			p := path
-			g.Go(func() error {
-				e, err := ParseEntry(ctx, p)
-				if err != nil {
-					return err
-				}
+			// Parse the entry archive
+			e, err := ParseEntry(ctx, path)
+			if err != nil {
+				return err
+			}
 
-				e.SID = s.SID
-				s.NumPages += len(e.Pages)
-				if e.ModTime.After(s.ModTime) {
-					s.ModTime = e.ModTime
-				}
+			// Fill in remaining details
+			e.SID = s.SID
+			s.NumPages += len(e.Pages)
+			if e.ModTime.After(s.ModTime) {
+				s.ModTime = e.ModTime
+			}
 
-				en = append(en, e)
-				return nil
-			})
-
+			// Add the entry to the list of entries
+			en = append(en, e)
 		}
 
 		return nil
 	})
-	if err := g.Wait(); err != nil {
+	if err != nil {
 		return Series{}, nil, err
 	}
 

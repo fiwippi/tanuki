@@ -2,51 +2,36 @@ package config
 
 import (
 	"os"
+	"path/filepath"
 
+	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 
-	"github.com/fiwippi/tanuki/internal/log"
-	"github.com/fiwippi/tanuki/internal/platform/encryption"
-	"github.com/fiwippi/tanuki/internal/platform/fse"
-	"github.com/fiwippi/tanuki/internal/platform/task"
+	"github.com/fiwippi/tanuki/internal/encryption"
+	"github.com/fiwippi/tanuki/internal/fse"
 )
 
-const (
-	ScanInterval          = 180     // Every 3 hours
-	SubscriptionsInterval = 60 * 24 // Every 24 hours
-)
+const ScanInterval = 3 * 60 // Every 3 hours
 
 type Config struct {
-	Host    string `yaml:"host"`
-	Port    string `yaml:"port"`
-	Logging struct {
-		Level        log.Level `yaml:"level"`
-		LogToFile    bool      `yaml:"log_to_file"`
-		LogToConsole bool      `yaml:"log_to_console"`
-	} `yaml:"logging"`
-	Paths                  Paths           `yaml:"paths"`
+	Host                   string          `yaml:"host"`
+	Port                   string          `yaml:"port"`
+	DBPath                 string          `yaml:"db_path"`
+	LibraryPath            string          `yaml:"library_Path"`
 	SessionSecret          *encryption.Key `yaml:"session_secret"`
-	ScanInterval           *task.Job       `yaml:"scan_interval_minutes"`
-	SubscriptionsInterval  *task.Job       `yaml:"subscriptions_interval_minutes"`
+	ScanInterval           int             `yaml:"scan_interval_minutes"`
 	MaxUploadedFileSizeMiB int             `yaml:"max_uploaded_file_size_mib"`
 	DebugMode              bool            `yaml:"debug_mode"`
 }
 
 func DefaultConfig() *Config {
-	defautLog := struct {
-		Level        log.Level `yaml:"level"`
-		LogToFile    bool      `yaml:"log_to_file"`
-		LogToConsole bool      `yaml:"log_to_console"`
-	}{Level: log.InfoLevel, LogToFile: true, LogToConsole: true}
-
 	return &Config{
 		Host:                   "0.0.0.0",
 		Port:                   "8096",
-		Logging:                defautLog,
-		Paths:                  defaultPaths(),
+		DBPath:                 "./data/tanuki.db",
+		LibraryPath:            "./library",
 		SessionSecret:          encryption.NewKey(32),
-		ScanInterval:           task.NewJob(ScanInterval),
-		SubscriptionsInterval:  task.NewJob(SubscriptionsInterval),
+		ScanInterval:           ScanInterval,
 		MaxUploadedFileSizeMiB: 10,
 		DebugMode:              false,
 	}
@@ -61,23 +46,9 @@ func LoadConfig(fp string) *Config {
 		c = DefaultConfig()
 	}
 
-	// If in debug mode then set the log level to at least debug
-	if c.DebugMode && c.Logging.Level > log.DebugLevel {
-		c.Logging.Level = log.DebugLevel
-	}
-
 	// Ensures the file/dir paths which tanuki uses exist
-	err = c.Paths.EnsureExist(c.Logging.LogToFile)
-	if err != nil {
+	if err := fse.CreateDirs(filepath.Dir(c.DBPath), c.LibraryPath); err != nil {
 		log.Panic().Err(err).Msg("paths can't be created")
-	}
-
-	// Ensure Job intervals can't be nil
-	if c.ScanInterval == nil {
-		c.ScanInterval = task.NewJob(ScanInterval)
-	}
-	if c.SubscriptionsInterval == nil {
-		c.SubscriptionsInterval = task.NewJob(SubscriptionsInterval)
 	}
 
 	return c
@@ -105,5 +76,10 @@ func (c *Config) Save(fp string) error {
 		return err
 	}
 
-	return fse.EnsureWriteFile(fp, data, 0666)
+	parentDir := filepath.Dir(fp)
+	err = fse.CreateDirs(parentDir)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(fp, data, 0666)
 }
