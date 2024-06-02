@@ -1,13 +1,4 @@
 .idea
 /bin/
-/config/
-/data/
 /library/
-/files/minified/templates
-/files/minified/static/css
-/files/minified/static/js/components
-/files/minified/static/js/api.js
-/files/minified/static/js/mangadex.js
-/files/minified/static/js/theme.js
-/files/minified/static/js/util.js
-/files/minified/static/icon
+/data/

@@ -1,0 +1,12 @@
+version: "3"
+
+services:
+  tanuki:
+    image: tanuki:latest
+    command: run -config /data/config.json
+    ports:
+      - "8001:8001"
+      - "9001:9001"
+    volumes:
+      - ./library/:/library
+      - ./data:/data

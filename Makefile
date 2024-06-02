@@ -1,35 +1,16 @@
-build: minify
-		CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/tanuki tanuki.go
+.PHONY: build
+build:
+	CGO_ENABLED=0 go build -o ./bin/tanuki cmd/*.go
 
-run:
-		./bin/tanuki
-
-minify:
-		CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/minify minify.go
-		bin/minify -input-dir files/unminified -output-dir files/minified
-		rm -f bin/minify
-
+.PHONY: clean
 clean:
-		rm -Rf "bin"
-		rm -Rf "data"
-		rm -Rf "library"
-		rm -Rf "config"
-		rm -Rf "files/minified/static/css"
-		rm -Rf "files/minified/static/icon"
-		rm -Rf "files/minified/static/js/api.js"
-		rm -Rf "files/minified/static/js/util.js"
-		rm -Rf "files/minified/static/js/theme.js"
-		rm -Rf "files/minified/static/js/components"
-		rm -Rf "files/minified/templates"
-		rm -Rf "tests/data/tanuki.db-shm"
-		rm -Rf "tests/data/tanuki.db"
-		rm -Rf "tests/data/tanuki.db-wal"
-		rm -Rf "tests/lib/20th Century Boys/info.tanuki"
-		rm -Rf "tests/lib/Akira/info.tanuki"
-		rm -Rf "tests/lib/Amano/info.tanuki"
+	rm -rf bin
+	go clean -testcache
 
+.PHONY: test
 test:
-		go test ./... -v
+	go test ./... -race -p 1
 
-test-quiet:
-		go test ./...
+.PHONY: image
+image:
+	docker build -t tanuki:latest .
