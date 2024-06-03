@@ -97,3 +97,42 @@ within its own folder.
 **Q: Should I expose the RPC port?**
 
 No! It is not protected by any authentication mechanisms.
+
+**Q: Can I run this using Docker?**
+
+Yes, look at the following `compose.yaml` file.
+
+Notice that for this setup to work, you must place the config
+file in the data folder before the container is created, i.e.
+don't wait for Docker to automatically create the data folder 
+for you.
+
+```yaml
+---
+version: "3"
+
+services:
+  tanuki:
+    image: "ghcr.io/fiwippi/tanuki:latest"
+    command: -config /data/config.json run
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./library/:/library
+      - ./data:/data
+```
+
+**Q: How can I run RPC commands with Docker?**
+
+First attach to the container.
+
+```console
+$ docker exec -it tanuki /bin/sh
+```
+
+Now you can run commands as you please.
+
+```console
+$ ./bin/tanuki -config ./data/config.json scan
+Scan complete in 2ms
+```
