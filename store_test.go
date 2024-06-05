@@ -627,14 +627,21 @@ func (s *Store) AddEntry(e Entry, position int) error {
 // Utils
 
 func TestMain(m *testing.M) {
-	// Run the tests
+	// Setup
+	if err := os.MkdirAll("./tests/data", 0666); err != nil {
+		panic(err)
+	}
+
 	code := m.Run()
 
-	// Remove any generated stores
+	// Cleanup
 	for _, f := range tempFiles {
 		if err := os.Remove(f); err != nil {
 			slog.Error("Failed to delete temp store", slog.Any("err", err))
 		}
+	}
+	if err := os.RemoveAll("./tests/data"); err != nil {
+		panic(err)
 	}
 	os.Exit(code)
 }

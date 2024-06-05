@@ -112,9 +112,9 @@ type Series struct {
 	ModTime time.Time
 }
 
-var validArchiveTypes = map[string]struct{}{
-	"application/zip":               {},
-	"application/vnd.comicbook+zip": {},
+var validArchiveExtensions = map[string]struct{}{
+	".zip": {},
+	".cbz": {},
 }
 
 func ParseSeries(path string) (Series, []Entry, error) {
@@ -150,7 +150,7 @@ func ParseSeries(path string) (Series, []Entry, error) {
 		if d.IsDir() {
 			return nil
 		}
-		_, valid := validArchiveTypes[mime.TypeByExtension(filepath.Ext(p))]
+		_, valid := validArchiveExtensions[filepath.Ext(p)]
 		if !valid {
 			return nil
 		}

@@ -225,23 +225,33 @@ func router(s *Store) *chi.Mux {
 // Tasks
 
 func (s *Server) scan() {
+	task := func() {
+		slog.Info("Scanning library", slog.String("path", s.config.LibraryPath))
+
+		start := time.Now()
+
+		lib, err := ParseLibrary(s.config.LibraryPath)
+		if err != nil {
+			slog.Error("Failed to (fully) scan library", slog.Any("err", err))
+		}
+
+		if len(lib) >= 1 {
+			if err := s.store.PopulateCatalog(lib); err != nil {
+				slog.Error("Failed to populate catalog", slog.Any("err", err))
+			} else {
+				timeTaken := time.Since(start).Round(time.Millisecond)
+				slog.Info("Scanned library", slog.Duration("duration", timeTaken))
+			}
+		}
+	}
+
 	t := time.NewTicker(s.config.ScanInterval.Duration)
 
+	task() // We want to scan on startup
 	for {
 		select {
 		case <-t.C:
-			slog.Info("Scanning library", slog.String("path", s.config.LibraryPath))
-
-			lib, err := ParseLibrary(s.config.LibraryPath)
-			if err != nil {
-				slog.Error("Failed to (fully) scan library", slog.Any("err", err))
-			}
-
-			if len(lib) >= 1 {
-				if err := s.store.PopulateCatalog(lib); err != nil {
-					slog.Error("Failed to populate catalog", slog.Any("err", err))
-				}
-			}
+			task()
 		case <-s.stopScan:
 			t.Stop()
 			slog.Info("Done scanning")
@@ -260,6 +270,8 @@ func (s *Server) vacuum() {
 			slog.Info("Vacuuming store")
 			if err := s.store.Vacuum(); err != nil {
 				slog.Error("Failed to vacuum store", slog.Any("err", err))
+			} else {
+				slog.Info("Vacuumed store")
 			}
 		case <-s.stopVacuum:
 			t.Stop()
@@ -272,6 +284,8 @@ func (s *Server) vacuum() {
 
 // OPDS Handlers
 
+const opdsMime = "application/atom+xml"
+
 func handleSearch() http.HandlerFunc {
 	// Pre-encode the search-related XML
 	// since it remains static
@@ -281,6 +295,7 @@ func handleSearch() http.HandlerFunc {
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/xml")
 		w.WriteHeader(http.StatusOK)
 		w.Write(encodedSearch)
 	}
@@ -317,6 +332,7 @@ func handleCatalog(s *Store) http.HandlerFunc {
 			c.addSeries(&series)
 		}
 
+		w.Header().Set("Content-Type", opdsMime)
 		w.WriteHeader(http.StatusOK)
 		if err := newXmlEncoder(w).Encode(c); err != nil {
 			slog.Error("Failed to encode catalog", slog.Any("err", err))
@@ -352,6 +368,7 @@ func handleEntries(s *Store) http.HandlerFunc {
 			c.addEntry(&e)
 		}
 
+		w.Header().Set("Content-Type", opdsMime)
 		w.WriteHeader(http.StatusOK)
 		if err := newXmlEncoder(w).Encode(c); err != nil {
 			slog.Error("Failed to encode entries", slog.Any("err", err), slog.String("sid", sid))

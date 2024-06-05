@@ -2,11 +2,10 @@ version: "3"
 
 services:
   tanuki:
-    image: tanuki:latest
-    command: run -config /data/config.json
+    image: ghcr.io/fiwippi/tanuki:latest
+    command: -config /data/config.json run
     ports:
       - "8001:8001"
-      - "9001:9001"
     volumes:
       - ./library/:/library
       - ./data:/data

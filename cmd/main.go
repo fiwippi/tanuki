@@ -54,7 +54,8 @@ func main() {
 	case "user":
 		modifyUser(dialRPC(config))
 	default:
-		panic("Invalid command")
+		fmt.Fprintf(os.Stderr, "Invalid command: %s\n", flag.Arg(0))
+		flagUsage()
 	}
 }
 
@@ -180,10 +181,12 @@ func modifyUser(api *rpc.Client) {
 			}
 			fmt.Println("Changed password")
 		default:
-			panic("Invalid command")
+			fmt.Fprintf(os.Stderr, "Invalid command: %s\n", flag.Arg(2))
+			flagUsage()
 		}
 	default:
-		panic("Invalid command")
+		fmt.Fprintf(os.Stderr, "Invalid command: %s\n", flag.Arg(1))
+		flagUsage()
 	}
 }
 

@@ -335,7 +335,7 @@ func TestServer_ScanLibrary(t *testing.T) {
 // Utils
 
 func newTestServer(t *testing.T, conf ServerConfig) *Server {
-	conf.DataPath = InMemory
+	conf.DataPath = "./tests/data"
 	conf.LibraryPath = "./tests/lib"
 	s, err := NewServer(conf)
 	require.NoError(t, err)

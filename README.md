@@ -3,7 +3,7 @@ Self-hosted OPDS manga server
 
 ## FAQ
 
-**Q: What features do you have?**
+**Q: What features does it have?**
 
 - OPDS API
 - Multiple user accounts
@@ -16,9 +16,9 @@ Self-hosted OPDS manga server
 - The route for the OPDS catalog is `/opds/v1.2/catalog`
 - This is the current [OPDS](https://specs.opds.io/) 1.2 feature support:
     - [x] Basic Auth
-    - [x] Viewing library
-    - [x] Downloading archive
-    - [x] Getting cover/thumbnail of entry
+    - [x] Catalog feed
+    - [x] Downloading of archives
+    - [x] Getting cover/thumbnail of entries
     - [x] Searching (via OpenSearch)
     - [x] Page streaming
 
@@ -27,6 +27,7 @@ Self-hosted OPDS manga server
 Yes.
 
 ```console
+$ tanuki -help
 Usage: tanuki [options] [command] args
 
 Options:
@@ -59,7 +60,7 @@ Examples:
 
 **Q: What does the config file look like?**
 
-This is JSON encoded.
+This is JSON-encoded.
 
 ```json
 {
@@ -113,7 +114,7 @@ version: "3"
 
 services:
   tanuki:
-    image: "ghcr.io/fiwippi/tanuki:latest"
+    image: ghcr.io/fiwippi/tanuki:latest
     command: -config /data/config.json run
     ports:
       - "8001:8001"
@@ -133,6 +134,6 @@ $ docker exec -it tanuki /bin/sh
 Now you can run commands as you please.
 
 ```console
-$ ./bin/tanuki -config ./data/config.json scan
+$ tanuki -config ./data/config.json scan
 Scan complete in 2ms
 ```
