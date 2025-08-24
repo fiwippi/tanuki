@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -10,8 +9,7 @@ import (
 	"net"
 	"net/rpc"
 	"os"
-	"os/signal"
-	"syscall"
+	"strconv"
 	"time"
 
 	"github.com/lmittmann/tint"
@@ -29,33 +27,37 @@ func init() {
 }
 
 func main() {
-	configPath := flag.String("config", "", "Path to config.json file. Leave blank to use the default config")
+	defaultConfig := tanuki.DefaultServerConfig()
+	host := flag.String("host", defaultConfig.Host, "Host address of tanuki")
+	port := flag.String("port", strconv.Itoa(int(defaultConfig.RpcPort)), "Port tanuki's RPC handler is listening on")
 	flag.Usage = flagUsage
 	flag.Parse()
 
-	config := tanuki.DefaultServerConfig()
-	if *configPath != "" {
-		f, err := os.Open(*configPath)
-		if err != nil {
-			exit("Could not open config file", err)
-		}
-		if err := json.NewDecoder(f).Decode(&config); err != nil {
-			exit("Could not decode config file", err)
-		}
+	if err := run(*host, *port); err != nil {
+		slog.Error("Failed to run tanukictl", slog.Any("err", err))
+		os.Exit(1)
 	}
+}
+
+func run(host, port string) error {
+	socketAddr := net.JoinHostPort(host, port)
+	conn, err := net.Dial("tcp", socketAddr)
+	if err != nil {
+		return fmt.Errorf("dial tcp: %w", err)
+	}
+	rpc := rpc.NewClient(conn)
 
 	switch flag.Arg(0) {
-	case "run":
-		runServer(config)
 	case "scan":
-		scanLibrary(dialRPC(config))
+		return scanLibrary(rpc)
 	case "dump":
-		dumpStore(dialRPC(config))
+		return dumpStore(rpc)
 	case "user":
-		modifyUser(dialRPC(config))
+		return modifyUser(rpc)
 	default:
-		fmt.Fprintf(os.Stderr, "Invalid command: %s\n", flag.Arg(0))
+		slog.Error("Invalid command", slog.String("command", flag.Arg(0)))
 		flagUsage()
+		return nil
 	}
 }
 
@@ -63,13 +65,12 @@ func main() {
 
 func flagUsage() {
 	out := flag.CommandLine.Output()
-	fmt.Fprintf(out, "Usage: tanuki [options] [command] args\n")
+	fmt.Fprintf(out, "Usage: tanukictl [options] [command] args\n")
 	fmt.Fprintf(out, "\n")
 	fmt.Fprintf(out, "Options:\n")
 	flag.PrintDefaults()
 	fmt.Fprintf(out, "\n")
 	fmt.Fprintf(out, "Commands:\n")
-	fmt.Fprintf(out, "  run                                   Run the server\n")
 	fmt.Fprintf(out, "  scan                                  Scan the library\n")
 	fmt.Fprintf(out, "  dump                                  Dump the store's state\n")
 	fmt.Fprintf(out, "  user add <name>                       Add a new user with the password provided via stdin\n")
@@ -77,62 +78,39 @@ func flagUsage() {
 	fmt.Fprintf(out, "  user edit name <old-name> <new-name>  Change a user's name\n")
 	fmt.Fprintf(out, "  user edit pass <name>                 Change a user's password provided via stdin\n")
 	fmt.Fprintf(out, "\n")
-	fmt.Fprintf(out, "Examples:\n")
-	fmt.Fprintf(out, "  $ tanuki -config /path/to/config.json run\n")
-	fmt.Fprintf(out, "    // Run the server using a specific config\n")
-	fmt.Fprintf(out, "\n")
-	fmt.Fprintf(out, "  $ tanuki scan\n")
-	fmt.Fprintf(out, "  $ tanuki dump\n")
+	fmt.Fprintf(out, "  $ tanukictl -port 5000 scan\n")
+	fmt.Fprintf(out, "  $ tanukictl -port 5000 dump\n")
 	fmt.Fprintf(out, "    // Scan the library, then dump the store's contents\n")
+	fmt.Fprintf(out, "    // We connect to a tanuki instance listening on a\n")
+	fmt.Fprintf(out, "    // standard host but a non-standard port (5000)\n")
 	fmt.Fprintf(out, "\n")
-	fmt.Fprintf(out, "  $ tanuki user edit name old-name new-name\n")
-	fmt.Fprintf(out, "  $ echo \"new-password\" | tanuki user edit pass new-name\n")
-	fmt.Fprintf(out, "    // Edit a user's name, then its password. Since the server we are \n")
-	fmt.Fprintf(out, "    // connecting to exposes a custom RPC port, we also supply the\n")
-	fmt.Fprintf(out, "    // config to the CLI, (which details the value of the port)\n")
+	fmt.Fprintf(out, "  $ tanukictl user edit name old-name new-name\n")
+	fmt.Fprintf(out, "  $ echo \"new-password\" | tanukictl user edit pass new-name\n")
+	fmt.Fprintf(out, "    // Edit a user's name, then their password\n")
 }
 
-func runServer(config tanuki.ServerConfig) {
-	s, err := tanuki.NewServer(config)
-	if err != nil {
-		exit("Failed to create server", err)
-	}
-
-	if err := s.Start(); err != nil {
-		exit("Failed to start server", err)
-	}
-	<-done()
-	s.Stop()
-}
-
-func dialRPC(config tanuki.ServerConfig) *rpc.Client {
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", config.Host, config.RpcPort))
-	if err != nil {
-		exit("Could not dial the RPC port", err)
-	}
-	return rpc.NewClient(conn)
-}
-
-func scanLibrary(api *rpc.Client) {
+func scanLibrary(api *rpc.Client) error {
 	start := time.Now()
 	if err := api.Call("Server.Scan", struct{}{}, &struct{}{}); err != nil {
-		exit("Failed to scan library", err)
+		return fmt.Errorf("scan library: %w", err)
 	}
 	fmt.Printf("Scan complete in %s\n", time.Since(start).Round(time.Millisecond))
+	return nil
 }
 
-func dumpStore(api *rpc.Client) {
+func dumpStore(api *rpc.Client) error {
 	output := new(string)
 	if err := api.Call("Server.Dump", struct{}{}, output); err != nil {
-		exit("Failed to dump store", err)
+		return fmt.Errorf("dump store: %w", err)
 	}
 	fmt.Print(*output)
+	return nil
 }
 
-func modifyUser(api *rpc.Client) {
+func modifyUser(api *rpc.Client) error {
 	stat, err := os.Stdin.Stat()
 	if err != nil {
-		exit("Failed to state os.Stdin", err)
+		return fmt.Errorf("stat os.Stdin: %w", err)
 	}
 	canReadFromStdin := (stat.Mode() & os.ModeCharDevice) == 0
 
@@ -140,7 +118,7 @@ func modifyUser(api *rpc.Client) {
 	if canReadFromStdin {
 		input, err = io.ReadAll(os.Stdin)
 		if err != nil {
-			exit("Failed to read os.Stdin", err)
+			return fmt.Errorf("read os.Stdin: %w", err)
 		}
 		input = bytes.TrimRight(input, "\n")
 	}
@@ -152,12 +130,12 @@ func modifyUser(api *rpc.Client) {
 			Pass: string(input),
 		}
 		if err := api.Call("Server.AddUser", u, &struct{}{}); err != nil {
-			exit("Failed to add user", err)
+			return fmt.Errorf("add user: %w", err)
 		}
 		fmt.Println("Added user")
 	case "delete":
 		if err := api.Call("Server.DeleteUser", flag.Arg(2), &struct{}{}); err != nil {
-			exit("Failed to delete user", err)
+			return fmt.Errorf("delete user: %w", err)
 		}
 		fmt.Println("Deleted user")
 	case "edit":
@@ -168,7 +146,7 @@ func modifyUser(api *rpc.Client) {
 				NewName: flag.Arg(4),
 			}
 			if err := api.Call("Server.ChangeUsername", req, &struct{}{}); err != nil {
-				exit("Failed to change username", err)
+				return fmt.Errorf("change username: %w", err)
 			}
 			fmt.Println("Changed username")
 		case "pass":
@@ -177,28 +155,17 @@ func modifyUser(api *rpc.Client) {
 				Password: string(input),
 			}
 			if err := api.Call("Server.ChangePassword", req, &struct{}{}); err != nil {
-				exit("Failed to change password", err)
+				return fmt.Errorf("change password: %w", err)
 			}
 			fmt.Println("Changed password")
 		default:
-			fmt.Fprintf(os.Stderr, "Invalid command: %s\n", flag.Arg(2))
+			slog.Error("Invalid command", slog.String("command", flag.Arg(2)))
 			flagUsage()
 		}
 	default:
-		fmt.Fprintf(os.Stderr, "Invalid command: %s\n", flag.Arg(1))
+		slog.Error("Invalid command", slog.String("command", flag.Arg(1)))
 		flagUsage()
 	}
-}
 
-// Helpers
-
-func done() <-chan os.Signal {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	return c
-}
-
-func exit(msg string, err error) {
-	fmt.Fprintf(os.Stderr, "%s: %s\n", msg, err)
-	os.Exit(1)
+	return nil
 }

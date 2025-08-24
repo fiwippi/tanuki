@@ -19,6 +19,9 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/maruel/natural"
 	"github.com/nfnt/resize"
+	_ "golang.org/x/image/bmp"
+	_ "golang.org/x/image/tiff"
+	_ "golang.org/x/image/webp"
 	_ "modernc.org/sqlite"
 )
 
@@ -33,16 +36,15 @@ type Store struct {
 func NewStore(path string) (*Store, error) {
 	pool, err := sqlx.Connect("sqlite", path+"?_pragma=journal_mode(WAL)&_pragma=foreign_keys(on)")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("connect to %s: %w", path, err)
 	}
 	pool.SetMaxOpenConns(1)
 	pool.MapperFunc(func(s string) string {
-		// E.g. ModTime --> mod_time
+		// For example, ModTime --> mod_time
 		b := strings.Builder{}
 		for i, r := range s {
 			if unicode.IsUpper(r) && i > 0 {
-				// Only split if the following letter
-				// is also not uppercase
+				// Only split if the following letter is also not uppercase
 				if i+1 < len(s) && !unicode.IsUpper(rune(s[i+1])) {
 					b.WriteRune('_')
 				}
@@ -157,7 +159,7 @@ func (s *Store) Dump() (string, error) {
 
 			i := 1
 			for rows.Next() {
-				results := make(map[string]interface{})
+				results := make(map[string]any)
 				err = rows.MapScan(results)
 				if err != nil {
 					return err

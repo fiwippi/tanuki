@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -28,12 +27,12 @@ import (
 // Server Config
 
 type ServerConfig struct {
-	Host         string   `json:"host"`
-	HttpPort     uint16   `json:"http_port"`
-	RpcPort      uint     `json:"rpc_port"`
-	DataPath     string   `json:"data_path"`
-	LibraryPath  string   `json:"library_path"`
-	ScanInterval duration `json:"scan_interval"`
+	Host         string   `toml:"host"`
+	HttpPort     uint16   `toml:"http_port"`
+	RpcPort      uint16   `toml:"rpc_port"`
+	DataPath     string   `toml:"data_path"`
+	LibraryPath  string   `toml:"library_path"`
+	ScanInterval duration `toml:"scan_interval"`
 }
 
 func DefaultServerConfig() ServerConfig {
@@ -72,12 +71,12 @@ type Server struct {
 }
 
 func NewServer(config ServerConfig) (*Server, error) {
-	if err := os.MkdirAll(config.DataPath, 0666); err != nil {
-		return nil, err
+	if err := os.MkdirAll(config.DataPath, os.ModePerm); err != nil {
+		return nil, fmt.Errorf("make data directory: %w", err)
 	}
 	store, err := NewStore(filepath.Join(config.DataPath, "store"))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("create store: %w", err)
 	}
 
 	s := &Server{
@@ -191,15 +190,11 @@ func (s *Server) Stop() {
 	close(s.ackStopVacuum)
 
 	// Stop the server
-	//
-	// We panic because an errored shutdown
-	// puts the server in an invalid state
-	// which we can't recover from
 	if err := s.public.Close(); err != nil {
-		panic(err)
+		slog.Error("Failed to stop HTTP listener", slog.Any("err", err))
 	}
 	if err := s.privateL.Close(); err != nil {
-		panic(err)
+		slog.Error("Failed to stop RPC listener", slog.Any("err", err))
 	}
 }
 
@@ -207,7 +202,6 @@ func router(s *Store) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(httpLogger())
 
-	// Public routes
 	r.Route(opdsRoot, func(r chi.Router) {
 		r.Use(basicAuth("Tanuki OPDS", s))
 
@@ -703,17 +697,12 @@ type duration struct {
 	time.Duration
 }
 
-func (d duration) MarshalJSON() ([]byte, error) {
-	return json.Marshal(d.String())
+func (d duration) MarshalText() ([]byte, error) {
+	return []byte(d.String()), nil
 }
 
-func (d *duration) UnmarshalJSON(data []byte) error {
-	var s string
-	err := json.Unmarshal(data, &s)
-	if err != nil {
-		return err
-	}
-
-	d.Duration, err = time.ParseDuration(s)
+func (d *duration) UnmarshalText(data []byte) error {
+	var err error
+	d.Duration, err = time.ParseDuration(string(data))
 	return err
 }

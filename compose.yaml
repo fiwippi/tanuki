@@ -1,11 +1,11 @@
-version: "3"
-
+---
 services:
   tanuki:
     image: ghcr.io/fiwippi/tanuki:latest
-    command: -config /data/config.json run
+    command: -config /config.toml
     ports:
       - "8001:8001"
     volumes:
+      - ./config.toml:/config.toml
       - ./library/:/library
       - ./data:/data

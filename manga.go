@@ -6,6 +6,7 @@ import (
 	"database/sql/driver"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -33,7 +34,7 @@ func (p Pages) Value() (driver.Value, error) {
 func (p *Pages) Scan(src any) error {
 	src, ok := src.([]byte)
 	if !ok {
-		return fmt.Errorf("incompatible type for pages")
+		return fmt.Errorf("incompatible type")
 	}
 	return json.Unmarshal(src.([]byte), &p)
 }
@@ -53,6 +54,9 @@ type Entry struct {
 var validImageTypes = map[string]struct{}{
 	"image/jpeg": {},
 	"image/png":  {},
+	"image/webp": {},
+	"image/tiff": {},
+	"image/bmp":  {},
 }
 
 func ParseEntry(path string) (Entry, error) {
@@ -86,7 +90,7 @@ func ParseEntry(path string) (Entry, error) {
 		if !fi.IsDir() && !strings.HasPrefix(fi.Name(), ".") {
 			m := mime.TypeByExtension(filepath.Ext(fi.Name()))
 			if _, found := validImageTypes[m]; !found {
-				return Entry{}, fmt.Errorf("invalid image mime: %s", fi.Name())
+				return Entry{}, fmt.Errorf("invalid image mime for page %s: %s", fi.Name(), m)
 			}
 
 			e.Pages = append(e.Pages, Page{
@@ -131,9 +135,9 @@ func ParseSeries(path string) (Series, []Entry, error) {
 	entries := make([]Entry, 0)
 
 	// Authors do not necessarily have to exist
-	authorFile, err := os.Open(path + "/author.tanuki")
-	if err != nil {
-		slog.Warn("Could not open author file", slog.Any("err", err))
+	authorFile, err := os.Open(path + "/author.txt")
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		slog.Error("Could not open author file", slog.Any("err", err))
 	} else {
 		author, err := io.ReadAll(authorFile)
 		if err != nil {
@@ -190,7 +194,8 @@ func ParseLibrary(path string) (map[Series][]Entry, error) {
 
 		series, entries, err := ParseSeries(filepath.Join(path, item.Name()))
 		if err != nil {
-			slog.Error("Failed to scan series/entries", slog.Any("err", err))
+			slog.Error("Failed to scan series/entries",
+				slog.Any("err", err), slog.String("name", item.Name()))
 			continue
 		}
 
