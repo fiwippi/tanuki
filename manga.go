@@ -136,14 +136,14 @@ func ParseSeries(path string) (Series, []Entry, error) {
 
 	// Authors do not necessarily have to exist
 	authorFile, err := os.Open(path + "/author.txt")
-	if err != nil && !errors.Is(err, fs.ErrNotExist) {
-		slog.Error("Could not open author file", slog.Any("err", err))
-	} else {
+	if err == nil {
 		author, err := io.ReadAll(authorFile)
 		if err != nil {
-			return Series{}, nil, err
+			return Series{}, nil, fmt.Errorf("read author.txt")
 		}
 		s.Author = strings.TrimRight(string(author), "\n")
+	} else if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		slog.Error("Could not open author file", slog.Any("err", err))
 	}
 
 	err = filepath.WalkDir(path, func(p string, d fs.DirEntry, err error) error {
@@ -161,7 +161,7 @@ func ParseSeries(path string) (Series, []Entry, error) {
 
 		e, err := ParseEntry(p)
 		if err != nil {
-			return err
+			return fmt.Errorf("parse entry: %w", err)
 		}
 		e.SID = s.SID
 		if e.ModTime.After(s.ModTime) {
