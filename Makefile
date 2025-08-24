@@ -1,6 +1,7 @@
 .PHONY: build
 build:
-	CGO_ENABLED=0 go build -o ./bin/tanuki cmd/*.go
+	CGO_ENABLED=0 go build -o ./bin/tanuki cmd/tanuki/*.go
+	CGO_ENABLED=0 go build -o ./bin/tanukictl cmd/tanukictl/*.go
 
 .PHONY: clean
 clean:

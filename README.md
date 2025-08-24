@@ -7,9 +7,10 @@ Self-hosted OPDS manga server
 
 - OPDS API
 - Multiple user accounts
-- Support for `.zip` and `.cbz`
+- Support for:
+  - `.zip` and `.cbz` archives
+  - `.jpeg`, `.png`, `.webp`, `.tiff` and `.bmp` images
 - Nested folders in library
-- Single binary (~18 MB)
 
 **Q: What's the OPDS support like?**
 
@@ -28,14 +29,20 @@ Yes.
 
 ```console
 $ tanuki -help
-Usage: tanuki [options] [command] args
-
-Options:
+Usage of tanuki:
   -config string
         Path to config.json file. Leave blank to use the default config
 
+$ tanukictl -help
+Usage: tanukictl [options] [command] args
+
+Options:
+  -host string
+        Host address of tanuki (default "0.0.0.0")
+  -port string
+        Port tanuki's RPC handler is listening on (default "9001")
+
 Commands:
-  run                                   Run the server
   scan                                  Scan the library
   dump                                  Dump the store's state
   user add <name>                       Add a new user with the password provided via stdin
@@ -43,34 +50,28 @@ Commands:
   user edit name <old-name> <new-name>  Change a user's name
   user edit pass <name>                 Change a user's password provided via stdin
 
-Examples:
-  $ tanuki -config /path/to/config.json run
-    // Run the server using a specific config
-
-  $ tanuki scan
-  $ tanuki dump
+  $ tanukictl -port 5000 scan
+  $ tanukictl -port 5000 dump
     // Scan the library, then dump the store's contents
+    // We connect to a tanuki instance listening on a
+    // standard host but a non-standard port (5000)
 
-  $ tanuki -config custom.json user edit name old-name new-name
-  $ echo "new-password" | tanuki -config custom.json user edit pass new-name
-    // Edit a user's name, then its password. Since the server we are 
-    // connecting to exposes a custom RPC port, we also supply the 
-    // config to the CLI, (which details the value of the port)
+  $ tanukictl user edit name old-name new-name
+  $ echo "new-password" | tanukictl user edit pass new-name
+    // Edit a user's name, then their password
 ```
 
 **Q: What does the config file look like?**
 
-This is JSON-encoded.
+This is TOML-encoded.
 
-```json
-{
- "host": "0.0.0.0",
- "http_port": 8001,
- "rpc_port": 9001,
- "data_path": "./data",
- "library_path": "./library",
- "scan_interval": "1h0m0s"
-}
+```toml
+host = '0.0.0.0'
+http_port = 8001
+rpc_port = 9001
+data_path = './data'
+library_path = './library'
+scan_interval = '1h0m0s'
 ```
 
 **Q: Where's my username and password?**
@@ -78,17 +79,13 @@ This is JSON-encoded.
 The default username and password are logged to `STDERR` 
 on the initialisation of the store.
 
-To change the password, run `echo "new-password" | tanuki user edit pass name`. 
+To change the password, run `echo "new-password" | tanukictl user edit pass name`. 
 This works assuming that you are using the default configuration.
 
 **Q: I'm not using the default config, how do I connect to the server?**
 
-The config you feed into the server specifies the port that 
-it's listening on to accept RPC requests, these are requests 
-that the CLI makes to the server in order to edit its state. 
-Make sure that if your server is running on a custom config,
-then you still feed as the config as input to RPC-based commands
-such as `user edit`.
+You can manually specify the host and port that the tanuki RPC
+handler has bound to, via `-host` and `-port`.
 
 **Q: Do you support standalone files?**
 
@@ -103,22 +100,20 @@ No! It is not protected by any authentication mechanisms.
 
 Yes, look at the following `compose.yaml` file.
 
-Notice that for this setup to work, you must place the config
-file in the data folder before the container is created, i.e.
-don't wait for Docker to automatically create the data folder 
-for you.
+Notice that for this setup to work, you must create the config
+file before the container is created, otherwise Docker attempts
+to create it as a directory.
 
 ```yaml
 ---
-version: "3"
-
 services:
   tanuki:
     image: ghcr.io/fiwippi/tanuki:latest
-    command: -config /data/config.json run
+    command: -config /config.toml
     ports:
       - "8001:8001"
     volumes:
+      - ./config.toml:/config.toml
       - ./library/:/library
       - ./data:/data
 ```
@@ -134,6 +129,6 @@ $ docker exec -it tanuki /bin/sh
 Now you can run commands as you please.
 
 ```console
-$ tanuki -config ./data/config.json scan
+$ tanukictl scan
 Scan complete in 2ms
 ```
