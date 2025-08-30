@@ -33,6 +33,7 @@ type ServerConfig struct {
 	DataPath     string   `toml:"data_path"`
 	LibraryPath  string   `toml:"library_path"`
 	ScanInterval duration `toml:"scan_interval"`
+	LogLevel     string   `toml:"log_level"`
 }
 
 func DefaultServerConfig() ServerConfig {
@@ -43,6 +44,7 @@ func DefaultServerConfig() ServerConfig {
 		DataPath:     "./data",
 		LibraryPath:  "./library",
 		ScanInterval: duration{1 * time.Hour},
+		LogLevel:     "DEBUG",
 	}
 }
 
@@ -226,7 +228,13 @@ func (s *Server) scan() {
 
 		lib, err := ParseLibrary(s.config.LibraryPath)
 		if err != nil {
-			slog.Error("Failed to (fully) scan library", slog.Any("err", err))
+			var pe *ParseError
+			if errors.As(err, &pe) {
+				slog.Error("Partially failed to scan library", slog.Any("err", err))
+			} else {
+				slog.Error("Failed to scan library", slog.Any("err", err))
+				return
+			}
 		}
 
 		if len(lib) >= 1 {
@@ -448,23 +456,29 @@ func handlePage(s *Store) http.HandlerFunc {
 
 func (s *Server) Scan(_ struct{}, _ *struct{}) error {
 	slog.Info("Manually scanning library")
+
 	lib, err := ParseLibrary(s.config.LibraryPath)
-	if err != nil && len(lib) == 0 {
-		return err
+	if err != nil {
+		var pe *ParseError
+		if errors.As(err, &pe) {
+			// We still try to populate the store but
+			// return the error at the end so the RPC
+			// client can inspect the parse failures
+			slog.Error("Partially failed to manually scan library", slog.Any("err", err))
+		} else {
+			return err
+		}
 	}
 
 	if len(lib) >= 1 {
-		if err != nil {
-			slog.Error("Failed to (fully) manually scan library", slog.Any("err", err))
-		}
 		if err := s.store.PopulateCatalog(lib); err != nil {
-			slog.Error("Failed to populate (manually scanned) catalog", slog.Any("err", err))
+			slog.Error("Failed to populate manually scanned catalog", slog.Any("err", err))
 			return err
 		}
-		slog.Info("Manual scan complete")
 	}
 
-	return nil
+	slog.Info("Manual scan complete")
+	return err
 }
 
 func (s *Server) Dump(_ struct{}, output *string) error {

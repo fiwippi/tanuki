@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -15,10 +16,14 @@ import (
 	"github.com/fiwippi/tanuki/v2"
 )
 
+var logLevel = &slog.LevelVar{}
+
 func init() {
+	// Until we parse the log level we only emit error logs
+	logLevel.Set(slog.LevelError)
 	slog.SetDefault(slog.New(
 		tint.NewHandler(os.Stderr, &tint.Options{
-			Level:      slog.LevelDebug,
+			Level:      logLevel,
 			TimeFormat: time.DateTime,
 		}),
 	))
@@ -43,7 +48,6 @@ func run(configPath string, printVersion bool) error {
 
 	config := tanuki.DefaultServerConfig()
 	if configPath != "" {
-		slog.Info("Loading config", slog.String("path", configPath))
 		f, err := os.Open(configPath)
 		if err != nil {
 			return fmt.Errorf("open config: %w", err)
@@ -52,6 +56,21 @@ func run(configPath string, printVersion bool) error {
 			return fmt.Errorf("decode config: %w", err)
 		}
 	}
+
+	// No non-ERROR logging should happen until we set the log level!
+	switch strings.ToUpper(config.LogLevel) {
+	case "DEBUG":
+		logLevel.Set(slog.LevelDebug)
+	case "INFO":
+		logLevel.Set(slog.LevelInfo)
+	case "WARN":
+		logLevel.Set(slog.LevelWarn)
+	case "ERROR":
+		logLevel.Set(slog.LevelError)
+	default:
+		return fmt.Errorf("invalid log level: %s", config.LogLevel)
+	}
+
 	slog.Info("Using config", slog.Any("config", config))
 
 	s, err := tanuki.NewServer(config)

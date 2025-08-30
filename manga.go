@@ -19,13 +19,18 @@ import (
 	"time"
 
 	"github.com/maruel/natural"
+	"golang.org/x/text/encoding/charmap"
 )
 
 // Pages
 
 type Page struct {
-	Path string `json:"path"`
-	Mime string `json:"mime"`
+	Path string
+	Mime string
+	// Was the path originally encoded using a non-UTF-8
+	// encoding? The only alternate encoding we support
+	// is CP437
+	NonUtf8 bool
 }
 
 type Pages []Page
@@ -63,6 +68,8 @@ var validImageTypes = map[string]struct{}{
 }
 
 func ParseEntry(path string) (Entry, error) {
+	slog.Debug("Parsing entry", slog.String("path", path))
+
 	abs, err := filepath.Abs(path)
 	if err != nil {
 		return Entry{}, err
@@ -96,9 +103,17 @@ func ParseEntry(path string) (Entry, error) {
 				return Entry{}, fmt.Errorf("invalid image mime for page %s: %s", fi.Name(), m)
 			}
 
+			name := f.Name
+			if f.NonUTF8 {
+				name, err = decodeCP437(f.Name)
+				if err != nil {
+					return Entry{}, fmt.Errorf("invalid CP437 name for page %s: %w", fi.Name(), err)
+				}
+			}
 			e.Pages = append(e.Pages, Page{
-				Path: f.Name,
-				Mime: m,
+				Path:    name,
+				Mime:    m,
+				NonUtf8: f.NonUTF8,
 			})
 		}
 
@@ -135,6 +150,8 @@ var validArchiveExtensions = map[string]struct{}{
 }
 
 func ParseSeries(path string) (Series, []Entry, error) {
+	slog.Debug("Parsing series", slog.String("path", path))
+
 	stat, err := os.Stat(path)
 	if err != nil {
 		return Series{}, nil, err
@@ -155,7 +172,7 @@ func ParseSeries(path string) (Series, []Entry, error) {
 			return Series{}, nil, fmt.Errorf("read author.txt")
 		}
 		s.Author = strings.TrimRight(string(author), "\n")
-	} else if err != nil && !errors.Is(err, fs.ErrNotExist) {
+	} else if !errors.Is(err, fs.ErrNotExist) {
 		slog.Error("Could not open author file", slog.Any("err", err))
 	}
 
@@ -174,7 +191,7 @@ func ParseSeries(path string) (Series, []Entry, error) {
 
 		e, err := ParseEntry(p)
 		if err != nil {
-			return fmt.Errorf("parse entry: %w", err)
+			return fmt.Errorf("parse entry %s: %w", p, err)
 		}
 		e.SID = s.SID
 		if e.ModTime.After(s.ModTime) {
@@ -193,6 +210,23 @@ func ParseSeries(path string) (Series, []Entry, error) {
 
 // Library
 
+type ParseErrorItem struct {
+	Name string
+	Err  error
+}
+
+type ParseError struct {
+	Items []ParseErrorItem
+}
+
+func (pe *ParseError) Error() string {
+	msgs := make([]string, len(pe.Items))
+	for i, item := range pe.Items {
+		msgs[i] = fmt.Sprintf("(%s, %s)", item.Name, item.Err)
+	}
+	return "parse errors: " + strings.Join(msgs, "; ")
+}
+
 func ParseLibrary(path string) (map[Series][]Entry, error) {
 	lib := make(map[Series][]Entry)
 
@@ -200,6 +234,8 @@ func ParseLibrary(path string) (map[Series][]Entry, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	var pErr ParseError
 	for _, item := range items {
 		if !item.IsDir() {
 			continue
@@ -207,22 +243,34 @@ func ParseLibrary(path string) (map[Series][]Entry, error) {
 
 		series, entries, err := ParseSeries(filepath.Join(path, item.Name()))
 		if err != nil {
-			slog.Error("Failed to scan series/entries",
-				slog.Any("err", err), slog.String("name", item.Name()))
+			pErr.Items = append(pErr.Items, ParseErrorItem{item.Name(), err})
 			continue
 		}
 
 		lib[series] = entries
 	}
+	if len(pErr.Items) > 0 {
+		// We return what we've succesfully managed to parse
+		// instead of only returning an empty library
+		return lib, &pErr
+	}
 
 	return lib, nil
 }
 
-// Hashing
+// Hashing / Encoding
 
 func Sha256(s string) string {
 	h := sha256.New()
 	h.Write([]byte(s))
 	digest := h.Sum(nil)
 	return base64.RawURLEncoding.EncodeToString(digest)
+}
+
+func decodeCP437(s string) (string, error) {
+	decBytes, err := charmap.CodePage437.NewDecoder().Bytes([]byte(s))
+	if err != nil {
+		return "", err
+	}
+	return string(decBytes), nil
 }

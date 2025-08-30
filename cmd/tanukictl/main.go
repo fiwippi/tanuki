@@ -98,6 +98,9 @@ func flagUsage() {
 func scanLibrary(api *rpc.Client) error {
 	start := time.Now()
 	if err := api.Call("Server.Scan", struct{}{}, &struct{}{}); err != nil {
+		// Even if it's only a partial failure, we don't
+		// attempt to disambiguate it, so it looks like
+		// a total failure
 		return fmt.Errorf("scan library: %w", err)
 	}
 	fmt.Printf("Scan complete in %s\n", time.Since(start).Round(time.Millisecond))

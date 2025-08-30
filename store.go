@@ -344,10 +344,34 @@ func (s *Store) getPage(tx *sqlx.Tx, sid, eid string, pageNum int) (*bytes.Buffe
 	}
 	defer r.Close()
 
-	f, err := r.Open(p.Path)
+	// If the path was originally non-UTF-8 encoded then we
+	// can't directly Open the path, since it doesn't exist
+	// under the UTF-8 name. Instead we need to do a page
+	// by page comparison in the ZIP file... blegh!
+	var f io.ReadCloser
+	if !p.NonUtf8 {
+		f, err = r.Open(p.Path)
+	} else {
+		for _, f2 := range r.File {
+			if !f2.NonUTF8 {
+				continue
+			}
+			f2Name, err := decodeCP437(f2.Name)
+			if err != nil {
+				return nil, "", err
+			}
+			if p.Path == f2Name {
+				f, err = f2.Open()
+				goto FoundFile
+			}
+		}
+		return nil, "", fmt.Errorf("non-utf-8 page not found")
+	}
+FoundFile:
 	if err != nil {
 		return nil, "", err
 	}
+
 	content, err := io.ReadAll(f)
 	if err != nil {
 		return nil, "", err

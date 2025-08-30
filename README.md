@@ -72,6 +72,7 @@ rpc_port = 9001
 data_path = './data'
 library_path = './library'
 scan_interval = '1h0m0s'
+log_level = 'DEBUG' # One of DEBUG, INFO, WARN, ERROR
 ```
 
 **Q: Where's my username and password?**
