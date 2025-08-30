@@ -14,8 +14,11 @@ import (
 	"mime"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
+
+	"github.com/maruel/natural"
 )
 
 // Pages
@@ -103,6 +106,16 @@ func ParseEntry(path string) (Entry, error) {
 	if len(e.Pages) == 0 {
 		return Entry{}, fmt.Errorf("archive contains no pages")
 	}
+
+	// Go reads the ZIP files in string-sorted order, which means
+	// they're read as out-of-order in some cases because they're
+	// "natural" sorted. Some archives also have problems with bad
+	// casing, so we just lowercase everything to be safe
+	sort.SliceStable(e.Pages, func(i, j int) bool {
+		a := strings.TrimSuffix(e.Pages[i].Path, filepath.Ext(e.Pages[i].Path))
+		b := strings.TrimSuffix(e.Pages[j].Path, filepath.Ext(e.Pages[j].Path))
+		return natural.Less(strings.ToLower(a), strings.ToLower(b))
+	})
 
 	return e, nil
 }
