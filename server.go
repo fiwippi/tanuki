@@ -619,7 +619,7 @@ func basicAuth(realm string, store *Store) func(next http.Handler) http.Handler 
 
 			valid := store.AuthLogin(user, pass)
 			if !valid {
-				slog.Debug("Invalid login credentials", slog.Any("err", err))
+				slog.Debug("Invalid login credentials")
 				w.Header().Set("WWW-Authenticate", realm)
 				w.WriteHeader(http.StatusUnauthorized)
 				return

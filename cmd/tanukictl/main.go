@@ -30,16 +30,22 @@ func main() {
 	defaultConfig := tanuki.DefaultServerConfig()
 	host := flag.String("host", defaultConfig.Host, "Host address of tanuki")
 	port := flag.String("port", strconv.Itoa(int(defaultConfig.RpcPort)), "Port tanuki's RPC handler is listening on")
+	printVersion := flag.Bool("version", false, "Output version information and exit")
 	flag.Usage = flagUsage
 	flag.Parse()
 
-	if err := run(*host, *port); err != nil {
+	if err := run(*host, *port, *printVersion); err != nil {
 		slog.Error("Failed to run tanukictl", slog.Any("err", err))
 		os.Exit(1)
 	}
 }
 
-func run(host, port string) error {
+func run(host, port string, printVersion bool) error {
+	if printVersion {
+		fmt.Printf("tanukictl %s\n", tanuki.Version)
+		return nil
+	}
+
 	socketAddr := net.JoinHostPort(host, port)
 	conn, err := net.Dial("tcp", socketAddr)
 	if err != nil {

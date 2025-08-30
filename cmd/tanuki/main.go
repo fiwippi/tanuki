@@ -26,15 +26,21 @@ func init() {
 
 func main() {
 	configPath := flag.String("config", "", "Path to config.json file. Leave blank to use the default config")
+	printVersion := flag.Bool("version", false, "Output version information and exit")
 	flag.Parse()
 
-	if err := run(*configPath); err != nil {
+	if err := run(*configPath, *printVersion); err != nil {
 		slog.Error("Failed to run tanuki", slog.Any("err", err))
 		os.Exit(1)
 	}
 }
 
-func run(configPath string) error {
+func run(configPath string, printVersion bool) error {
+	if printVersion {
+		fmt.Printf("tanuki %s\n", tanuki.Version)
+		return nil
+	}
+
 	config := tanuki.DefaultServerConfig()
 	if configPath != "" {
 		slog.Info("Loading config", slog.String("path", configPath))
